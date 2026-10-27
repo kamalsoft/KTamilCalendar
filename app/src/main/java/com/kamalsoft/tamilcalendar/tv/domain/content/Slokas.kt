@@ -23,7 +23,8 @@ object Slokas {
         "கௌஸல்யா ஸுப்ரஜா ராம பூர்வா ஸந்த்யா ப்ரவர்த்ததே ।\nஉத்திஷ்ட நரசார்தூல கர்த்தவ்யம் தைவமாஹ்நிகம் ॥",
         "Kausalya supraja Rama, purva sandhya pravartate. Uttishtha narashardula, kartavyam daivam ahnikam.",
         "O Rama, dear son of Kausalya, dawn is breaking in the east. Arise, tiger among men; the day's sacred duties await.",
-        "Sri Venkatesa Suprabhatam, verse 1 (Prativadi Bhayankaram Annan, 15th c.)",
+        // Verse 1 is Valmiki's (Ramayana, Bala Kanda); the rest of the Suprabhatam is by Prativadi Bhayankaram Annan.
+        "Sri Venkatesa Suprabhatam, verse 1 — from Valmiki Ramayana, Bala Kanda",
     )
     val THIRUPPUGAZH = Sloka(
         "thiruppugazh", "திருப்புகழ் — முத்தைத்தரு", "Thiruppugazh — Muththaith tharu", Deity.MURUGAN,

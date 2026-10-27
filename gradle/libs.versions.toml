@@ -2,7 +2,7 @@
 # AndroidX raised minSdk to 23 across most libraries in mid-2025 (Compose 1.8+/1.9+, Room 2.8+,
 # Lifecycle 2.9+, Core 1.16+). Do NOT bump these without re-checking each library's minSdk.
 [versions]
-agp = "8.7.3"
+agp = "8.13.2"
 kotlin = "2.0.21"
 ksp = "2.0.21-1.0.28"
 coreKtx = "1.13.1"

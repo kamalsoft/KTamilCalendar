@@ -19,8 +19,13 @@ audio, so the sloka music isn't in the video.
 | Today | Daily sloka (music) | Weather + forecast preview |
 | ![Month](docs/screens/tv-month.png) | ![Special dates](docs/screens/tv-special.png) | ![Rasi chart](docs/screens/tv-rasi.png) |
 | Month grid | சிறப்பு · Special dates | Rasi chart |
-| ![Rasi detail](docs/screens/tv-rasi-detail.png) | ![Settings](docs/screens/tv-settings.png) | |
-| Rasi Today / Month / Year | Settings | |
+| ![Rasi detail](docs/screens/tv-rasi-detail.png) | ![Ambient](docs/screens/tv-ambient.png) | ![Settings](docs/screens/tv-settings.png) |
+| Rasi Today / Month / Year | Ambient screen | Settings |
+
+| Phone | | |
+|---|---|---|
+| ![Phone today](docs/screens/phone-today.png) | ![Phone month](docs/screens/phone-month.png) | ![Phone more](docs/screens/phone-more.png) |
+| Today | Month | ☰ More |
 
 ## Features
 * **Panchangam:** Tamil date, tithi, nakshatram, yogam, Nalla Neram, Gowri, Rahu Kalam, Yamagandam, Kuligai and
