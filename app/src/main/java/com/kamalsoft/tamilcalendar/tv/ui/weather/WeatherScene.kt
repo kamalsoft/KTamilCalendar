@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.rotate
 import com.kamalsoft.tamilcalendar.tv.domain.model.GeoLocation
+import com.kamalsoft.tamilcalendar.tv.ui.theme.DisplayPrefs
 import com.kamalsoft.tamilcalendar.tv.domain.model.WeatherCondition
 import java.time.LocalDate
 import kotlin.math.PI
@@ -80,6 +81,7 @@ fun WeatherScene(
     density: Float = 1f,
     alpha: Float = 1f,
 ) {
+    if (!DisplayPrefs.weatherAnimations) return
     val time by produceState(0f, active) {
         if (!active) return@produceState
         val start = withFrameNanos { it }

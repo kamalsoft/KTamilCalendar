@@ -1,5 +1,6 @@
 package com.kamalsoft.tamilcalendar.tv.ui.location
 
+import com.kamalsoft.tamilcalendar.tv.ui.theme.DisplayPrefs
 import android.view.KeyEvent as AndroidKeyEvent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -13,6 +14,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -42,7 +45,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
+import com.kamalsoft.tamilcalendar.tv.ui.components.Text
 import com.kamalsoft.tamilcalendar.tv.R
 import com.kamalsoft.tamilcalendar.tv.domain.model.GeoLocation
 import com.kamalsoft.tamilcalendar.tv.ui.app.LocationSearch
@@ -67,6 +70,7 @@ fun LocationScreen(
     onUseMyLocation: () -> Unit,
     onQueryChange: (String) -> Unit,
     onChoose: (GeoLocation) -> Unit,
+    recent: List<GeoLocation> = emptyList(),
 ) {
     var editing by remember { mutableStateOf(false) }
     val field = remember { FocusRequester() }
@@ -153,6 +157,29 @@ fun LocationScreen(
             }
         }
 
+        // Quick toggle between diaspora cities: one press recalculates sunrise, Rahu Kalam, Yamagandam… for that place.
+        Text("விரைவு இடங்கள் · Quick locations", style = MaterialTheme.typography.labelMedium, color = TvColors.TextMuted)
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)) {
+            val quick = (GeoLocation.QUICK + recent).distinctBy { it.nameEn.lowercase() + it.countryCode }
+            items(quick.size) { i ->
+                val place = quick[i]
+                val isCurrent = place.samePlace(current)
+                TvFocusCard(
+                    onClick = { if (!isCurrent) onChoose(place) },
+                    selected = isCurrent, cornerRadius = 22.dp,
+                    modifier = Modifier.height(44.dp),
+                ) {
+                    Row(Modifier.fillMaxHeight().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        if (isCurrent) Text("✓ ", style = MaterialTheme.typography.titleMedium, color = TvColors.Gold)
+                        Text(
+                            if (place.nameTa != place.nameEn) "${place.nameTa} · ${place.nameEn}" else place.nameEn,
+                            style = MaterialTheme.typography.titleMedium, color = TvColors.Text, maxLines = 1,
+                        )
+                    }
+                }
+            }
+        }
+
         // Follow the TV's location (default), or re-enable it after a hand-picked city.
         TvFocusCard(
             onClick = onUseMyLocation, selected = autoDetect, cornerRadius = 12.dp,
@@ -175,16 +202,13 @@ fun LocationScreen(
         }
 
         val (message, places) = when (search) {
-            LocationSearch.Idle -> "பரிந்துரைகள் · Suggestions" to listOf(GeoLocation.NAPERVILLE, GeoLocation.CHENNAI).filterNot {
-                // Geocoded places have slightly different coordinates; compare by name and country.
-                it.nameEn.equals(current.nameEn, ignoreCase = true) && it.countryCode == current.countryCode
-            }
+            LocationSearch.Idle -> "" to emptyList()
             LocationSearch.Searching -> "தேடுகிறது… · Searching…" to emptyList()
             LocationSearch.Failed -> "தேட முடியவில்லை — இணைய இணைப்பைச் சரிபார்க்கவும் · Search failed — check the internet connection" to emptyList()
             is LocationSearch.Results ->
                 (if (search.places.isEmpty()) "எதுவும் கிடைக்கவில்லை · No places found" else "முடிவுகள் · Results (${search.places.size})") to search.places
         }
-        Text(message, style = MaterialTheme.typography.labelMedium, color = TvColors.TextMuted)
+        if (message.isNotEmpty()) Text(message, style = MaterialTheme.typography.labelMedium, color = TvColors.TextMuted)
 
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -208,7 +232,7 @@ fun LocationScreen(
                             )
                             Text("${place.coordinates} · ${place.zoneId}", style = MaterialTheme.typography.bodySmall, color = TvColors.TextDim, maxLines = 1)
                         }
-                        Pill("OK: தேர்வு · Select", TvColors.SurfaceSelected)
+                        if (!DisplayPrefs.compact) Pill("OK: தேர்வு · Select", TvColors.SurfaceSelected)
                     }
                 }
             }

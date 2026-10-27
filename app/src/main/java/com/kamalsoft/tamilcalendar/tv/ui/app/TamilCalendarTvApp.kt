@@ -5,6 +5,19 @@ import android.os.SystemClock
 import android.view.KeyEvent as AndroidKeyEvent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import com.kamalsoft.tamilcalendar.tv.ui.components.Text
+import androidx.tv.material3.MaterialTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.AnimatedVisibility
+import com.kamalsoft.tamilcalendar.tv.ui.ambient.NoWeather
+import com.kamalsoft.tamilcalendar.tv.ui.ambient.AmbientScreen
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import com.kamalsoft.tamilcalendar.tv.ui.theme.ambientBackground
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.core.tween
@@ -21,12 +34,15 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kamalsoft.tamilcalendar.tv.ui.components.DetailContent
@@ -40,14 +56,16 @@ import com.kamalsoft.tamilcalendar.tv.ui.events.ImportantDatesScreen
 import com.kamalsoft.tamilcalendar.tv.ui.location.LocationScreen
 import com.kamalsoft.tamilcalendar.tv.ui.monthly.MonthlyScreen
 import com.kamalsoft.tamilcalendar.tv.ui.rasipalan.RasiPalanScreen
+import com.kamalsoft.tamilcalendar.tv.ui.settings.SettingsScreen
 import com.kamalsoft.tamilcalendar.tv.ui.settings.ThemeScreen
+import com.kamalsoft.tamilcalendar.tv.ui.theme.DisplayPrefs
 import com.kamalsoft.tamilcalendar.tv.ui.theme.AppTheme
 import com.kamalsoft.tamilcalendar.tv.ui.theme.TvColors
 import com.kamalsoft.tamilcalendar.tv.ui.theme.TvDimens
 import kotlinx.coroutines.delay
 
-/** Shown once on first launch (and kept in About). */
-private val DISCLAIMER = DetailContent(
+/** Shown once on first launch (and kept in About). The navigation hint matches the device. */
+private val DISCLAIMER get() = DetailContent(
     title = "அறிவிப்பு · Disclaimer",
     subtitle = "தகவலுக்காக மட்டும் · For information only",
     lines = listOf(
@@ -55,7 +73,11 @@ private val DISCLAIMER = DetailContent(
         "பிற மதங்கள் · Other faiths" to "Islamic dates are calculated and may differ by a day from local moon sighting.",
         "இடம் · Location" to "With your permission the TV's location is used; otherwise an approximate city from your internet connection (ipapi.co). It is stored only on this TV.",
         "வானிலை · Weather" to "From Open-Meteo, provided as-is without warranty.",
-        "ரிமோட் · Remote" to "▲ for the top tabs · OK to select · BACK to go back. More under About (ⓘ).",
+        if (DisplayPrefs.compact) {
+            "வழிசெலுத்தல் · Navigation" to "Bottom bar for sections; ☰ More for Location, Theme, Settings and About."
+        } else {
+            "ரிமோட் · Remote" to "▲ for the top tabs · OK to select · BACK to go back. More under About (ⓘ)."
+        },
     ),
 )
 
@@ -81,6 +103,15 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
     val locationQuery by vm.locationQuery.collectAsStateWithLifecycle()
     val locationSearch by vm.locationSearch.collectAsStateWithLifecycle()
     val locationStatus by vm.locationStatus.collectAsStateWithLifecycle()
+    val settings by vm.settings.collectAsStateWithLifecycle()
+    val speaker by vm.speaker.collectAsStateWithLifecycle()
+    val todayData by vm.todayData.collectAsStateWithLifecycle()
+    val banner by vm.banner.collectAsStateWithLifecycle()
+    val rasiSky by vm.rasiSky.collectAsStateWithLifecycle()
+    val rasiForecasts by vm.rasiForecasts.collectAsStateWithLifecycle()
+    val visibleTabs = Destination.entries.filter { it.name !in settings.hiddenSections }
+    // A section hidden in Settings while open: fall back to Today.
+    LaunchedEffect(destination, visibleTabs) { if (destination !in visibleTabs) vm.navigate(Destination.DAILY) }
 
     val context = LocalContext.current
     val contentFocus = remember { FocusRequester() }
@@ -90,6 +121,20 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
     // Counts user key presses (KeyDown), so a pending focus request yields to real navigation.
     var userKeyPresses by remember { mutableIntStateOf(0) }
     var lastBackAt by remember { mutableLongStateOf(0L) }
+    var moreOpen by remember { mutableStateOf(false) }
+
+    // Ambient mode: shown after N idle minutes; any key or touch wakes the app (that input is swallowed).
+    var lastInput by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
+    var ambient by remember { mutableStateOf(false) }
+    LaunchedEffect(lastInput, settings.ambient, settings.ambientMinutes, status) {
+        ambient = false
+        if (!settings.ambient || status != LoadStatus.READY) return@LaunchedEffect
+        delay(settings.ambientMinutes * 60_000L)
+        if (!speaker.speakingId.isNullOrEmpty()) return@LaunchedEffect // don't interrupt a sloka
+        ambient = true
+    }
+    // TV overscan margins don't apply to phones.
+    val sidePad = if (DisplayPrefs.compact) 12.dp else TvDimens.SafeHorizontal
 
     // One-shot "move focus into the page" request. Made on launch, OK on a tab, opening a date, or a
     // location change, but NEVER by merely focusing a tab (tvOS tabs switch on focus, and focus must stay
@@ -101,7 +146,12 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
         focusRequestId++
     }
 
+    // Touch devices (phones/tablets) don't show a focus cursor, so programmatic focus is skipped there.
+    val inputMode = LocalInputModeManager.current
+    val touch = inputMode.inputMode == InputMode.Touch
+
     LaunchedEffect(focusRequestId, destination, status) {
+        if (touch) return@LaunchedEffect
         val requestedAt = pendingFocusAtPresses ?: return@LaunchedEffect
         // The target may not exist until Room emits (first launch seeds a whole year), so retry briefly.
         repeat(100) {
@@ -139,7 +189,9 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
     }
 
     // BACK, like tvOS: content → current tab → Today tab → (twice) exit.
-    BackHandler(enabled = !tabBarHasFocus) {
+    // Touch: BACK goes to Today, then (twice) exits; there is no tab-bar focus to move to.
+    BackHandler(enabled = touch && destination != Destination.DAILY) { vm.navigate(Destination.DAILY) }
+    BackHandler(enabled = !touch && !tabBarHasFocus) {
         runCatching { tabs.getValue(destination).requestFocus() }
     }
     BackHandler(enabled = tabBarHasFocus && destination != Destination.DAILY) {
@@ -147,7 +199,7 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
         runCatching { tabs.getValue(Destination.DAILY).requestFocus() }
     }
     // A single stray BACK shouldn't close a wall-calendar app: ask for a second press.
-    BackHandler(enabled = tabBarHasFocus && destination == Destination.DAILY) {
+    BackHandler(enabled = (tabBarHasFocus || touch) && destination == Destination.DAILY) {
         val now = SystemClock.elapsedRealtime()
         if (now - lastBackAt < 2500) {
             (context as? Activity)?.finish()
@@ -161,7 +213,17 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
         Modifier
             .fillMaxSize()
             .ambientBackground()
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        awaitPointerEvent(PointerEventPass.Initial)
+                        lastInput = SystemClock.elapsedRealtime()
+                    }
+                }
+            }
             .onPreviewKeyEvent { event ->
+                lastInput = SystemClock.elapsedRealtime()
+                if (ambient) return@onPreviewKeyEvent true // wake only
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                 userKeyPresses++
                 // Digits, page and channel keys are typed/used in the search box there; no shortcuts.
@@ -182,35 +244,36 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
                     return@onPreviewKeyEvent true
                 }
                 val digit = event.nativeKeyEvent.keyCode - AndroidKeyEvent.KEYCODE_1
-                if (digit in Destination.entries.indices) {
-                    go(Destination.entries[digit])
+                if (digit in visibleTabs.indices) {
+                    go(visibleTabs[digit])
                     return@onPreviewKeyEvent true
                 }
                 false
             },
     ) {
-        TopTabBar(
+        if (DisplayPrefs.compact) CompactTopBar(destination, Modifier.padding(top = 4.dp)) else TopTabBar(
             current = destination,
+            visible = visibleTabs,
             tabRequesters = tabs,
             onFocusChanged = { tabBarHasFocus = it },
             onTabFocused = { vm.navigate(it) },
             onEnterContent = { focusContent() },
-            modifier = Modifier.padding(start = TvDimens.SafeHorizontal, end = TvDimens.SafeHorizontal, top = 16.dp),
+            modifier = Modifier.padding(start = sidePad, end = sidePad, top = 16.dp),
         )
         Box(
             Modifier
                 .fillMaxSize()
                 .padding(
-                    start = TvDimens.SafeHorizontal,
-                    end = TvDimens.SafeHorizontal,
-                    top = 16.dp + 48.dp + 10.dp,
-                    bottom = TvDimens.SafeVertical,
+                    start = sidePad,
+                    end = sidePad,
+                    top = if (DisplayPrefs.compact) 4.dp + COMPACT_TOP_BAR_HEIGHT else 16.dp + 48.dp + 10.dp,
+                    bottom = if (DisplayPrefs.compact) COMPACT_BOTTOM_BAR_HEIGHT + 4.dp else TvDimens.SafeVertical,
                 ),
         ) {
             // Fade-and-rise on page change. Only the new page is composed (no cross-fade), so focus
             // targets are never duplicated during the animation.
             val enter = remember(destination) { Animatable(0f) }
-            LaunchedEffect(destination) { enter.animateTo(1f, tween(260)) }
+            LaunchedEffect(destination) { if (DisplayPrefs.animations) enter.animateTo(1f, tween(260)) else enter.snapTo(1f) }
             Box(Modifier.fillMaxSize().graphicsLayer { alpha = enter.value; translationY = (1f - enter.value) * 14.dp.toPx() }) {
                 if (status == LoadStatus.ERROR) {
                     ErrorState(focusRequester = contentFocus, onRetry = { vm.retry(); focusContent() })
@@ -220,12 +283,16 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
                         today = today,
                         location = location,
                         weather = weather,
+                        weatherEnabled = settings.weather,
                         imperialUnits = imperial,
                         entryFocus = contentFocus,
                         onPreviousDay = { vm.shiftDay(-1) },
                         onNextDay = { vm.shiftDay(1) },
                         onToday = vm::goToday,
                         onOpenMonth = { go(Destination.MONTHLY) },
+                        speaker = speaker,
+                        onToggleSpeech = vm::toggleSpeech,
+                        onStopSpeech = vm::stopSpeech,
                     )
                     Destination.MONTHLY -> MonthlyScreen(
                         month = visibleMonth,
@@ -269,6 +336,11 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
                         entryFocus = contentFocus,
                         onPreviousDay = { vm.shiftDay(-1) },
                         onNextDay = { vm.shiftDay(1) },
+                        sky = rasiSky,
+                        forecasts = rasiForecasts,
+                        speaker = speaker,
+                        onToggleSpeech = vm::toggleSpeech,
+                        onStopSpeech = vm::stopSpeech,
                     )
                     Destination.THEME -> ThemeScreen(
                         current = AppTheme.entries.firstOrNull { it.palette == TvColors.palette } ?: AppTheme.GRAPHITE,
@@ -277,6 +349,14 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
                             TvColors.palette = theme.palette
                             vm.saveTheme(theme.name)
                         },
+                    )
+                    Destination.SETTINGS -> SettingsScreen(
+                        settings = settings,
+                        autoLocation = vm.autoLocation,
+                        entryFocus = contentFocus,
+                        onUpdate = vm::updateSettings,
+                        onAutoLocation = vm::setAutoLocation,
+                        onShowDisclaimer = { vm.resetFirstLaunch(); overlay.show(DISCLAIMER, contentFocus) },
                     )
                     Destination.ABOUT -> AboutScreen(location = location, entryFocus = contentFocus)
                     Destination.LOCATION -> LocationScreen(
@@ -289,10 +369,38 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
                         onUseMyLocation = vm::useMyLocation,
                         onQueryChange = vm::onLocationQueryChange,
                         onChoose = vm::chooseLocation,
+                        recent = vm.recentLocations(),
                     )
                 }
             }
         }
+        if (DisplayPrefs.compact) {
+            if (moreOpen) {
+                CompactMoreSheet(destination, visibleTabs, onSelect = { moreOpen = false; vm.navigate(it) }, onDismiss = { moreOpen = false })
+            }
+            CompactBottomBar(
+                current = destination, visible = visibleTabs, moreOpen = moreOpen,
+                onSelect = { moreOpen = false; vm.navigate(it) }, onMore = { moreOpen = !moreOpen },
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
+        }
         DetailHost(overlay)
+        // Reminder banner (Rahu Kalam soon / Nalla Neram begun) while the app is open.
+        AnimatedVisibility(
+            visible = banner != null && !ambient,
+            enter = slideInVertically { -it } + fadeIn(), exit = slideOutVertically { -it } + fadeOut(),
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp),
+        ) {
+            Text(
+                "🔔 " + (banner ?: ""), style = MaterialTheme.typography.titleMedium, color = TvColors.Midnight,
+                modifier = Modifier.background(TvColors.Gold, RoundedCornerShape(50)).padding(horizontal = 22.dp, vertical = 10.dp),
+            )
+        }
+        if (ambient) {
+            AmbientScreen(
+                day = todayData, weather = if (settings.weather) weather else NoWeather, location = location,
+                modifier = Modifier.pointerInput(Unit) { detectTapGestures { lastInput = SystemClock.elapsedRealtime() } },
+            )
+        }
     }
 }

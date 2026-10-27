@@ -16,7 +16,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
 import com.kamalsoft.tamilcalendar.tv.R
 import com.kamalsoft.tamilcalendar.tv.domain.model.DayTag
 import com.kamalsoft.tamilcalendar.tv.domain.model.Religion

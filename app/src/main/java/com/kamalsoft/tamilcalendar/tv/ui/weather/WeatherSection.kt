@@ -2,6 +2,10 @@ package com.kamalsoft.tamilcalendar.tv.ui.weather
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
+import com.kamalsoft.tamilcalendar.tv.ui.theme.DisplayPrefs
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
@@ -26,7 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
+import com.kamalsoft.tamilcalendar.tv.ui.components.Text
 import com.kamalsoft.tamilcalendar.tv.R
 import com.kamalsoft.tamilcalendar.tv.domain.model.DayForecast
 import com.kamalsoft.tamilcalendar.tv.domain.model.GeoLocation
@@ -118,9 +122,10 @@ fun WeatherSection(
             return@Column
         }
 
-        Row(Modifier.fillMaxWidth().height(200.dp), horizontalArrangement = Arrangement.spacedBy(TvDimens.Gap)) {
-            val c = report.current
-            TvFocusCard(onClick = {}, onFocused = { preview = null }, focusRequester = entryFocus, modifier = Modifier.weight(1f).fillMaxHeight()) {
+        val c = report.current
+        val compact = DisplayPrefs.compact
+        val currentCard: @Composable (Modifier) -> Unit = { m ->
+            TvFocusCard(onClick = {}, onFocused = { preview = null }, focusRequester = entryFocus, modifier = m) {
                 Row(Modifier.fillMaxSize().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                     Image(painterResource(c.condition.iconRes(c.isDay)), contentDescription = c.condition.en, modifier = Modifier.size(96.dp).floating())
                     Column(Modifier.padding(start = 20.dp)) {
@@ -133,7 +138,9 @@ fun WeatherSection(
                     }
                 }
             }
-            TvFocusCard(onClick = {}, onFocused = { preview = null }, modifier = Modifier.weight(1.3f).fillMaxHeight()) {
+        }
+        val hourlyCard: @Composable (Modifier) -> Unit = { m ->
+            TvFocusCard(onClick = {}, onFocused = { preview = null }, modifier = m) {
                 Column(Modifier.fillMaxSize().padding(16.dp)) {
                     Text("Next 12 hours", style = MaterialTheme.typography.labelMedium, color = TvColors.Gold)
                     Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -149,14 +156,28 @@ fun WeatherSection(
                 }
             }
         }
-
-        Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            report.daily.take(7).forEachIndexed { i, d ->
-                DayTile(d, isToday = d.date == today, onFocused = { preview = d }, modifier = Modifier.weight(1f).fillMaxHeight().staggeredEnter(report.fetchedAt, i))
+        // TV / landscape: side by side; phone: stacked, and the 7 days scroll sideways.
+        if (compact) {
+            currentCard(Modifier.fillMaxWidth().height(176.dp))
+            hourlyCard(Modifier.fillMaxWidth().height(160.dp))
+            Row(Modifier.fillMaxWidth().height(140.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                report.daily.take(7).forEachIndexed { i, d ->
+                    DayTile(d, isToday = d.date == today, onFocused = { preview = d }, modifier = Modifier.width(112.dp).fillMaxHeight().staggeredEnter(report.fetchedAt, i))
+                }
+            }
+        } else {
+            Row(Modifier.fillMaxWidth().height(200.dp), horizontalArrangement = Arrangement.spacedBy(TvDimens.Gap)) {
+                currentCard(Modifier.weight(1f).fillMaxHeight())
+                hourlyCard(Modifier.weight(1.3f).fillMaxHeight())
+            }
+            Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                report.daily.take(7).forEachIndexed { i, d ->
+                    DayTile(d, isToday = d.date == today, onFocused = { preview = d }, modifier = Modifier.weight(1f).fillMaxHeight().staggeredEnter(report.fetchedAt, i))
+                }
             }
         }
         Text(
-            "Source: Open-Meteo.com (NOAA models) · Press ▲ to return to the calendar",
+            if (DisplayPrefs.compact) "Source: Open-Meteo.com (NOAA models)" else "Source: Open-Meteo.com (NOAA models) · Press ▲ to return to the calendar",
             style = MaterialTheme.typography.labelMedium, color = TvColors.TextDim,
         )
     }

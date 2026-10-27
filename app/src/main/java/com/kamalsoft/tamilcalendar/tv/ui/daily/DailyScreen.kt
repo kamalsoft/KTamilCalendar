@@ -1,6 +1,12 @@
 package com.kamalsoft.tamilcalendar.tv.ui.daily
 
 import androidx.compose.foundation.Image
+import androidx.compose.ui.focus.focusRequester
+import com.kamalsoft.tamilcalendar.tv.domain.content.Slokas
+import com.kamalsoft.tamilcalendar.tv.data.audio.Speaker
+import com.kamalsoft.tamilcalendar.tv.ui.theme.DisplayPrefs
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import com.kamalsoft.tamilcalendar.tv.ui.components.floating
 import com.kamalsoft.tamilcalendar.tv.ui.components.staggeredEnter
 import androidx.compose.animation.togetherWith
@@ -57,9 +63,10 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
+import com.kamalsoft.tamilcalendar.tv.ui.components.Text
 import com.kamalsoft.tamilcalendar.tv.R
 import com.kamalsoft.tamilcalendar.tv.domain.model.EventKind
 import com.kamalsoft.tamilcalendar.tv.domain.model.GeoLocation
@@ -107,12 +114,16 @@ fun DailyScreen(
     today: LocalDate,
     location: GeoLocation,
     weather: WeatherState,
+    weatherEnabled: Boolean,
     imperialUnits: Boolean,
     entryFocus: FocusRequester,
     onPreviousDay: () -> Unit,
     onNextDay: () -> Unit,
     onToday: () -> Unit,
     onOpenMonth: () -> Unit,
+    speaker: Speaker.State = Speaker.State(),
+    onToggleSpeech: (id: String, ta: String, en: String, repeat: Int) -> Unit = { _, _, _, _ -> },
+    onStopSpeech: () -> Unit = {},
 ) {
     if (day == null) {
         LoadingState()
@@ -124,6 +135,57 @@ fun DailyScreen(
     // ▶ from the tall date card should land on the first panchangam card, not the geometrically nearest (middle) one.
     val firstPanchangamCard = remember { FocusRequester() }
     var weatherPage by remember { mutableStateOf(false) }
+    var slokaOpen by remember { mutableStateOf(false) }
+    val sloka = Slokas.forDay(day)
+    val slokaButton = remember { FocusRequester() }
+    val slokaHost: @Composable () -> Unit = {
+        if (slokaOpen) {
+            SlokaPanel(
+                sloka, speaker,
+                onToggle = { onToggleSpeech(sloka.id, sloka.textTa, sloka.transliteration, SLOKA_REPEAT) },
+                onClose = { onStopSpeech(); slokaOpen = false; runCatching { slokaButton.requestFocus() } },
+            )
+        }
+    }
+
+    if (DisplayPrefs.compact) {
+        // Phone: one scrolling column (touch scrolls; no D-pad paging needed).
+        Box(Modifier.fillMaxSize()) {
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 6.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                HeroCard(
+                    day = day,
+                    isToday = day.date == today,
+                    zone = ZoneId.of(location.zoneId),
+                    season = seasonFor(day.date, location),
+                    weather = if (weatherEnabled) weather else WeatherState(null, refreshFailed = false, isLoading = false),
+                    focusRequester = entryFocus,
+                    onClick = onOpenMonth,
+                    modifier = Modifier.fillMaxWidth().height(340.dp).staggeredEnter(Unit, 0),
+                )
+                Row(Modifier.fillMaxWidth().height(52.dp), horizontalArrangement = Arrangement.spacedBy(TvDimens.Gap)) {
+                    DayButton("◀", onPreviousDay, Modifier.width(56.dp))
+                    DayButton("இன்று · Today", onToday, Modifier.weight(1f), highlighted = day.date != today)
+                    DayButton("🔊 ஸ்லோகம்", { slokaOpen = true }, Modifier.weight(1f).focusRequester(slokaButton))
+                    DayButton("▶", onNextDay, Modifier.width(56.dp))
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { PanchangamColumn(day, location.label, firstPanchangamCard, show) }
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { TimingColumn(day, show) }
+                if (weatherEnabled) {
+                    WeatherSection(
+                        state = weather, location = location, imperial = imperialUnits, today = today,
+                        zone = ZoneId.of(location.zoneId), entryFocus = weatherFocus,
+                        modifier = Modifier.fillMaxWidth().height(620.dp),
+                    )
+                }
+            }
+            DetailHost(details)
+            slokaHost()
+        }
+        return
+    }
 
     BoxWithConstraints(Modifier.fillMaxSize().clipToBounds()) {
         // Two fixed pages that slide as a whole, driven by which page holds focus. (A scroll container
@@ -153,15 +215,16 @@ fun DailyScreen(
                         isToday = day.date == today,
                         zone = ZoneId.of(location.zoneId),
                         season = seasonFor(day.date, location),
-                        weather = weather,
+                        weather = if (weatherEnabled) weather else WeatherState(null, refreshFailed = false, isLoading = false),
                         focusRequester = entryFocus,
                         onClick = onOpenMonth,
                         modifier = Modifier.weight(1f).fillMaxWidth().focusProperties { right = firstPanchangamCard }.staggeredEnter(Unit, 0),
                     )
                     Row(Modifier.fillMaxWidth().height(52.dp), horizontalArrangement = Arrangement.spacedBy(TvDimens.Gap)) {
-                        DayButton("◀", onPreviousDay, Modifier.width(56.dp))
-                        DayButton("இன்று · Today", onToday, Modifier.weight(1f), highlighted = day.date != today)
-                        DayButton("▶", onNextDay, Modifier.width(56.dp))
+                        DayButton("◀", onPreviousDay, Modifier.width(44.dp))
+                        DayButton("இன்று", onToday, Modifier.weight(0.8f), highlighted = day.date != today)
+                        DayButton("🔊 ஸ்லோகம்", { slokaOpen = true }, Modifier.weight(1.3f).focusRequester(slokaButton))
+                        DayButton("▶", onNextDay, Modifier.width(44.dp))
                     }
                 }
                 Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(TvDimens.Gap)) {
@@ -171,7 +234,7 @@ fun DailyScreen(
                     TimingColumn(day, show)
                 }
             }
-            WeatherSection(
+            if (weatherEnabled) WeatherSection(
                 state = weather,
                 location = location,
                 imperial = imperialUnits,
@@ -186,6 +249,7 @@ fun DailyScreen(
             )
         }
         DetailHost(details)
+            slokaHost()
     }
 }
 
@@ -274,7 +338,11 @@ private fun HeroCard(
                     Text(" ${c.temperature.roundToInt()}°  ", style = MaterialTheme.typography.titleMedium, color = TvColors.Text, maxLines = 1)
                 }
                 Text(
-                    if (focused) "▼ Weather · OK: மாதம்" else "▼ Weather",
+                    when {
+                        weather.report == null -> if (focused) "OK: மாதம்" else ""
+                        focused -> "▼ Weather · OK: மாதம்"
+                        else -> "▼ Weather"
+                    },
                     style = MaterialTheme.typography.labelMedium, color = TvColors.TextDim, maxLines = 1,
                 )
             }
@@ -291,7 +359,10 @@ private fun DayButton(label: String, onClick: () -> Unit, modifier: Modifier, hi
         cornerRadius = 12.dp,
         containerColor = if (highlighted) TvColors.Crimson.copy(alpha = 0.35f) else TvColors.Surface,
     ) {
-        Text(label, style = MaterialTheme.typography.titleMedium, color = TvColors.Text, modifier = Modifier.align(Alignment.Center))
+        Text(
+            label, style = MaterialTheme.typography.titleMedium, fontSize = if (label.length > 6) 15.sp else TextUnit.Unspecified,
+            color = TvColors.Text, maxLines = 1, softWrap = false, modifier = Modifier.align(Alignment.Center),
+        )
     }
 }
 
@@ -412,7 +483,8 @@ private fun ColumnScope.InfoCard(
         onClick = { show(detail, self) },
         focusRequester = self,
         accent = accent,
-        modifier = Modifier.weight(1f).fillMaxWidth().staggeredEnter(Unit, order),
+        // TV: cards share the column height; phone: fixed height inside the scrolling column.
+        modifier = (if (DisplayPrefs.compact) Modifier.height(78.dp) else Modifier.weight(1f)).fillMaxWidth().staggeredEnter(Unit, order),
     ) {
         Row(Modifier.fillMaxSize()) {
             Box(

@@ -11,6 +11,7 @@ import com.kamalsoft.tamilcalendar.tv.ui.app.CalendarViewModel
 import com.kamalsoft.tamilcalendar.tv.ui.app.TamilCalendarTvApp
 import com.kamalsoft.tamilcalendar.tv.ui.theme.AppTheme
 import com.kamalsoft.tamilcalendar.tv.ui.theme.DesignCanvas
+import com.kamalsoft.tamilcalendar.tv.ui.theme.DisplayPrefs
 import com.kamalsoft.tamilcalendar.tv.ui.theme.TamilCalendarTheme
 import com.kamalsoft.tamilcalendar.tv.ui.theme.TvColors
 import kotlinx.coroutines.launch
@@ -41,6 +42,15 @@ class MainActivity : ComponentActivity() {
             }
         }
         lifecycleScope.launch { viewModel.locationRequests.collect { startLocationDetection(userInitiated = true) } }
+        // Push display settings to the UI helpers (motion, time format, Tamil-only labels).
+        lifecycleScope.launch {
+            viewModel.settings.collect {
+                DisplayPrefs.animations = it.animations
+                DisplayPrefs.weatherAnimations = it.weatherAnimations
+                DisplayPrefs.clock24h = it.clock24h
+                DisplayPrefs.tamilOnly = it.tamilOnly
+            }
+        }
         // Open with the TV's own location by default (unless the user picked a place by hand).
         if (savedInstanceState == null && viewModel.autoLocation) startLocationDetection(userInitiated = false)
     }

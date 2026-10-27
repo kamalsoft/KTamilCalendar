@@ -23,8 +23,14 @@ class LocationRepository(
     }.getOrNull() ?: default
 
     fun save(location: GeoLocation) {
-        prefs.edit().putString(KEY, gson.toJson(location)).apply()
+        val recent = (listOf(location) + recent()).distinctBy { it.nameEn.lowercase() + it.countryCode }.take(5)
+        prefs.edit().putString(KEY, gson.toJson(location)).putString(KEY_RECENT, gson.toJson(recent.toTypedArray())).apply()
     }
+
+    /** Last five places used, most recent first. */
+    fun recent(): List<GeoLocation> = runCatching {
+        gson.fromJson(prefs.getString(KEY_RECENT, null) ?: return emptyList(), Array<GeoLocation>::class.java).toList()
+    }.getOrDefault(emptyList())
 
     /** Auto: follow where the TV is (default). Turned off when the user picks a place by hand. */
     var autoDetect: Boolean
@@ -36,7 +42,7 @@ class LocationRepository(
             val zone = r.timezone?.takeIf { runCatching { ZoneId.of(it) }.isSuccess } ?: return@mapNotNull null
             val name = r.name ?: return@mapNotNull null
             // Keep the Tamil names of the built-in places when the user picks them again.
-            val known = listOf(GeoLocation.NAPERVILLE, GeoLocation.CHENNAI).firstOrNull {
+            val known = GeoLocation.QUICK.firstOrNull {
                 it.nameEn.equals(name, ignoreCase = true) && it.countryCode == r.countryCode
             }
             GeoLocation(
@@ -55,5 +61,6 @@ class LocationRepository(
     private companion object {
         const val KEY = "location_json"
         const val KEY_AUTO = "location_auto"
+        const val KEY_RECENT = "location_recent"
     }
 }

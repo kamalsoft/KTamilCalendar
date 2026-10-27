@@ -8,7 +8,10 @@ import com.kamalsoft.tamilcalendar.tv.data.remote.TamilCalendarApi
 import com.kamalsoft.tamilcalendar.tv.data.repository.CalendarRepositoryImpl
 import com.kamalsoft.tamilcalendar.tv.data.repository.WeatherRepository
 import com.kamalsoft.tamilcalendar.tv.domain.model.GeoLocation
+import com.kamalsoft.tamilcalendar.tv.domain.model.ConventionPref
 import com.kamalsoft.tamilcalendar.tv.domain.model.LocationPolicy
+import com.kamalsoft.tamilcalendar.tv.domain.model.TimingConvention
+import com.kamalsoft.tamilcalendar.tv.domain.model.UnitsPref
 import com.kamalsoft.tamilcalendar.tv.domain.repository.CalendarRepository
 import com.kamalsoft.tamilcalendar.tv.domain.usecase.GetDayUseCase
 import com.kamalsoft.tamilcalendar.tv.domain.usecase.GetMonthGridUseCase
@@ -30,13 +33,26 @@ class CalendarSession(
     schoolJson: () -> String,
     weatherFactory: (GeoLocation, imperial: Boolean) -> WeatherRepository,
     io: CoroutineDispatcher,
+    units: UnitsPref = UnitsPref.AUTO,
+    convention: ConventionPref = ConventionPref.AUTO,
 ) {
     val zone: ZoneId = ZoneId.of(location.zoneId)
-    val imperialUnits: Boolean = LocationPolicy.usesImperialUnits(location)
+    val imperialUnits: Boolean = when (units) {
+        UnitsPref.AUTO -> LocationPolicy.usesImperialUnits(location)
+        UnitsPref.IMPERIAL -> true
+        UnitsPref.METRIC -> false
+    }
 
     private val localHolidayRegions = LocationPolicy.localHolidayRegions(location)
     private val schoolDistricts = LocationPolicy.schoolDistricts(location)
-    private val engine = TamilCalendarEngine(location, LocationPolicy.timingConvention(location))
+    private val engine = TamilCalendarEngine(
+        location,
+        when (convention) {
+            ConventionPref.AUTO -> LocationPolicy.timingConvention(location)
+            ConventionPref.TRADITIONAL_6AM -> TimingConvention.TRADITIONAL_6AM
+            ConventionPref.SUNRISE_BASED -> TimingConvention.SUNRISE_BASED
+        },
+    )
 
     /** Changing the engine config or the holiday regions regenerates the cached days. */
     private val dataVersion = listOf(engine.dataVersion, localHolidayRegions).hashCode()

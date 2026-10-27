@@ -1,5 +1,6 @@
 package com.kamalsoft.tamilcalendar.tv.ui.events
 
+import com.kamalsoft.tamilcalendar.tv.ui.components.AdaptivePanes
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -24,7 +25,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
+import com.kamalsoft.tamilcalendar.tv.ui.components.Text
 import com.kamalsoft.tamilcalendar.tv.R
 import com.kamalsoft.tamilcalendar.tv.domain.model.CalendarEvent
 import com.kamalsoft.tamilcalendar.tv.domain.model.DayTag
@@ -130,7 +131,7 @@ fun ImportantDatesScreen(
         Row(Modifier.fillMaxWidth().height(52.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             NavButton("◀", onPreviousMonth)
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("முக்கிய நாட்கள் · Important Dates", style = MaterialTheme.typography.headlineSmall, color = TvColors.Gold)
+                Text("சிறப்பு நாட்கள் · Important Dates", style = MaterialTheme.typography.headlineSmall, color = TvColors.Gold)
                 Text(
                     "${Fmt.gregorianMonthsTa[month.monthValue - 1]} ${month.year} · ${month.month.getDisplayName(TextStyle.FULL, Locale.US)}",
                     style = MaterialTheme.typography.bodySmall, color = TvColors.TextMuted,
@@ -142,8 +143,8 @@ fun ImportantDatesScreen(
             LoadingState()
             return@Column
         }
-        Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            Column(Modifier.weight(1f).fillMaxHeight()) {
+        AdaptivePanes(16.dp) {
+            Column(Modifier.pane(1f)) {
                 SectionTitle("இந்து · Hindu")
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(10.dp)) {
                     items(hindu.size) { i ->
@@ -153,7 +154,7 @@ fun ImportantDatesScreen(
                     }
                 }
             }
-            Column(Modifier.weight(1f).fillMaxHeight()) {
+            Column(Modifier.pane(1f)) {
                 SectionTitle("பிற மதங்கள் · Other faiths")
                 if (others.isEmpty()) {
                     Text("இந்த மாதம் இல்லை · None this month", style = MaterialTheme.typography.bodyMedium, color = TvColors.TextDim, modifier = Modifier.padding(10.dp))

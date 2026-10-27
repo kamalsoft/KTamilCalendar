@@ -9,7 +9,10 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.kamalsoft.tamilcalendar.tv.TamilCalendarApp
 import com.kamalsoft.tamilcalendar.tv.di.AppContainer
 import com.kamalsoft.tamilcalendar.tv.di.CalendarSession
+import com.kamalsoft.tamilcalendar.tv.domain.model.AppSettings
 import com.kamalsoft.tamilcalendar.tv.domain.model.CalendarEvent
+import com.kamalsoft.tamilcalendar.tv.domain.model.applying
+import com.kamalsoft.tamilcalendar.tv.domain.model.isVisible
 import com.kamalsoft.tamilcalendar.tv.domain.model.EventKind
 import com.kamalsoft.tamilcalendar.tv.domain.model.GeoLocation
 import com.kamalsoft.tamilcalendar.tv.domain.model.RasiPalan
@@ -30,6 +33,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -37,7 +41,10 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
 
-enum class Destination { DAILY, MONTHLY, IMPORTANT_DATES, FESTIVALS, MUHURTHAM, RASI_PALAN, LOCATION, THEME, ABOUT }
+enum class Destination { DAILY, MONTHLY, IMPORTANT_DATES, FESTIVALS, MUHURTHAM, RASI_PALAN, LOCATION, THEME, SETTINGS, ABOUT }
+
+/** Sections that can be hidden from the tab bar in Settings. */
+val HIDEABLE_SECTIONS = listOf(Destination.MONTHLY, Destination.IMPORTANT_DATES, Destination.FESTIVALS, Destination.MUHURTHAM, Destination.RASI_PALAN)
 
 enum class LoadStatus { LOADING, READY, ERROR }
 
@@ -88,17 +95,37 @@ class CalendarViewModel(private val container: AppContainer) : ViewModel() {
             .flatMapLatest { (s, key) -> block(s, key).guard(fallback) }
             .stateIn(viewModelScope, sharing, fallback)
 
-    val day: StateFlow<TamilDayData?> = _selectedDate.perSession(null) { s, d -> s.getDay(d) }
+    /** User settings (feature toggles). Calendar data below is filtered through them. */
+    val settings: StateFlow<AppSettings> = container.appSettings.settings
 
-    val month: StateFlow<List<TamilDayData>> = _visibleMonth.perSession(emptyList()) { s, m -> s.getMonthGrid(m) }
+    private fun <T> Flow<T>.filtered(f: (T, AppSettings) -> T): Flow<T> = combine(this, settings) { v, st -> f(v, st) }
+
+    /** Today (not the browsed date): for ambient mode and reminders. */
+    val todayData: StateFlow<TamilDayData?> = _today.perSession(null) { s, d -> s.getDay(d).filtered { v, st -> v?.applying(st) } }
+
+    val day: StateFlow<TamilDayData?> = _selectedDate.perSession(null) { s, d -> s.getDay(d).filtered { v, st -> v?.applying(st) } }
+
+    val month: StateFlow<List<TamilDayData>> = _visibleMonth.perSession(emptyList()) { s, m -> s.getMonthGrid(m).filtered { v, st -> v.map { it.applying(st) } } }
 
     val festivals: StateFlow<List<CalendarEvent>> = _today.perSession(emptyList()) { s, t ->
         s.getUpcomingEvents(t, 365, setOf(EventKind.FESTIVAL, EventKind.VIRATHAM, EventKind.GOVT_HOLIDAY, EventKind.SCHOOL))
+            .filtered { v, st -> v.filter { it.isVisible(st) } }
     }
 
     val muhurthams: StateFlow<List<CalendarEvent>> = _today.perSession(emptyList()) { s, t ->
         s.getUpcomingEvents(t, 365, setOf(EventKind.MUHURTHAM))
     }
+
+    /** Graha positions and gochara forecasts for the selected date (Rasi chart). */
+    val rasiSky: StateFlow<com.kamalsoft.tamilcalendar.tv.domain.usecase.SkyPositions?> =
+        combine(_selectedDate, session) { d, s -> d to s.zone }
+            .map { (d, z) -> com.kamalsoft.tamilcalendar.tv.domain.usecase.TransitForecast.positions(d, z) }
+            .flowOn(kotlinx.coroutines.Dispatchers.Default)
+            .stateIn(viewModelScope, sharing, null)
+
+    val rasiForecasts: StateFlow<List<com.kamalsoft.tamilcalendar.tv.domain.usecase.RasiForecast>> = rasiSky
+        .map { sky -> sky?.let { s -> (0 until 12).map { com.kamalsoft.tamilcalendar.tv.domain.usecase.TransitForecast.forecast(it, s) } }.orEmpty() }
+        .stateIn(viewModelScope, sharing, emptyList())
 
     val rasiPalan: StateFlow<List<RasiPalan>> = _selectedDate.perSession(emptyList()) { s, d -> s.getRasiPalan(d) }
 
@@ -143,9 +170,24 @@ class CalendarViewModel(private val container: AppContainer) : ViewModel() {
         _destination.value = Destination.DAILY
     }
 
+    // ------------------------------------------------------------------ speech (slokas, read-aloud)
+
+    val speaker: StateFlow<com.kamalsoft.tamilcalendar.tv.data.audio.Speaker.State> = container.speaker.state
+
+    fun toggleSpeech(id: String, ta: String, en: String, repeat: Int = 1) = container.speaker.toggle(id, ta, en, repeat)
+
+    fun stopSpeech() = container.speaker.stop()
+
+    override fun onCleared() {
+        container.speaker.stop()
+    }
+
     // ------------------------------------------------------------------ auto location
 
     val autoLocation: Boolean get() = container.locations.autoDetect
+
+    /** Recently used places (for the Location screen's quick row). */
+    fun recentLocations(): List<GeoLocation> = container.locations.recent()
 
     private val _locationStatus = MutableStateFlow<String?>(null)
     /** Last detection result, shown on the Location screen. */
@@ -199,14 +241,28 @@ class CalendarViewModel(private val container: AppContainer) : ViewModel() {
 
     private var seedJob: Job? = null
 
+    /** In-app reminder banner (Rahu Kalam soon / Nalla Neram begun), shown for two minutes. */
+    private val _banner = MutableStateFlow<String?>(null)
+    val banner: StateFlow<String?> = _banner.asStateFlow()
+
     init {
         load()
+        container.reminders.reschedule()
+        viewModelScope.launch {
+            while (true) {
+                _banner.value = com.kamalsoft.tamilcalendar.tv.data.notify.bannerFor(
+                    todayData.value, settings.value, java.time.LocalDateTime.now(session.value.zone),
+                )
+                delay(20_000)
+            }
+        }
         viewModelScope.launch {
             session.drop(1).collect { s ->
                 // New place → new time zone: "today" may differ, and the offline year must be rebuilt.
                 _today.value = LocalDate.now(s.zone)
                 selectDate(_today.value)
                 load(restart = true)
+                container.reminders.reschedule()
             }
         }
         viewModelScope.launch {
@@ -252,6 +308,27 @@ class CalendarViewModel(private val container: AppContainer) : ViewModel() {
         // Follow "today" only if the user was looking at today; don't yank them off a browsed date.
         if (_selectedDate.value == old) selectDate(now)
         load()
+    }
+
+    /**
+     * Applies a settings change. Units / Rahu Kalam convention change the calculation, so the session is
+     * rebuilt (the offline year is regenerated); auto-location re-detects when switched on.
+     */
+    fun updateSettings(transform: (AppSettings) -> AppSettings) {
+        val before = settings.value
+        container.appSettings.update(transform)
+        val after = settings.value
+        if (before.units != after.units || before.convention != after.convention) container.refreshSession()
+        if (before.rahuReminder != after.rahuReminder || before.nallaReminder != after.nallaReminder) container.reminders.reschedule()
+    }
+
+    fun setAutoLocation(on: Boolean) {
+        if (on) useMyLocation() else container.locations.autoDetect = false
+    }
+
+    /** Clears the "seen" flag so the first-launch disclaimer shows again. */
+    fun resetFirstLaunch() {
+        container.settings.edit().putBoolean(KEY_HELP_SEEN, false).apply()
     }
 
     /** True exactly once per install: show the remote-control help on first launch. */

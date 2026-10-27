@@ -1,5 +1,7 @@
 package com.kamalsoft.tamilcalendar.tv.ui.about
 
+import com.kamalsoft.tamilcalendar.tv.ui.theme.DisplayPrefs
+import com.kamalsoft.tamilcalendar.tv.ui.components.AdaptivePanes
 import android.graphics.Bitmap
 import android.os.Build
 import androidx.compose.foundation.Image
@@ -28,7 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
+import com.kamalsoft.tamilcalendar.tv.ui.components.Text
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
@@ -50,7 +52,7 @@ private fun sections(location: GeoLocation) = listOf(
         ),
     ),
     Section(
-        "முக்கிய நாட்கள் · Religious dates",
+        "சிறப்பு நாட்கள் · Religious dates",
         listOf(
             "Hindu, Jain, Sikh, Buddhist: panchangam rules. Christian: Easter computus. Jewish: Hebrew calendar arithmetic.",
             "Islamic: astronomical (Umm al-Qura / FCNA style). Local moon sighting may differ by a day.",
@@ -101,10 +103,10 @@ fun AboutScreen(location: GeoLocation, entryFocus: FocusRequester) {
     val qr = remember { runCatching { qrBitmap(BuildConfig.REPO_URL).asImageBitmap() }.getOrNull() }
     val items = remember(location) { sections(location) }
 
-    Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+    AdaptivePanes(if (DisplayPrefs.compact) 8.dp else 28.dp) {
         // Left: identity + GitHub QR (TVs can't open links, so the phone does).
         Column(
-            Modifier.weight(0.85f).fillMaxHeight(),
+            Modifier.pane(0.85f, compactWeight = 1f),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
@@ -128,7 +130,7 @@ fun AboutScreen(location: GeoLocation, entryFocus: FocusRequester) {
         }
         // Right: focusable info cards (D-pad scrolls through them).
         LazyColumn(
-            Modifier.weight(1.4f).fillMaxHeight(),
+            Modifier.pane(1.4f, compactWeight = 1f),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(vertical = 12.dp, horizontal = 12.dp),
         ) {

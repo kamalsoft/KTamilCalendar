@@ -7,7 +7,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
 import com.kamalsoft.tamilcalendar.tv.ui.theme.TvColors
 import kotlinx.coroutines.delay
 
@@ -78,7 +78,7 @@ private fun DetailOverlay(content: DetailContent, onDismiss: () -> Unit) {
             onClick = onDismiss,
             focusRequester = closeFocus,
             onDirectionalKey = { true }, // trap focus inside the modal
-            modifier = Modifier.width(520.dp),
+            modifier = Modifier.fillMaxWidth(0.92f).widthIn(max = 520.dp),
         ) {
             Column(Modifier.padding(28.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(content.title, style = MaterialTheme.typography.headlineSmall, color = TvColors.Gold)
@@ -89,7 +89,7 @@ private fun DetailOverlay(content: DetailContent, onDismiss: () -> Unit) {
                         Text(value, style = MaterialTheme.typography.bodyMedium, color = TvColors.Text)
                     }
                 }
-                Text("மூட OK / BACK அழுத்தவும் · Press OK or BACK to close", style = MaterialTheme.typography.labelMedium, color = TvColors.TextDim)
+                Text("OK / BACK அழுத்தித் திரும்பவும் · Press OK or BACK to close", style = MaterialTheme.typography.labelMedium, color = TvColors.TextDim)
             }
         }
     }

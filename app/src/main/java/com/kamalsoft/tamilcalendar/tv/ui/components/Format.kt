@@ -2,6 +2,7 @@ package com.kamalsoft.tamilcalendar.tv.ui.components
 
 import com.kamalsoft.tamilcalendar.tv.domain.model.TamilTime
 import com.kamalsoft.tamilcalendar.tv.domain.model.TimingWindow
+import com.kamalsoft.tamilcalendar.tv.ui.theme.DisplayPrefs
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -17,7 +18,9 @@ object Fmt {
     )
     val weekdayShortTa = listOf("ஞா", "தி", "செ", "பு", "வி", "வெ", "ச")
 
-    fun time(t: LocalTime): String = TamilTime.time(t)
+    private fun clock24(t: LocalTime): String = t.plusSeconds(30).withSecond(0).withNano(0).let { "%02d:%02d".format(it.hour, it.minute) }
+
+    fun time(t: LocalTime): String = if (DisplayPrefs.clock24h) clock24(t) else TamilTime.time(t)
 
     /** For narrow hourly columns: ("இரவு", "8"). */
     fun hourParts(t: LocalTime): Pair<String, String> = TamilTime.period(t) to TamilTime.clock(t).substringBefore(':')
@@ -25,7 +28,8 @@ object Fmt {
     fun range(w: TimingWindow): String = range(w.start, w.end)
 
     /** Period word on the start only, as printed calendars do: "காலை 10:30 – 12:00". */
-    fun range(start: LocalTime, end: LocalTime): String = TamilTime.range(start, end)
+    fun range(start: LocalTime, end: LocalTime): String =
+        if (DisplayPrefs.clock24h) "${clock24(start)} – ${clock24(end)}" else TamilTime.range(start, end)
 
     fun until(at: LocalDateTime?, day: LocalDate): String {
         at ?: return "முழு நாள்"
@@ -41,7 +45,7 @@ object Fmt {
 
     private val clockEn = DateTimeFormatter.ofPattern("h:mm a", Locale.US)
 
-    fun timeEn(t: LocalTime): String = t.plusSeconds(30).withSecond(0).withNano(0).format(clockEn)
+    fun timeEn(t: LocalTime): String = if (DisplayPrefs.clock24h) clock24(t) else t.plusSeconds(30).withSecond(0).withNano(0).format(clockEn)
 
     /** English counterpart of [until]: "until 8:32 PM", "until tomorrow 5:09 AM". */
     fun untilEn(at: LocalDateTime?, day: LocalDate): String {

@@ -1,5 +1,6 @@
 package com.kamalsoft.tamilcalendar.tv.ui.settings
 
+import com.kamalsoft.tamilcalendar.tv.ui.theme.DisplayPrefs
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -24,7 +25,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
+import com.kamalsoft.tamilcalendar.tv.ui.components.Text
 import com.kamalsoft.tamilcalendar.tv.ui.components.TvFocusCard
 import com.kamalsoft.tamilcalendar.tv.ui.theme.AppTheme
 import com.kamalsoft.tamilcalendar.tv.ui.theme.Palette
@@ -41,7 +42,7 @@ fun ThemeScreen(current: AppTheme, entryFocus: FocusRequester, onChoose: (AppThe
         )
         // Ten themes: a scrolling 3-column grid; focus scrolls it (bring-into-view), padding leaves room for the lift.
         LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
+            columns = GridCells.Fixed(if (DisplayPrefs.compact) 2 else 3),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(12.dp),

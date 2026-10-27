@@ -1,5 +1,7 @@
 package com.kamalsoft.tamilcalendar.tv.ui.monthly
 
+import androidx.compose.ui.unit.TextUnit
+import com.kamalsoft.tamilcalendar.tv.ui.theme.DisplayPrefs
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,7 +29,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
+import com.kamalsoft.tamilcalendar.tv.ui.components.Text
 import com.kamalsoft.tamilcalendar.tv.domain.model.Religion
 import com.kamalsoft.tamilcalendar.tv.domain.model.TamilDayData
 import com.kamalsoft.tamilcalendar.tv.ui.components.DpadDirection
@@ -74,22 +76,25 @@ fun MonthlyScreen(
         Row(Modifier.fillMaxWidth().height(52.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    "${Fmt.gregorianMonthsTa[month.monthValue - 1]} ${month.year} · ${month.month.getDisplayName(TextStyle.FULL, Locale.US)}",
+                    "${Fmt.gregorianMonthsTa[month.monthValue - 1]} ${month.year}" +
+                        if (DisplayPrefs.compact) "" else " · ${month.month.getDisplayName(TextStyle.FULL, Locale.US)}",
                     style = MaterialTheme.typography.headlineSmall, color = TvColors.Text, maxLines = 1,
+                    fontSize = if (DisplayPrefs.compact) 19.sp else TextUnit.Unspecified,
                 )
                 if (gridReady) {
                     val tamilMonths = days.filter { YearMonth.from(it.date) == month }.map { "${it.tamilDate.monthTa} (${it.tamilDate.monthEn})" }.distinct()
                     Text(tamilMonths.joinToString(" – "), style = MaterialTheme.typography.labelMedium, color = TvColors.TextMuted, maxLines = 1)
                 }
             }
-            HeaderButton("◀", onPreviousMonth)
-            HeaderButton("இன்று · Today", onToday, width = 150)
-            HeaderButton("▶", onNextMonth)
+            val c = DisplayPrefs.compact
+            HeaderButton("◀", onPreviousMonth, width = if (c) 44 else 64)
+            HeaderButton(if (c) "இன்று" else "இன்று · Today", onToday, width = if (c) 76 else 150)
+            HeaderButton("▶", onNextMonth, width = if (c) 44 else 64)
         }
         Row(Modifier.fillMaxWidth()) {
             Fmt.weekdayShortTa.forEachIndexed { i, label ->
                 Text(
-                    "$label · ${java.time.DayOfWeek.of(if (i == 0) 7 else i).getDisplayName(TextStyle.SHORT, Locale.US)}", modifier = Modifier.weight(1f), textAlign = TextAlign.Center,
+                    if (DisplayPrefs.compact) label else "$label · ${java.time.DayOfWeek.of(if (i == 0) 7 else i).getDisplayName(TextStyle.SHORT, Locale.US)}", modifier = Modifier.weight(1f), textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelMedium, color = if (i == 0) TvColors.CrimsonSoft else TvColors.TextMuted,
                 )
             }
@@ -176,10 +181,12 @@ private fun DayCell(
                     },
                     modifier = if (isToday) Modifier.background(TvColors.Gold, RoundedCornerShape(6.dp)).padding(horizontal = 5.dp) else Modifier,
                 )
-                Box(Modifier.padding(start = 4.dp)) { TagIcons(day.tags, day.otherReligions, size = 12.dp, max = 3) }
+                // Phone cells are ~50 dp wide: no room for icons; the names below carry the information.
+                if (!DisplayPrefs.compact) Box(Modifier.padding(start = 4.dp)) { TagIcons(day.tags, day.otherReligions, size = 12.dp, max = 3) }
                 Text(
                     if (day.tamilDate.day == 1) day.tamilDate.monthTa else "${day.tamilDate.day}",
                     style = MaterialTheme.typography.labelMedium,
+                    fontSize = if (DisplayPrefs.compact) 10.sp else TextUnit.Unspecified,
                     color = if (day.tamilDate.day == 1) TvColors.Gold else TvColors.TextDim,
                     textAlign = TextAlign.End,
                     maxLines = 1,
@@ -192,7 +199,8 @@ private fun DayCell(
                 val more = dates.size - maxDates
                 Text(
                     if (i == maxDates - 1 && more > 0) "${d.titleTa} +$more" else d.titleTa,
-                    fontSize = 12.sp, lineHeight = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    fontSize = if (DisplayPrefs.compact) 11.sp else 12.sp, lineHeight = if (DisplayPrefs.compact) 13.sp else 15.sp,
+                    maxLines = if (DisplayPrefs.compact) 3 else 1, overflow = TextOverflow.Ellipsis,
                     color = when {
                         d.isHoliday -> TvColors.CrimsonSoft
                         d.religion != null && d.religion != Religion.HINDU -> TvColors.TextMuted

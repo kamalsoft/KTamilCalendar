@@ -297,7 +297,17 @@ data class GeoLocation(
     companion object {
         val CHENNAI = GeoLocation("சென்னை", "Chennai", 13.0827, 80.2707, "Asia/Kolkata", "IN", "Tamil Nadu", "India")
         val NAPERVILLE = GeoLocation("நேப்பர்வில்", "Naperville", 41.7508, -88.1535, "America/Chicago", "US", "Illinois", "United States")
+        val SINGAPORE = GeoLocation("சிங்கப்பூர்", "Singapore", 1.3521, 103.8198, "Asia/Singapore", "SG", "Singapore", "Singapore")
+        val COLOMBO = GeoLocation("கொழும்பு", "Colombo", 6.9271, 79.8612, "Asia/Colombo", "LK", "Western Province", "Sri Lanka")
+        val LONDON = GeoLocation("லண்டன்", "London", 51.5074, -0.1278, "Europe/London", "GB", "England", "United Kingdom")
+
+        /** One-press diaspora locations on the Location screen. */
+        val QUICK = listOf(CHENNAI, SINGAPORE, COLOMBO, NAPERVILLE, LONDON)
     }
+
+    /** Same place, ignoring small coordinate differences between sources (geocoder vs presets). */
+    fun samePlace(other: GeoLocation): Boolean =
+        nameEn.equals(other.nameEn, ignoreCase = true) && countryCode == other.countryCode
 }
 
 /** Location-dependent behaviour, in one place so a new location just works. */

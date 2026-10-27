@@ -21,11 +21,21 @@ const val DESIGN_HEIGHT_DP = 540f
  * re-derived so that the design canvas always fills the screen: 1 dp = screen width / 960 (or height
  * / 540, whichever is smaller, so nothing is cut off on non-16:9 screens). All art is vector, so it
  * stays sharp at 8K. The user's font-size setting is honoured within a range the layouts can absorb.
+ * Portrait screens (phones, portrait tablets) switch to the compact layout ([DisplayPrefs.compact]).
  */
+/** Phones (and any portrait screen) use a narrow design width; content scrolls vertically. */
+const val COMPACT_DESIGN_WIDTH_DP = 412f
+
 @Composable
 fun DesignCanvas(content: @Composable () -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        val scale = min(constraints.maxWidth / DESIGN_WIDTH_DP, constraints.maxHeight / DESIGN_HEIGHT_DP)
+        val compact = constraints.maxWidth < constraints.maxHeight
+        DisplayPrefs.compact = compact
+        val scale = if (compact) {
+            constraints.maxWidth / COMPACT_DESIGN_WIDTH_DP
+        } else {
+            min(constraints.maxWidth / DESIGN_WIDTH_DP, constraints.maxHeight / DESIGN_HEIGHT_DP)
+        }
         val fontScale = LocalDensity.current.fontScale.coerceIn(0.85f, 1.15f)
         CompositionLocalProvider(LocalDensity provides Density(density = scale, fontScale = fontScale)) {
             content()

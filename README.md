@@ -26,7 +26,25 @@ Recorded on the Android TV emulator with the remote (D-pad only).
 * **Any screen from 480p to 8K:** the UI is drawn on a 960×540 design canvas scaled to the real screen. That fixes
   boxes that report the wrong pixel density, and everything is vector art, so it stays sharp at 4K/8K. Tested at
   720×480, 1280×720, 1920×1080 (mdpi and xhdpi), 3840×2160, 7680×4320 and 4:3.
-* **Bilingual:** Tamil with English throughout.
+* **Bilingual:** Tamil with English throughout (or Tamil only, in Settings).
+* **TV, phone and tablet:** one APK. TVs and landscape tablets get the 10-foot layout; phones (portrait) get a
+  scrolling single-column layout with touch, swipeable tabs and 2-column grids. Installs from the normal
+  phone launcher too.
+* **Ambient mode:** after 2 minutes idle (configurable), a full-screen "Panchangam at a glance": vector temple scene
+  with a sky for the time of day, lamps and embers, live weather, the clock, Tithi, the next Nalla Neram and Rahu Kalam.
+  The text drifts slowly to protect OLED screens. It's also registered as the Android screensaver.
+* **Daily sloka:** 🔊 on Today reads the day's verse (Suprabhatam, Thiruppugazh, Sivapuranam, Vinayagar, Narayani,
+  Gayatri, Thirukkural), chosen by the day's observance or the weekday, using the device's text-to-speech (Tamil
+  voice if installed). All texts are public-domain classics.
+* **Reminders (optional):** 10 minutes before Rahu Kalam and when Nalla Neram begins, as system notifications plus
+  an in-app banner (Google TV may hide third-party notifications).
+* **Rasi chart:** the 12 rasis on a South Indian chart with today's planet positions. Selecting one opens Today /
+  Month / Year predictions (Month and Year are rule-based gochara from Sun, Jupiter, Saturn and Rahu transits) with
+  read-aloud.
+* **Quick locations:** one press for Chennai, Singapore, Colombo, Naperville or London, plus recent places.
+* **Settings (⚙ tab):** show/hide sections and weather; per-faith dates; US/Illinois, school and Tamil Nadu
+  holidays; animations and weather animations (turn off on slow TVs); 24-hour clock; Tamil-only labels;
+  °F/°C; auto location; Rahu Kalam convention (6 AM fixed or local sunrise); show the disclaimer again.
 
 ## Disclaimer
 For information only. The panchangam is **calculated**, not issued by a religious authority. Confirm muhurtham and
@@ -231,7 +249,7 @@ The app follows the date at midnight and when the TV wakes from standby, so it c
 
 ## Look & feel, navigation, location and themes
 The UI follows **Apple TV (tvOS)** conventions:
-* **Top tab bar:** இன்று Today · மாதம் Month · முக்கியம் Important Dates · பண்டிகை Festivals · முகூர்த்தம் Muhurtham ·
+* **Top tab bar:** இன்று Today · மாதம் Month · சிறப்பு Important Dates · பண்டிகை Festivals · முகூர்த்தம் Muhurtham ·
   ராசி Rasi, plus round icons for **Location** (📍), **Theme** (🎨) and **About** (ⓘ). Moving focus along the tabs
   switches the screen immediately. ▼ or OK enters the content, and ▲ from the top row returns to the tabs.
 * **Focus:** the focused card lifts (scale and deep shadow) with a soft sheen. Temple Night and High Contrast add an
@@ -255,7 +273,7 @@ conditions, the next 12 hours, and 7 days (°F, Naperville).
 
 ## Important dates & religious observances
 The **month grid** marks each day's observances with icons, and shows the day's main festival or observance in the cell.
-The **முக்கியம் · Important Dates** tab lists the selected month (◀ ▶ or CH▲▼ to change month).
+The **சிறப்பு · Important Dates** tab lists the selected month (◀ ▶ or CH▲▼ to change month).
 * **Hindu monthly observances, by deity:**
   * Murugan: Sashti (Valarpirai, Sashti at sunset), Krithigai
   * Shiva: Pradosham, Masa Sivaratri

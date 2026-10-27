@@ -4,9 +4,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- City-level location so the calendar opens for where the TV is (panchangam, holidays, weather). -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Optional Rahu Kalam / Nalla Neram reminders. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
-    <!-- TV-first: required leanback, no touchscreen. -->
-    <uses-feature android:name="android.software.leanback" android:required="true" />
+    <!-- One app for TV, phone and tablet: leanback is optional so phones/tablets can install it. -->
+    <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <!-- Location is optional: most TVs have no GPS (the app falls back to IP location / manual search). -->
     <uses-feature android:name="android.hardware.location" android:required="false" />
@@ -26,12 +29,30 @@
         <activity
             android:name=".MainActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode"
-            android:exported="true"
-            android:screenOrientation="landscape">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <receiver android:name=".data.notify.ReminderReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="com.kamalsoft.tamilcalendar.tv.REMIND" />
+            </intent-filter>
+        </receiver>
+
+        <!-- "Panchangam at a glance" as the system screensaver. -->
+        <service
+            android:name=".ui.ambient.PanchangamDreamService"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_DREAM_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.dreams.DreamService" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>

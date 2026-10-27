@@ -172,7 +172,7 @@ class LocationDetector(private val context: Context) {
     }
 
     private fun knownTamilName(name: String, countryCode: String?): String? =
-        listOf(GeoLocation.NAPERVILLE, GeoLocation.CHENNAI)
+        GeoLocation.QUICK
             .firstOrNull { it.nameEn.equals(name, ignoreCase = true) && it.countryCode == countryCode }?.nameTa
 
     private companion object {

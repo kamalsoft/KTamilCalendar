@@ -6,6 +6,9 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import com.kamalsoft.tamilcalendar.tv.ui.theme.DisplayPrefs
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.focusable
@@ -46,7 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
+import com.kamalsoft.tamilcalendar.tv.ui.components.Text
 import com.kamalsoft.tamilcalendar.tv.R
 import com.kamalsoft.tamilcalendar.tv.ui.components.rememberBreath
 import com.kamalsoft.tamilcalendar.tv.ui.theme.TvColors
@@ -57,12 +60,13 @@ val Destination.tabTa: String
     get() = when (this) {
         Destination.DAILY -> "இன்று"
         Destination.MONTHLY -> "மாதம்"
-        Destination.IMPORTANT_DATES -> "முக்கியம்"
+        Destination.IMPORTANT_DATES -> "சிறப்பு"
         Destination.FESTIVALS -> "பண்டிகை"
         Destination.MUHURTHAM -> "முகூர்த்தம்"
         Destination.RASI_PALAN -> "ராசி"
         Destination.LOCATION -> "இடம்"
         Destination.THEME -> "நிறம்"
+        Destination.SETTINGS -> "அமைப்பு"
         Destination.ABOUT -> "பற்றி"
     }
 
@@ -76,6 +80,7 @@ val Destination.tabEn: String
         Destination.RASI_PALAN -> "Rasi"
         Destination.LOCATION -> "Location"
         Destination.THEME -> "Theme"
+        Destination.SETTINGS -> "Settings"
         Destination.ABOUT -> "About"
     }
 
@@ -85,6 +90,7 @@ private val Destination.utilityIcon: Int?
     get() = when (this) {
         Destination.LOCATION -> R.drawable.ic_nav_location
         Destination.THEME -> R.drawable.ic_nav_theme
+        Destination.SETTINGS -> R.drawable.ic_settings
         Destination.ABOUT -> R.drawable.ic_info
         else -> null
     }
@@ -97,15 +103,21 @@ private val Destination.utilityIcon: Int?
 @Composable
 fun TopTabBar(
     current: Destination,
+    /** Tabs to show (sections hidden in Settings are left out). */
+    visible: List<Destination>,
     tabRequesters: Map<Destination, FocusRequester>,
     onFocusChanged: (Boolean) -> Unit,
     onTabFocused: (Destination) -> Unit,
     onEnterContent: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Phones: the bar scrolls sideways instead of squeezing the tabs.
+    val compact = DisplayPrefs.compact
+    val scroll = rememberScrollState()
     Row(
         modifier
             .fillMaxWidth()
+            .then(if (compact) Modifier.horizontalScroll(scroll) else Modifier)
             .height(48.dp)
             .onFocusChanged { onFocusChanged(it.hasFocus) }
             .focusProperties { enter = { tabRequesters.getValue(current) } }
@@ -113,7 +125,7 @@ fun TopTabBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Image(painterResource(R.drawable.gopuram), contentDescription = "Tamil Calendar", modifier = Modifier.size(30.dp))
-        Spacer(Modifier.weight(1f))
+        Spacer(if (compact) Modifier.width(8.dp) else Modifier.weight(1f))
         // tvOS groups the tabs in a soft capsule.
         Row(
             Modifier
@@ -122,7 +134,7 @@ fun TopTabBar(
             horizontalArrangement = Arrangement.spacedBy(2.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Destination.entries.filter { it.utilityIcon == null }.forEach { dest ->
+            visible.filter { it.utilityIcon == null }.forEach { dest ->
                 TabItem(
                     selected = dest == current,
                     requester = tabRequesters.getValue(dest),
@@ -133,9 +145,9 @@ fun TopTabBar(
                 }
             }
         }
-        Spacer(Modifier.weight(1f))
+        Spacer(if (compact) Modifier.width(8.dp) else Modifier.weight(1f))
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Destination.entries.mapNotNull { d -> d.utilityIcon?.let { d to it } }.forEach { (dest, icon) ->
+            visible.mapNotNull { d -> d.utilityIcon?.let { d to it } }.forEach { (dest, icon) ->
                 TabItem(
                     selected = dest == current,
                     requester = tabRequesters.getValue(dest),

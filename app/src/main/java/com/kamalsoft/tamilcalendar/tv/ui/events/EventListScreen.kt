@@ -1,5 +1,6 @@
 package com.kamalsoft.tamilcalendar.tv.ui.events
 
+import com.kamalsoft.tamilcalendar.tv.ui.theme.DisplayPrefs
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -18,7 +19,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
+import com.kamalsoft.tamilcalendar.tv.ui.components.Text
 import com.kamalsoft.tamilcalendar.tv.domain.model.CalendarEvent
 import com.kamalsoft.tamilcalendar.tv.domain.model.EventKind
 import com.kamalsoft.tamilcalendar.tv.domain.model.EventSource
@@ -76,7 +77,7 @@ private fun EventRow(e: CalendarEvent, isToday: Boolean, focusRequester: FocusRe
         modifier = Modifier.fillMaxWidth().height(68.dp),
     ) {
         Row(Modifier.fillMaxSize().padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.width(150.dp)) {
+            Column(Modifier.width(if (DisplayPrefs.compact) 92.dp else 150.dp)) {
                 Text(
                     "${e.date.dayOfMonth} ${Fmt.gregorianMonthsTa[e.date.monthValue - 1]}",
                     style = MaterialTheme.typography.titleMedium,
@@ -95,11 +96,12 @@ private fun EventRow(e: CalendarEvent, isToday: Boolean, focusRequester: FocusRe
                     style = MaterialTheme.typography.bodySmall, color = TvColors.TextDim, maxLines = 1,
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            // Phones have room for one tag at most.
+            if (!DisplayPrefs.compact || e.isLocalHoliday) Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (isToday) Pill("இன்று · Today", TvColors.Crimson)
                 if (e.isLocalHoliday) Pill("விடுமுறை · Holiday", TvColors.Crimson.copy(alpha = 0.5f))
                 if (e.kind == EventKind.SCHOOL && e.isHoliday) Pill("பள்ளி இல்லை · No school", TvColors.Amber.copy(alpha = 0.3f))
-                e.region?.let { Pill(it.en, TvColors.SurfaceSelected) }
+                if (!DisplayPrefs.compact) e.region?.let { Pill(it.en, TvColors.SurfaceSelected) }
                 if (e.kind == EventKind.VIRATHAM) Pill("விரதம் · Fast", TvColors.SurfaceSelected)
                 if (e.source == EventSource.REMOTE) Pill("அதிகாரப்பூர்வம் · Official", TvColors.SurfaceSelected)
             }

@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import com.kamalsoft.tamilcalendar.tv.ui.theme.DisplayPrefs
 import kotlinx.coroutines.delay
 
 /**
@@ -23,6 +24,7 @@ import kotlinx.coroutines.delay
  * Only layer properties animate: cheap even on low-end TV GPUs.
  */
 fun Modifier.staggeredEnter(key: Any?, order: Int, stepMs: Long = 28L): Modifier = composed {
+    if (!DisplayPrefs.animations) return@composed Modifier
     val progress = remember(key) { Animatable(0f) }
     LaunchedEffect(key) {
         delay((order.coerceIn(0, 14)) * stepMs)
@@ -41,6 +43,7 @@ fun Modifier.staggeredEnter(key: Any?, order: Int, stepMs: Long = 28L): Modifier
 /** 0 → 1 → 0 over [periodMs], forever. Used for the focus "breathing" glow and floating icons. */
 @Composable
 fun rememberBreath(periodMs: Int = 1800): Float {
+    if (!DisplayPrefs.animations) return 0.5f
     val t = rememberInfiniteTransition(label = "breath")
     val v = t.animateFloat(
         0f, 1f,
@@ -52,6 +55,7 @@ fun rememberBreath(periodMs: Int = 1800): Float {
 
 /** Gentle vertical float (±3dp) for decorative icons. */
 fun Modifier.floating(): Modifier = composed {
+    if (!DisplayPrefs.animations) return@composed Modifier
     val b = rememberBreath(2600)
     graphicsLayer { translationY = (b - 0.5f) * 6.dp.toPx() }
 }
