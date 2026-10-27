@@ -82,22 +82,36 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
     val tabs = remember { Destination.entries.associateWith { FocusRequester() } }
     val overlay = rememberDetailHostState()
     var tabBarHasFocus by remember { mutableStateOf(false) }
-    // Incremented whenever focus should move into the content area once it is composed.
-    var focusContentRequest by remember { mutableIntStateOf(1) }
-    // Counts user key presses, so a pending focus request yields to real navigation but not to the
-    // system's initial focus (which lands on the tab bar before the content has loaded).
+    // Counts user key presses (KeyDown), so a pending focus request yields to real navigation.
     var userKeyPresses by remember { mutableIntStateOf(0) }
     var lastBackAt by remember { mutableLongStateOf(0L) }
 
-    LaunchedEffect(focusContentRequest, destination, status) {
-        if (focusContentRequest == 0) return@LaunchedEffect
+    // One-shot "move focus into the page" request. Made on launch, OK on a tab, opening a date, or a
+    // location change, but NEVER by merely focusing a tab (tvOS tabs switch on focus, and focus must stay
+    // on the tab bar so the user can keep moving along it).
+    var focusRequestId by remember { mutableIntStateOf(0) }
+    var pendingFocusAtPresses by remember { mutableStateOf<Int?>(0) } // launch: pending from the start
+    fun focusContent() {
+        pendingFocusAtPresses = userKeyPresses
+        focusRequestId++
+    }
+
+    LaunchedEffect(focusRequestId, destination, status) {
+        val requestedAt = pendingFocusAtPresses ?: return@LaunchedEffect
         // The target may not exist until Room emits (first launch seeds a whole year), so retry briefly.
-        val pressesAtRequest = userKeyPresses
         repeat(100) {
-            if (userKeyPresses != pressesAtRequest || overlay.content != null) return@LaunchedEffect
-            if (runCatching { contentFocus.requestFocus() }.isSuccess) return@LaunchedEffect
+            // Any key pressed after the request means the user is navigating: drop the request.
+            if (userKeyPresses != requestedAt || overlay.content != null) {
+                pendingFocusAtPresses = null
+                return@LaunchedEffect
+            }
+            if (runCatching { contentFocus.requestFocus() }.isSuccess) {
+                pendingFocusAtPresses = null
+                return@LaunchedEffect
+            }
             delay(50)
         }
+        pendingFocusAtPresses = null
     }
 
     LaunchedEffect(status) {
@@ -110,13 +124,13 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
         if (location != lastLocation) {
             lastLocation = location
             Toast.makeText(context, "இடம் மாற்றப்பட்டது · Location set: ${location.displayName}", Toast.LENGTH_LONG).show()
-            focusContentRequest++
+            focusContent()
         }
     }
 
     fun go(to: Destination) {
         vm.navigate(to)
-        focusContentRequest++
+        focusContent()
     }
 
     // BACK, like tvOS: content → current tab → Today tab → (twice) exit.
@@ -175,7 +189,7 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
             tabRequesters = tabs,
             onFocusChanged = { tabBarHasFocus = it },
             onTabFocused = { vm.navigate(it) },
-            onEnterContent = { focusContentRequest++ },
+            onEnterContent = { focusContent() },
             modifier = Modifier.padding(start = TvDimens.SafeHorizontal, end = TvDimens.SafeHorizontal, top = 16.dp),
         )
         Box(
@@ -189,7 +203,7 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
                 ),
         ) {
             if (status == LoadStatus.ERROR) {
-                ErrorState(focusRequester = contentFocus, onRetry = { vm.retry(); focusContentRequest++ })
+                ErrorState(focusRequester = contentFocus, onRetry = { vm.retry(); focusContent() })
             } else when (destination) {
                 Destination.DAILY -> DailyScreen(
                     day = day,
@@ -212,7 +226,7 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
                     onPreviousMonth = { vm.shiftMonth(-1) },
                     onNextMonth = { vm.shiftMonth(1) },
                     onToday = vm::goToday,
-                    onOpenDate = { vm.openDate(it); focusContentRequest++ },
+                    onOpenDate = { vm.openDate(it); focusContent() },
                 )
                 Destination.IMPORTANT_DATES -> ImportantDatesScreen(
                     month = visibleMonth,
@@ -221,7 +235,7 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
                     entryFocus = contentFocus,
                     onPreviousMonth = { vm.shiftMonth(-1) },
                     onNextMonth = { vm.shiftMonth(1) },
-                    onOpenDate = { vm.openDate(it); focusContentRequest++ },
+                    onOpenDate = { vm.openDate(it); focusContent() },
                 )
                 Destination.FESTIVALS -> EventListScreen(
                     title = "பண்டிகைகள் & விடுமுறைகள் · Festivals & Holidays",
@@ -229,7 +243,7 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
                     events = festivals,
                     today = today,
                     entryFocus = contentFocus,
-                    onOpenDate = { vm.openDate(it); focusContentRequest++ },
+                    onOpenDate = { vm.openDate(it); focusContent() },
                 )
                 Destination.MUHURTHAM -> EventListScreen(
                     title = "சுப முகூர்த்த நாட்கள் · Subha Muhurtham",
@@ -237,7 +251,7 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
                     events = muhurthams,
                     today = today,
                     entryFocus = contentFocus,
-                    onOpenDate = { vm.openDate(it); focusContentRequest++ },
+                    onOpenDate = { vm.openDate(it); focusContent() },
                 )
                 Destination.RASI_PALAN -> RasiPalanScreen(
                     date = selectedDate,
