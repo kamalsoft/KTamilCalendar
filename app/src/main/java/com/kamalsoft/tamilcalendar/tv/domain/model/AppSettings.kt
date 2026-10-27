@@ -31,6 +31,11 @@ data class AppSettings(
     val rahuReminder: Boolean = false,
     /** Reminder when each Nalla Neram window begins. */
     val nallaReminder: Boolean = false,
+    /** Synthesised tanpura/bell background under the daily sloka. */
+    val slokaMusic: Boolean = true,
+    /** Also read the sloka aloud (text-to-speech). Off: music only. */
+    val slokaVoice: Boolean = false,
+    val music: MusicStyle = MusicStyle(),
 )
 
 val AMBIENT_MINUTE_CHOICES = listOf(1, 2, 5, 10)

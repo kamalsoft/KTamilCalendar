@@ -117,4 +117,6 @@ dependencies {
 
 tasks.withType<Test>().configureEach {
     System.getProperty("exportPath")?.let { systemProperty("exportPath", it) }
+    System.getProperty("wavPath")?.let { systemProperty("wavPath", it) }
+    System.getProperty("ragaWav")?.let { systemProperty("ragaWav", it) }
 }

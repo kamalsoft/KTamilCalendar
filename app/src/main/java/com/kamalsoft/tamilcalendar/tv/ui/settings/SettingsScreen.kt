@@ -27,6 +27,11 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import com.kamalsoft.tamilcalendar.tv.domain.model.AMBIENT_MINUTE_CHOICES
 import com.kamalsoft.tamilcalendar.tv.domain.model.AppSettings
+import com.kamalsoft.tamilcalendar.tv.domain.model.BellStyle
+import com.kamalsoft.tamilcalendar.tv.domain.model.MusicMix
+import com.kamalsoft.tamilcalendar.tv.domain.model.MusicPitch
+import com.kamalsoft.tamilcalendar.tv.domain.model.MusicTempo
+import com.kamalsoft.tamilcalendar.tv.domain.model.Raga
 import com.kamalsoft.tamilcalendar.tv.domain.model.ConventionPref
 import com.kamalsoft.tamilcalendar.tv.domain.model.Religion
 import com.kamalsoft.tamilcalendar.tv.domain.model.UnitsPref
@@ -101,6 +106,28 @@ fun SettingsScreen(
         })
         add(Row.Choice("அலகுகள் · Units", "Weather temperature and wind", settings.units.en) {
             onUpdate { it.copy(units = UnitsPref.entries.after(it.units)) }
+        })
+        add(Row.Toggle("ஸ்லோக இசை · Sloka music", "Tanpura, flute and temple bell", settings.slokaMusic) {
+            onUpdate { it.copy(slokaMusic = !it.slokaMusic) }
+        })
+        val m = settings.music
+        add(Row.Choice("ராகம் · Raga", "Flute melody", "${m.raga.ta} · ${m.raga.en}") {
+            onUpdate { it.copy(music = it.music.copy(raga = Raga.entries.after(it.music.raga))) }
+        })
+        add(Row.Choice("தாளம் · Tempo", null, "${m.tempo.ta} · ${m.tempo.en}") {
+            onUpdate { it.copy(music = it.music.copy(tempo = MusicTempo.entries.after(it.music.tempo))) }
+        })
+        add(Row.Choice("மணி · Bell", "Temple bell spacing and loudness", m.bell.en) {
+            onUpdate { it.copy(music = it.music.copy(bell = BellStyle.entries.after(it.music.bell))) }
+        })
+        add(Row.Choice("ஸ்ருதி · Pitch (Sa)", "Higher = lighter, less bass", m.pitch.label) {
+            onUpdate { it.copy(music = it.music.copy(pitch = MusicPitch.entries.after(it.music.pitch))) }
+        })
+        add(Row.Choice("கலவை · Mix", "Tanpura vs flute", "${m.mix.ta} · ${m.mix.en}") {
+            onUpdate { it.copy(music = it.music.copy(mix = MusicMix.entries.after(it.music.mix))) }
+        })
+        add(Row.Toggle("ஸ்லோக குரல் · Sloka voice", "Also read the verse aloud (text-to-speech)", settings.slokaVoice) {
+            onUpdate { it.copy(slokaVoice = !it.slokaVoice) }
         })
         add(Row.Toggle("சூழல் திரை · Ambient mode", "Full-screen clock with Tithi, Nalla Neram and weather when idle", settings.ambient) {
             onUpdate { it.copy(ambient = !it.ambient) }

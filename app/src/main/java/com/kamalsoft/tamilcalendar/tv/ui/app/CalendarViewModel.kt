@@ -174,7 +174,18 @@ class CalendarViewModel(private val container: AppContainer) : ViewModel() {
 
     val speaker: StateFlow<com.kamalsoft.tamilcalendar.tv.data.audio.Speaker.State> = container.speaker.state
 
-    fun toggleSpeech(id: String, ta: String, en: String, repeat: Int = 1) = container.speaker.toggle(id, ta, en, repeat)
+    /**
+     * Slokas: music only by default; with "Sloka voice" on, the verse is read over the music.
+     * Rasi read-aloud is voice only.
+     */
+    fun toggleSpeech(id: String, ta: String, en: String, repeat: Int = 1) {
+        val s = settings.value
+        val isSloka = com.kamalsoft.tamilcalendar.tv.domain.content.Slokas.ALL.any { it.id == id }
+        when {
+            isSloka && !s.slokaVoice -> container.speaker.toggleMusic(id, s.music)
+            else -> container.speaker.toggle(id, ta, en, repeat, withMusic = isSloka && s.slokaMusic, style = s.music)
+        }
+    }
 
     fun stopSpeech() = container.speaker.stop()
 

@@ -3,6 +3,7 @@ package com.kamalsoft.tamilcalendar.tv.data.repository
 import android.content.SharedPreferences
 import com.kamalsoft.tamilcalendar.tv.domain.model.AppSettings
 import com.kamalsoft.tamilcalendar.tv.domain.model.ConventionPref
+import com.kamalsoft.tamilcalendar.tv.domain.model.MusicStyle
 import com.kamalsoft.tamilcalendar.tv.domain.model.Religion
 import com.kamalsoft.tamilcalendar.tv.domain.model.UnitsPref
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,8 +42,20 @@ class SettingsRepository(private val prefs: SharedPreferences) {
             ambientMinutes = prefs.getInt("s_ambientMinutes", d.ambientMinutes),
             rahuReminder = b("rahuReminder", d.rahuReminder),
             nallaReminder = b("nallaReminder", d.nallaReminder),
+            slokaMusic = b("slokaMusic", d.slokaMusic),
+            slokaVoice = b("slokaVoice", d.slokaVoice),
+            music = MusicStyle(
+                raga = enumOr("s_musicRaga", d.music.raga),
+                tempo = enumOr("s_musicTempo", d.music.tempo),
+                bell = enumOr("s_musicBell", d.music.bell),
+                pitch = enumOr("s_musicPitch", d.music.pitch),
+                mix = enumOr("s_musicMix", d.music.mix),
+            ),
         )
     }
+
+    private inline fun <reified E : Enum<E>> enumOr(key: String, default: E): E =
+        enumValues<E>().firstOrNull { it.name == prefs.getString(key, null) } ?: default
 
     private fun save(s: AppSettings) {
         prefs.edit()
@@ -62,6 +75,13 @@ class SettingsRepository(private val prefs: SharedPreferences) {
             .putInt("s_ambientMinutes", s.ambientMinutes)
             .putBoolean("s_rahuReminder", s.rahuReminder)
             .putBoolean("s_nallaReminder", s.nallaReminder)
+            .putBoolean("s_slokaMusic", s.slokaMusic)
+            .putBoolean("s_slokaVoice", s.slokaVoice)
+            .putString("s_musicRaga", s.music.raga.name)
+            .putString("s_musicTempo", s.music.tempo.name)
+            .putString("s_musicBell", s.music.bell.name)
+            .putString("s_musicPitch", s.music.pitch.name)
+            .putString("s_musicMix", s.music.mix.name)
             .apply()
     }
 }

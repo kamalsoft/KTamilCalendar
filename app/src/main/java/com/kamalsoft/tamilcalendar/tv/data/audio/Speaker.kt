@@ -32,6 +32,7 @@ class Speaker(context: Context) {
     private var lastUtterance: String? = null
 
     private val tamil = Locale("ta", "IN")
+    private val ambience = DevotionalAmbience()
 
     private fun withEngine(action: () -> Unit) {
         if (ready) return action()
@@ -48,8 +49,16 @@ class Speaker(context: Context) {
             engine.setSpeechRate(0.85f)
             engine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                 override fun onStart(id: String?) = Unit
-                override fun onDone(id: String?) { if (id == lastUtterance) _state.value = _state.value.copy(speakingId = null) }
-                @Deprecated("Required override") override fun onError(id: String?) { _state.value = _state.value.copy(speakingId = null) }
+                override fun onDone(id: String?) {
+                    if (id == lastUtterance) {
+                        _state.value = _state.value.copy(speakingId = null)
+                        ambience.stop()
+                    }
+                }
+                @Deprecated("Required override") override fun onError(id: String?) {
+                    _state.value = _state.value.copy(speakingId = null)
+                    ambience.stop()
+                }
             })
             ready = true
             _state.value = State(tamilVoice = hasTamil)
@@ -58,10 +67,17 @@ class Speaker(context: Context) {
         }
     }
 
-    /** Speaks [ta] (or [en] without a Tamil voice) [repeat] times. A second call with the same id stops. */
-    fun toggle(id: String, ta: String, en: String, repeat: Int = 1) {
+    /**
+     * Speaks [ta] (or [en] without a Tamil voice) [repeat] times, optionally over the synthesised
+     * devotional background ([withMusic]). A second call with the same id stops.
+     */
+    fun toggle(
+        id: String, ta: String, en: String, repeat: Int = 1, withMusic: Boolean = false,
+        style: com.kamalsoft.tamilcalendar.tv.domain.model.MusicStyle = com.kamalsoft.tamilcalendar.tv.domain.model.MusicStyle(),
+    ) {
         if (_state.value.speakingId == id) return stop()
         withEngine {
+            if (withMusic) { ambience.loud = false; ambience.style = style; ambience.start() }
             val engine = tts ?: return@withEngine
             val useTamil = _state.value.tamilVoice == true
             engine.language = if (useTamil) tamil else Locale.US
@@ -76,8 +92,19 @@ class Speaker(context: Context) {
         }
     }
 
+    /** Music only (no voice): plays the devotional ambience until [stop]. A second call with the same id stops. */
+    fun toggleMusic(id: String, style: com.kamalsoft.tamilcalendar.tv.domain.model.MusicStyle = com.kamalsoft.tamilcalendar.tv.domain.model.MusicStyle()) {
+        if (_state.value.speakingId == id) return stop()
+        tts?.stop()
+        ambience.loud = true
+        ambience.style = style
+        ambience.start()
+        _state.value = _state.value.copy(speakingId = id)
+    }
+
     fun stop() {
         tts?.stop()
+        ambience.stop()
         _state.value = _state.value.copy(speakingId = null)
     }
 }

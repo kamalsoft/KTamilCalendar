@@ -291,6 +291,7 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
                         onToday = vm::goToday,
                         onOpenMonth = { go(Destination.MONTHLY) },
                         speaker = speaker,
+                        slokaVoice = settings.slokaVoice,
                         onToggleSpeech = vm::toggleSpeech,
                         onStopSpeech = vm::stopSpeech,
                     )

@@ -122,6 +122,7 @@ fun DailyScreen(
     onToday: () -> Unit,
     onOpenMonth: () -> Unit,
     speaker: Speaker.State = Speaker.State(),
+    slokaVoice: Boolean = false,
     onToggleSpeech: (id: String, ta: String, en: String, repeat: Int) -> Unit = { _, _, _, _ -> },
     onStopSpeech: () -> Unit = {},
 ) {
@@ -141,7 +142,7 @@ fun DailyScreen(
     val slokaHost: @Composable () -> Unit = {
         if (slokaOpen) {
             SlokaPanel(
-                sloka, speaker,
+                sloka, speaker, voice = slokaVoice,
                 onToggle = { onToggleSpeech(sloka.id, sloka.textTa, sloka.transliteration, SLOKA_REPEAT) },
                 onClose = { onStopSpeech(); slokaOpen = false; runCatching { slokaButton.requestFocus() } },
             )

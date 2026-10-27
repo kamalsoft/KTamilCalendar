@@ -42,9 +42,9 @@ import kotlinx.coroutines.delay
 /** Repetitions per play (a sloka is traditionally chanted thrice; ≈ 1 minute). */
 const val SLOKA_REPEAT = 3
 
-/** "Now playing" panel for the day's sloka. Opens playing; OK toggles; BACK stops and closes. */
+/** "Now playing" panel for the day's sloka: music (and optionally voice). Opens playing; OK toggles; BACK stops and closes. */
 @Composable
-fun SlokaPanel(sloka: Sloka, speaker: Speaker.State, onToggle: () -> Unit, onClose: () -> Unit) {
+fun SlokaPanel(sloka: Sloka, speaker: Speaker.State, voice: Boolean, onToggle: () -> Unit, onClose: () -> Unit) {
     val playing = speaker.speakingId == sloka.id
     val playFocus = remember { FocusRequester() }
     BackHandler(onBack = onClose)
@@ -109,9 +109,10 @@ fun SlokaPanel(sloka: Sloka, speaker: Speaker.State, onToggle: () -> Unit, onClo
             }
             Text(
                 when {
+                    !voice -> "பின்னணி இசை · Ambient music: tanpura, flute and temple bell · voice can be turned on in Settings"
                     speaker.unavailable -> "இந்தச் சாதனத்தில் குரல் இல்லை · Text-to-speech isn't available on this device."
                     speaker.tamilVoice == false -> "தமிழ்க் குரல் இல்லை; ஒலிபெயர்ப்பு வாசிக்கப்படுகிறது · No Tamil voice installed — reading the transliteration."
-                    else -> "சாதனக் குரல் · Device text-to-speech · read $SLOKA_REPEAT times · check the TV volume"
+                    else -> "சாதனக் குரல் · Device text-to-speech, read $SLOKA_REPEAT times, with tanpura & bell (Settings) · check the TV volume"
                 },
                 style = MaterialTheme.typography.labelMedium, color = TvColors.TextDim,
             )
