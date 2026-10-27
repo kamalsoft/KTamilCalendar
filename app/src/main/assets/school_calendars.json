@@ -1,0 +1,65 @@
+{
+  "_comment": "Transcribed from the districts' official 2026-27 calendars. Update each year: add a new block per district/schoolYear. noSchool=false entries are informational.",
+  "districts": [
+    {
+      "region": "SCHOOL_D203",
+      "name": "Naperville CUSD 203",
+      "schoolYear": "2026-27",
+      "source": "https://www.naperville203.org/fs/resource-manager/view/e58a3e53-f131-4d30-9874-73bed9c14041",
+      "revision": "Rev. 6/20/2026",
+      "days": [
+        { "from": "2026-08-13", "en": "Classes Begin", "ta": "பள்ளி தொடக்கம்", "noSchool": false },
+        { "from": "2026-09-07", "en": "Labor Day", "ta": "தொழிலாளர் தினம்", "noSchool": true },
+        { "from": "2026-10-08", "en": "Institute Day", "ta": "ஆசிரியர் பயிற்சி நாள்", "noSchool": true },
+        { "from": "2026-10-09", "en": "Parent/Teacher Conferences", "ta": "பெற்றோர்–ஆசிரியர் சந்திப்பு", "noSchool": true },
+        { "from": "2026-10-12", "en": "Columbus/Indigenous Peoples' Day", "ta": "கொலம்பஸ் / பூர்வகுடி மக்கள் தினம்", "noSchool": true },
+        { "from": "2026-11-03", "en": "Election Day - e-Learning Day", "ta": "தேர்தல் நாள் - இணையவழிக் கற்றல்", "noSchool": false },
+        { "from": "2026-11-25", "to": "2026-11-27", "en": "Thanksgiving Holiday", "ta": "நன்றி தெரிவிக்கும் நாள் விடுமுறை", "noSchool": true },
+        { "from": "2026-12-21", "to": "2027-01-01", "en": "Winter Vacation", "ta": "குளிர்கால விடுமுறை", "noSchool": true },
+        { "from": "2027-01-04", "en": "Institute Day", "ta": "ஆசிரியர் பயிற்சி நாள்", "noSchool": true },
+        { "from": "2027-01-18", "en": "MLK Holiday", "ta": "மார்ட்டின் லூதர் கிங் தினம்", "noSchool": true },
+        { "from": "2027-02-15", "en": "Presidents' Day", "ta": "ஜனாதிபதிகள் தினம்", "noSchool": true },
+        { "from": "2027-02-23", "en": "Election Day - Tentative e-Learning Day", "ta": "தேர்தல் நாள் - இணையவழிக் கற்றல் (தற்காலிகம்)", "noSchool": false },
+        { "from": "2027-02-26", "en": "County Institute Day", "ta": "மாவட்ட ஆசிரியர் பயிற்சி நாள்", "noSchool": true },
+        { "from": "2027-03-04", "en": "Institute Day", "ta": "ஆசிரியர் பயிற்சி நாள்", "noSchool": true },
+        { "from": "2027-03-05", "en": "Parent/Teacher Conferences", "ta": "பெற்றோர்–ஆசிரியர் சந்திப்பு", "noSchool": true },
+        { "from": "2027-03-26", "en": "Spring Holiday", "ta": "வசந்தகால விடுமுறை நாள்", "noSchool": true },
+        { "from": "2027-03-29", "to": "2027-04-06", "en": "Spring Vacation", "ta": "வசந்தகால விடுமுறை", "noSchool": true },
+        { "from": "2027-05-07", "en": "Half-Day Institute (Early Childhood - No School)", "ta": "அரை நாள் பயிற்சி (முன்பள்ளி விடுமுறை)", "noSchool": false },
+        { "from": "2027-05-26", "en": "Classes End (tentative)", "ta": "கடைசி பள்ளி நாள் (தற்காலிகம்)", "noSchool": false },
+        { "from": "2027-05-27", "to": "2027-06-03", "en": "Emergency Days (if needed)", "ta": "அவசர நாட்கள் (தேவைப்பட்டால்)", "noSchool": false },
+        { "from": "2027-05-31", "en": "Memorial Day", "ta": "நினைவு தினம்", "noSchool": true }
+      ]
+    },
+    {
+      "region": "SCHOOL_D204",
+      "name": "Indian Prairie CUSD 204",
+      "schoolYear": "2026-27",
+      "source": "https://resources.finalsite.net/images/v1785767151/ipsdorg/kdopbpymlg03ffqsaxpf/SchoolCalendar2026-2027FINAL.pdf",
+      "revision": "Approved by the Board on 3/10/25",
+      "days": [
+        { "from": "2026-08-17", "en": "School Begins", "ta": "பள்ளி தொடக்கம்", "noSchool": false },
+        { "from": "2026-09-07", "en": "Labor Day", "ta": "தொழிலாளர் தினம்", "noSchool": true },
+        { "from": "2026-10-12", "en": "Columbus Day/Indigenous Peoples' Day", "ta": "கொலம்பஸ் / பூர்வகுடி மக்கள் தினம்", "noSchool": true },
+        { "from": "2026-10-23", "en": "Institute Day", "ta": "ஆசிரியர் பயிற்சி நாள்", "noSchool": true },
+        { "from": "2026-11-02", "en": "Parent/Teacher Conferences", "ta": "பெற்றோர்–ஆசிரியர் சந்திப்பு", "noSchool": true },
+        { "from": "2026-11-03", "en": "General Election", "ta": "பொதுத் தேர்தல்", "noSchool": true },
+        { "from": "2026-11-23", "to": "2026-11-27", "en": "Thanksgiving Break", "ta": "நன்றி தெரிவிக்கும் நாள் விடுமுறை", "noSchool": true },
+        { "from": "2026-12-21", "to": "2027-01-01", "en": "Winter Break", "ta": "குளிர்கால விடுமுறை", "noSchool": true },
+        { "from": "2027-01-11", "en": "SIP/Teacher Work Day", "ta": "ஆசிரியர் பணி நாள்", "noSchool": true },
+        { "from": "2027-01-18", "en": "Martin Luther King, Jr. Day", "ta": "மார்ட்டின் லூதர் கிங் தினம்", "noSchool": true },
+        { "from": "2027-02-15", "en": "Presidents' Day", "ta": "ஜனாதிபதிகள் தினம்", "noSchool": true },
+        { "from": "2027-02-26", "en": "Institute Day", "ta": "ஆசிரியர் பயிற்சி நாள்", "noSchool": true },
+        { "from": "2027-03-15", "en": "Parent/Teacher Conferences", "ta": "பெற்றோர்–ஆசிரியர் சந்திப்பு", "noSchool": true },
+        { "from": "2027-03-26", "en": "No School", "ta": "பள்ளி இல்லை", "noSchool": true },
+        { "from": "2027-03-29", "to": "2027-04-02", "en": "Spring Break", "ta": "வசந்தகால விடுமுறை", "noSchool": true },
+        { "from": "2027-04-05", "en": "No School", "ta": "பள்ளி இல்லை", "noSchool": true },
+        { "from": "2027-04-06", "en": "SIP (Election Day)", "ta": "ஆசிரியர் பணி நாள் (தேர்தல்)", "noSchool": true },
+        { "from": "2027-05-28", "en": "Last Day of School (tentative)", "ta": "கடைசி பள்ளி நாள் (தற்காலிகம்)", "noSchool": false },
+        { "from": "2027-05-31", "en": "Memorial Day", "ta": "நினைவு தினம்", "noSchool": true },
+        { "from": "2027-06-01", "en": "Teacher Work Day (tentative)", "ta": "ஆசிரியர் பணி நாள் (தற்காலிகம்)", "noSchool": true },
+        { "from": "2027-06-01", "to": "2027-06-07", "en": "Emergency Days (if needed)", "ta": "அவசர நாட்கள் (தேவைப்பட்டால்)", "noSchool": false }
+      ]
+    }
+  ]
+}

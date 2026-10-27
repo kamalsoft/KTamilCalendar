@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Platform theme (API 21+): no AppCompat needed for a Compose-only TV app. -->
+    <style name="Theme.TamilCalendar" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/midnight</item>
+        <item name="android:colorPrimary">@color/midnight</item>
+        <item name="android:colorAccent">@color/gold</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+</resources>
