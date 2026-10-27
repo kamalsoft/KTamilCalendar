@@ -7,9 +7,20 @@ computes a year of data on the device from an astronomical engine and stores it 
 
 ![Tamil Calendar demo on Google TV](docs/demo.gif)
 
-▶️ **[Full demo video (MP4, 1 min 30 s)](docs/demo.mp4)**: Today screen, weather with animated forecast preview,
-Month grid with important dates, Festivals, Muhurtham, Rasi Palan, themes, About.
-Recorded on the Android TV emulator with the remote (D-pad only).
+▶️ **[Full demo video (MP4)](docs/demo.mp4)**: Today with live clock and the day's special dates, the daily sloka,
+weather with animated forecast preview, Month grid, சிறப்பு (special dates), Festivals, Muhurtham, the Rasi chart
+with Today/Month/Year predictions, quick locations, themes, Settings, About, and the ambient screen.
+Recorded on the Android TV emulator with the remote (D-pad only). Android's screen recorder doesn't capture app
+audio, so the sloka music isn't in the video.
+
+| TV | | |
+|---|---|---|
+| ![Today](docs/screens/tv-today.png) | ![Daily sloka](docs/screens/tv-sloka.png) | ![Weather](docs/screens/tv-weather.png) |
+| Today | Daily sloka (music) | Weather + forecast preview |
+| ![Month](docs/screens/tv-month.png) | ![Special dates](docs/screens/tv-special.png) | ![Rasi chart](docs/screens/tv-rasi.png) |
+| Month grid | சிறப்பு · Special dates | Rasi chart |
+| ![Rasi detail](docs/screens/tv-rasi-detail.png) | ![Settings](docs/screens/tv-settings.png) | |
+| Rasi Today / Month / Year | Settings | |
 
 ## Features
 * **Panchangam:** Tamil date, tithi, nakshatram, yogam, Nalla Neram, Gowri, Rahu Kalam, Yamagandam, Kuligai and
@@ -33,9 +44,12 @@ Recorded on the Android TV emulator with the remote (D-pad only).
 * **Ambient mode:** after 2 minutes idle (configurable), a full-screen "Panchangam at a glance": vector temple scene
   with a sky for the time of day, lamps and embers, live weather, the clock, Tithi, the next Nalla Neram and Rahu Kalam.
   The text drifts slowly to protect OLED screens. It's also registered as the Android screensaver.
-* **Daily sloka:** 🔊 on Today reads the day's verse (Suprabhatam, Thiruppugazh, Sivapuranam, Vinayagar, Narayani,
-  Gayatri, Thirukkural), chosen by the day's observance or the weekday, using the device's text-to-speech (Tamil
-  voice if installed). All texts are public-domain classics.
+* **Daily sloka with devotional music:** 🔊 ஸ்லோகம் on Today shows the day's verse (Suprabhatam, Thiruppugazh,
+  Sivapuranam, Vinayagar, Narayani, Gayatri, Thirukkural), chosen by the day's observance or the weekday, and plays
+  ambient temple music generated on the device: tanpura drone, a slow flute melody in **Mohanam, Hindolam or
+  Revathi**, a temple bell and hall reverb. No recordings, so no licensing. Reading the verse aloud
+  (text-to-speech, Tamil voice if installed) is optional. All texts are public-domain classics. Close with
+  ✕ நிறைவு, BACK, Esc or a tap outside.
 * **Reminders (optional):** 10 minutes before Rahu Kalam and when Nalla Neram begins, as system notifications plus
   an in-app banner (Google TV may hide third-party notifications).
 * **Rasi chart:** the 12 rasis on a South Indian chart with today's planet positions. Selecting one opens Today /
@@ -44,7 +58,9 @@ Recorded on the Android TV emulator with the remote (D-pad only).
 * **Quick locations:** one press for Chennai, Singapore, Colombo, Naperville or London, plus recent places.
 * **Settings (⚙ tab):** show/hide sections and weather; per-faith dates; US/Illinois, school and Tamil Nadu
   holidays; animations and weather animations (turn off on slow TVs); 24-hour clock; Tamil-only labels;
-  °F/°C; auto location; Rahu Kalam convention (6 AM fixed or local sunrise); show the disclaimer again.
+  °F/°C; ambient mode and its delay; sloka music, raga, tempo, bell (off / soft / normal / prominent), pitch (C–G),
+  tanpura/flute mix and optional voice; Rahu Kalam and Nalla Neram reminders; auto location; Rahu Kalam convention
+  (6 AM fixed or local sunrise); show the disclaimer again.
 
 ## Disclaimer
 For information only. The panchangam is **calculated**, not issued by a religious authority. Confirm muhurtham and
@@ -232,7 +248,7 @@ always available again under the **About (ⓘ)** tab.
 **Updating:** run the same `adb install -r …` with a newer APK. Settings and data are kept.
 When you're done, you can turn **USB/Wireless debugging** off again. The app keeps working.
 
-## Using it with the remote
+## Using it with the remote (TV)
 Only the **D-pad, OK and BACK** are needed, which matches the standard Google TV remote (it has no number,
 channel or menu keys):
 
@@ -243,9 +259,16 @@ channel or menu keys):
 | ▼ from the bottom row of Today | Slide down to the **weather** page. ▲ slides back |
 | ◀ / இன்று / ▶ buttons | Previous day / today / next day |
 | BACK | Content → tab bar → Today → **press twice to exit** (a single stray press never closes the app) |
-| CH ▲▼, 1–5, MENU | Optional shortcuts if your remote has them (next/previous day, jump to a section, help) |
+| CH ▲▼, 1–9, MENU | Optional shortcuts if your remote has them (next/previous day or month, jump to a section, About) |
 
 The app follows the date at midnight and when the TV wakes from standby, so it can stay open as a wall calendar.
+After 2 minutes without input (configurable) it shows the ambient screen; any key brings the app back.
+
+## Using it on a phone or tablet
+The same APK installs on phones and tablets (`adb install -r app-debug.apk`, or `tools/install_tv.sh --serial <device>`).
+Tablets in landscape use the TV layout with touch. Phones in portrait get a single scrolling column and a
+**bottom bar**: இன்று · மாதம் · சிறப்பு · ராசி · ☰ மேலும் (More: Festivals, Muhurtham, Location, Theme, Settings,
+About). Swipe to scroll, tap to open, and use the system back gesture.
 
 ## Look & feel, navigation, location and themes
 The UI follows **Apple TV (tvOS)** conventions:
@@ -322,8 +345,9 @@ local temple's calendar.
 
 ## Focus and remote behaviour
 All focusable elements use `ui/components/TvFocusCard.kt`:
-* Focused state: 1.05× scale, 2 dp gold ring, 8 dp elevation, and a drawn gold halo. Colored shadows only
-  render on API 28+, so the halo keeps focus visible on API 21–27 boxes.
+* Focused state (tvOS style): 1.06× lift, deep shadow, a soft breathing sheen. Temple Night and High Contrast add a
+  2 dp accent ring and a drawn halo (coloured shadows only render on API 28+, so the halo keeps focus visible on
+  API 21–27 boxes).
 * OK/Enter fires on key-up (long-press fires on the first repeat). Arrow keys go to an optional
   `onDirectionalKey` handler first, then to Compose's spatial focus search.
 * BACK: content → tab bar → Today → exit. Entering the tab bar always lands on the current tab.
@@ -331,10 +355,10 @@ All focusable elements use `ui/components/TvFocusCard.kt`:
   (two lines in 5-week months, one plus a "+N" count in 6-week months).
 
 ## Calendar conventions (read before comparing with printed calendars)
-* **Location**: Naperville, IL (41.75°N, 88.15°W, `America/Chicago`). All dates and times, including
-  "today", sunrise, tithi end times and which civil day a festival lands on, are in Naperville local time, with
-  CST/CDT handled. Change it in `di/AppContainer.kt` (`GeoLocation.CHENNAI` is also defined). Changing the
-  location regenerates the offline database automatically.
+* **Location**: detected automatically (device location with permission, else approximate from the internet
+  connection); the fallback is Naperville, IL. Pick another place under 📍 (search, quick chips, recents). All
+  dates and times, including "today", sunrise, tithi end times and which civil day a festival lands on, are in that
+  place's local time, with daylight saving handled. Changing the location regenerates the offline database.
 * Because days are local, some festivals fall one day earlier in Naperville than in India (e.g. Deepavali 2026:
   7 Nov in Naperville, 8 Nov in Chennai). This is expected, and US temples observe these local dates.
 * **Tamil month**: starts on the day of the sidereal (Lahiri) sankranti if it falls before sunset, otherwise the next day.
@@ -342,26 +366,33 @@ All focusable elements use `ui/components/TvFocusCard.kt`:
   Deepavali and Ekadasi use sunrise. Vinayagar Chathurthi and Rama Navami use midday. Ayutha Pooja and
   Vijayadasami use the afternoon (aparahna). Krishna Jayanthi and Shivaratri use midnight.
   Skipped and repeated tithis are handled.
-* **Rahu / Yama / Kuligai / Gowri**: each is 1/8 of the actual local sunrise-to-sunset span
-  (`TimingConvention.SUNRISE_BASED`). Indian printed calendars use a fixed 06:00–18:00 day
-  (`TRADITIONAL_6AM`), but that breaks with US latitudes and DST.
+* **Rahu / Yama / Kuligai / Gowri**: in India, a fixed 06:00–18:00 day, as printed Tamil calendars do; elsewhere,
+  each is 1/8 of the actual local sunrise-to-sunset span (a fixed day breaks with other latitudes and DST).
+  Settings → *Rahu Kalam convention* overrides this.
 * **Nalla Neram** = good Gowri periods minus Rahu Kalam and Yamagandam. Some printed calendars use their
   own per-weekday Nalla Neram tables, so their times may differ.
 * **Subha Muhurtham**: rule-based candidates (tithi, nakshatram, weekday, month, no adhika masa). The UI says to
   confirm with a priest.
-* **Rasi Palan** (offline): Chandra Gochara, i.e. the Moon's house from each rasi. Predictions synced from the
-  API replace it.
-* **Holidays** (set up in `di/AppContainer.kt`):
+* **Rasi Palan** (offline): Today = Chandra Gochara (the Moon's house from each rasi). Month = Sun and Jupiter
+  transits; Year = Jupiter, Saturn (incl. Sade Sati / Ashtama Shani) and Rahu. Planet positions are computed and
+  checked against the Swiss Ephemeris (within 0.4°). Predictions synced from the API replace the daily text.
+* **Holidays** (chosen by location in `LocationPolicy`; each group can be turned off in Settings):
   * **US federal + Illinois**: calculated from the legal rules (`core/holidays/UsHolidays.kt`) for any year, including
     weekend-observed days. Illinois adds Lincoln's Birthday, the day after Thanksgiving and general-election day
     (even years). These are the "local" holidays: they turn the day red.
   * **School: Naperville 203 and Indian Prairie 204**: transcribed from each district's official 2026–27 calendar
     into `app/src/main/assets/school_calendars.json` (source URLs and revision are inside the file). School boards adopt
-    calendars yearly, so **add the 2027–28 blocks when they're published**. To show one district only, edit
-    `schoolDistricts` in `AppContainer`. Multi-day breaks show as one row in the list and as a school badge on each day.
-  * **Tamil Nadu**: still listed (Pongal, Deepavali, …) with a "தமிழ்நாடு" label. They are not days off here, so they
-    don't turn the day red. When the same holiday appears in two lists (e.g. Christmas), it's shown once.
+    calendars yearly, so **add the 2027–28 blocks when they're published**. Shown only when the location is
+    Naperville. Multi-day breaks show as one row in the list and as a school badge on each day.
+  * **Tamil Nadu**: listed with a "தமிழ்நாடு" label. They turn the day red only when the location is in Tamil Nadu.
+    When the same holiday appears in two lists (e.g. Christmas), it's shown once.
   * Islamic holidays depend on moon sighting and can't be computed. They can come from sync.
+
+## Development with Claude Code
+`CLAUDE.md` is a short project brief, and `.claude/skills/` holds five skills so AI sessions build, test and
+release without rediscovering the setup: `build-install`, `e2e-test`, `verify-panchangam`, `add-calendar-rule`
+and `release`. The rules include: ask before committing; keep minSdk-21 versions; use the bilingual `Text` wrapper
+and `TvColors`.
 
 ## Deliberate deviations from the brief
 * **No `androidx.leanback`**: the UI is all Compose. Mixing Leanback fragments with Compose gives two focus
