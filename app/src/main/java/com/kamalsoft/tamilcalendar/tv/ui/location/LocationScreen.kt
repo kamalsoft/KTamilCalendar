@@ -151,7 +151,10 @@ fun LocationScreen(
         }
 
         val (message, places) = when (search) {
-            LocationSearch.Idle -> "பரிந்துரைகள் · Suggestions" to listOf(GeoLocation.NAPERVILLE, GeoLocation.CHENNAI).filter { it != current }
+            LocationSearch.Idle -> "பரிந்துரைகள் · Suggestions" to listOf(GeoLocation.NAPERVILLE, GeoLocation.CHENNAI).filterNot {
+                // Geocoded places have slightly different coordinates; compare by name and country.
+                it.nameEn.equals(current.nameEn, ignoreCase = true) && it.countryCode == current.countryCode
+            }
             LocationSearch.Searching -> "தேடுகிறது… · Searching…" to emptyList()
             LocationSearch.Failed -> "தேட முடியவில்லை — இணைய இணைப்பைச் சரிபார்க்கவும் · Search failed — check the internet connection" to emptyList()
             is LocationSearch.Results ->

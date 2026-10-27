@@ -23,10 +23,12 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kamalsoft.tamilcalendar.tv.ui.components.DetailContent
 import com.kamalsoft.tamilcalendar.tv.ui.components.DetailHost
 import com.kamalsoft.tamilcalendar.tv.ui.components.rememberDetailHostState
+import com.kamalsoft.tamilcalendar.tv.ui.about.AboutScreen
 import com.kamalsoft.tamilcalendar.tv.ui.daily.DailyScreen
 import com.kamalsoft.tamilcalendar.tv.ui.daily.ErrorState
 import com.kamalsoft.tamilcalendar.tv.ui.events.EventListScreen
@@ -34,6 +36,8 @@ import com.kamalsoft.tamilcalendar.tv.ui.events.ImportantDatesScreen
 import com.kamalsoft.tamilcalendar.tv.ui.location.LocationScreen
 import com.kamalsoft.tamilcalendar.tv.ui.monthly.MonthlyScreen
 import com.kamalsoft.tamilcalendar.tv.ui.rasipalan.RasiPalanScreen
+import com.kamalsoft.tamilcalendar.tv.ui.settings.ThemeScreen
+import com.kamalsoft.tamilcalendar.tv.ui.theme.AppTheme
 import com.kamalsoft.tamilcalendar.tv.ui.theme.TvColors
 import com.kamalsoft.tamilcalendar.tv.ui.theme.TvDimens
 import kotlinx.coroutines.delay
@@ -44,10 +48,10 @@ private val HELP = DetailContent(
     lines = listOf(
         "▲ ▼ ◀ ▶" to "நகர்த்த · Move",
         "OK" to "தேர்வு / விவரங்கள் · Select / details",
-        "◀ (இடது ஓரம்)" to "பக்க மெனு · Open the menu",
+        "▲ (மேல் வரிசை)" to "மேல் தாவல்கள் · Top tabs: ◀ ▶ to switch sections",
         "▼ (இன்றைய திரை)" to "கீழே வானிலை · Weather below the calendar",
-        "BACK" to "மெனு → முகப்பு → இரண்டு முறை அழுத்தி வெளியேறு · Menu → Home → press twice to exit",
-        "CH ▲▼ / 1–7" to "ரிமோட்டில் இருந்தால்: நாள் மாற்ற / பிரிவுகள் · If your remote has them",
+        "BACK" to "தாவல்கள் → இன்று → இரண்டு முறை அழுத்தி வெளியேறு · Tabs → Today → press twice to exit",
+        "CH ▲▼ / 1–9 / MENU" to "ரிமோட்டில் இருந்தால்: நாள் மாற்ற / பிரிவுகள் · If your remote has them",
     ),
 )
 
@@ -75,14 +79,13 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
 
     val context = LocalContext.current
     val contentFocus = remember { FocusRequester() }
-    val drawerItems = remember { Destination.entries.associateWith { FocusRequester() } }
-    val helpItem = remember { FocusRequester() }
+    val tabs = remember { Destination.entries.associateWith { FocusRequester() } }
     val overlay = rememberDetailHostState()
-    var drawerHasFocus by remember { mutableStateOf(false) }
+    var tabBarHasFocus by remember { mutableStateOf(false) }
     // Incremented whenever focus should move into the content area once it is composed.
     var focusContentRequest by remember { mutableIntStateOf(1) }
     // Counts user key presses, so a pending focus request yields to real navigation but not to the
-    // system's initial focus (which lands on the drawer before the content has loaded).
+    // system's initial focus (which lands on the tab bar before the content has loaded).
     var userKeyPresses by remember { mutableIntStateOf(0) }
     var lastBackAt by remember { mutableLongStateOf(0L) }
 
@@ -116,14 +119,16 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
         focusContentRequest++
     }
 
-    BackHandler(enabled = !drawerHasFocus) {
-        runCatching { drawerItems.getValue(destination).requestFocus() }
+    // BACK, like tvOS: content → current tab → Today tab → (twice) exit.
+    BackHandler(enabled = !tabBarHasFocus) {
+        runCatching { tabs.getValue(destination).requestFocus() }
     }
-    BackHandler(enabled = drawerHasFocus && destination != Destination.DAILY) {
-        go(Destination.DAILY)
+    BackHandler(enabled = tabBarHasFocus && destination != Destination.DAILY) {
+        vm.navigate(Destination.DAILY)
+        runCatching { tabs.getValue(Destination.DAILY).requestFocus() }
     }
     // A single stray BACK shouldn't close a wall-calendar app: ask for a second press.
-    BackHandler(enabled = drawerHasFocus && destination == Destination.DAILY) {
+    BackHandler(enabled = tabBarHasFocus && destination == Destination.DAILY) {
         val now = SystemClock.elapsedRealtime()
         if (now - lastBackAt < 2500) {
             (context as? Activity)?.finish()
@@ -144,7 +149,7 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
                 if (destination == Destination.LOCATION) return@onPreviewKeyEvent false
                 when (event.nativeKeyEvent.keyCode) {
                     AndroidKeyEvent.KEYCODE_MENU, AndroidKeyEvent.KEYCODE_INFO -> {
-                        overlay.show(HELP, contentFocus)
+                        go(Destination.ABOUT)
                         return@onPreviewKeyEvent true
                     }
                 }
@@ -165,13 +170,21 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
                 false
             },
     ) {
+        TopTabBar(
+            current = destination,
+            tabRequesters = tabs,
+            onFocusChanged = { tabBarHasFocus = it },
+            onTabFocused = { vm.navigate(it) },
+            onEnterContent = { focusContentRequest++ },
+            modifier = Modifier.padding(start = TvDimens.SafeHorizontal, end = TvDimens.SafeHorizontal, top = 16.dp),
+        )
         Box(
             Modifier
                 .fillMaxSize()
                 .padding(
-                    start = DrawerCollapsedWidth + TvDimens.Gap,
+                    start = TvDimens.SafeHorizontal,
                     end = TvDimens.SafeHorizontal,
-                    top = TvDimens.SafeVertical,
+                    top = 16.dp + 48.dp + 10.dp,
                     bottom = TvDimens.SafeVertical,
                 ),
         ) {
@@ -233,6 +246,15 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
                     onPreviousDay = { vm.shiftDay(-1) },
                     onNextDay = { vm.shiftDay(1) },
                 )
+                Destination.THEME -> ThemeScreen(
+                    current = AppTheme.entries.firstOrNull { it.palette == TvColors.palette } ?: AppTheme.GRAPHITE,
+                    entryFocus = contentFocus,
+                    onChoose = { theme ->
+                        TvColors.palette = theme.palette
+                        vm.saveTheme(theme.name)
+                    },
+                )
+                Destination.ABOUT -> AboutScreen(location = location, entryFocus = contentFocus)
                 Destination.LOCATION -> LocationScreen(
                     current = location,
                     query = locationQuery,
@@ -243,18 +265,6 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
                 )
             }
         }
-        if (drawerHasFocus) {
-            Box(Modifier.fillMaxSize().background(TvColors.MidnightDeep.copy(alpha = 0.55f)))
-        }
-        NavDrawer(
-            current = destination,
-            expanded = drawerHasFocus,
-            itemRequesters = drawerItems,
-            helpRequester = helpItem,
-            onFocusChanged = { drawerHasFocus = it },
-            onSelect = ::go,
-            onHelp = { overlay.show(HELP, helpItem) },
-        )
         DetailHost(overlay)
     }
 }

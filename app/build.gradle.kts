@@ -22,6 +22,7 @@ android {
 
         // Leave empty to run fully offline. Set to your backend (https only) to enable sync.
         buildConfigField("String", "API_BASE_URL", "\"\"")
+        buildConfigField("String", "REPO_URL", "\"https://github.com/kamalsoft/KTamilCalendar\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -108,6 +109,8 @@ dependencies {
     implementation(libs.okhttp.logging)
     // Brings TLS 1.3 to API 21–28 (platform TLS 1.3 only exists from Android 10).
     implementation(libs.conscrypt.android)
+    // QR code for the GitHub link on the About screen (TVs can't open links).
+    implementation(libs.zxing.core)
 
     testImplementation(libs.junit)
 }

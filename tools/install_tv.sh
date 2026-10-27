@@ -89,13 +89,33 @@ done
 [[ -n "$ADB" ]] || die "adb not found. Install Android SDK platform-tools or set ANDROID_HOME."
 ok "adb: $ADB"
 
+# Major Java version of a JDK home (e.g. 21), or empty if it can't be run.
+java_major() {
+  "$1/bin/java" -version 2>&1 | awk -F'"' '/version/ { split($2, v, "."); print (v[1] == "1") ? v[2] : v[1]; exit }'
+}
+jdk_ok() { local m; m="$(java_major "$1")"; [[ -n "$m" && "$m" -ge 17 && "$m" -le 22 ]]; }
+
 if [[ $BUILD -eq 1 ]]; then
-  # Gradle 8.9 runs on JDK 17–22. Prefer an explicit JAVA_HOME, then a JDK 21/17 found on macOS.
-  if [[ -z "${JAVA_HOME:-}" && -x /usr/libexec/java_home ]]; then
-    JAVA_HOME="$(/usr/libexec/java_home -v 21 2>/dev/null || /usr/libexec/java_home -v 17 2>/dev/null || true)"
-    [[ -n "$JAVA_HOME" ]] && export JAVA_HOME
+  # Gradle 8.9 runs on JDK 17–22 only. Android Studio's bundled JBR is often newer (e.g. 25), so an
+  # existing JAVA_HOME is checked and, if unsuitable, replaced by an installed JDK 21/17.
+  if [[ -z "${JAVA_HOME:-}" ]] || ! jdk_ok "$JAVA_HOME"; then
+    [[ -n "${JAVA_HOME:-}" ]] && warn "JAVA_HOME is JDK $(java_major "$JAVA_HOME"); Gradle 8.9 needs 17–22. Looking for another JDK…"
+    found=""
+    for v in 21 17 22; do
+      if [[ -x /usr/libexec/java_home ]]; then
+        cand="$(/usr/libexec/java_home -v "$v" 2>/dev/null || true)"
+        if [[ -n "$cand" ]] && jdk_ok "$cand"; then found="$cand"; break; fi
+      fi
+    done
+    if [[ -z "$found" ]]; then
+      for cand in "$HOME"/Library/Java/JavaVirtualMachines/*/Contents/Home /Library/Java/JavaVirtualMachines/*/Contents/Home /usr/lib/jvm/*; do
+        if [[ -d "$cand" ]] && jdk_ok "$cand"; then found="$cand"; break; fi
+      done
+    fi
+    [[ -n "$found" ]] || die "No JDK 17–22 found. Install one (e.g. 'brew install openjdk@21', or Android Studio → Settings → Gradle JDK → Download JDK 21), or run with --no-build."
+    export JAVA_HOME="$found"
   fi
-  [[ -n "${JAVA_HOME:-}" ]] && ok "JDK: $JAVA_HOME" || warn "JAVA_HOME not set; Gradle will use the default java (needs JDK 17–22)"
+  ok "JDK $(java_major "$JAVA_HOME"): $JAVA_HOME"
 fi
 
 # ----------------------------------------------------------------------------- build

@@ -26,6 +26,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -47,9 +48,10 @@ enum class DpadDirection { UP, DOWN, LEFT, RIGHT }
 /**
  * The single focus primitive for the whole app.
  *
- * Focused state: 1.05x scale, 2dp gold ring, 8dp elevation and a soft gold halo. The halo is
- * drawn manually because coloured shadows (spotColor) only render on API 28+, and this must
- * read clearly from 10 feet on API 21 boxes too.
+ * Focused state follows tvOS: the card lifts (1.06x scale, 20dp shadow), brightens, and gets a soft
+ * top sheen. Themes with [com.kamalsoft.tamilcalendar.tv.ui.theme.Palette.focusRing] (Temple Night,
+ * High Contrast) add a 2dp accent ring and halo for stronger 10-foot visibility; the halo is drawn
+ * manually because coloured shadows only render on API 28+.
  *
  * Key handling is explicit rather than relying on `clickable`:
  * - DPAD_CENTER / ENTER / NUMPAD_ENTER / BUTTON_A: click fires on key-up (like Leanback), long
@@ -79,14 +81,15 @@ fun TvFocusCard(
 
     val scale by animateFloatAsState(
         targetValue = when {
-            pressed -> 0.98f
-            focused -> 1.05f
+            pressed -> 0.97f
+            focused -> 1.06f
             else -> 1f
         },
         animationSpec = tween(durationMillis = 140),
         label = "focusScale",
     )
-    val elevation by animateDpAsState(if (focused) 8.dp else 0.dp, tween(140), label = "focusElevation")
+    val ring = TvColors.palette.focusRing
+    val elevation by animateDpAsState(if (focused) (if (ring) 8.dp else 20.dp) else 0.dp, tween(160), label = "focusElevation")
     val background by animateColorAsState(
         when {
             focused -> focusedContainerColor
@@ -96,10 +99,11 @@ fun TvFocusCard(
         tween(140), label = "focusBackground",
     )
     val ringColor = when {
-        focused -> accent
+        focused && ring -> accent
         selected -> accent.copy(alpha = 0.45f)
         else -> Color.Transparent
     }
+    val sheen = TvColors.Text.copy(alpha = if (TvColors.palette.isLight) 0.0f else 0.07f)
     val shape = RoundedCornerShape(cornerRadius)
 
     Box(
@@ -152,9 +156,20 @@ fun TvFocusCard(
                 scaleX = scale
                 scaleY = scale
             }
-            .goldHalo(visible = focused, color = accent, cornerRadius = cornerRadius)
-            .shadow(elevation, shape, clip = false, ambientColor = accent, spotColor = accent)
+            .goldHalo(visible = focused && ring, color = accent, cornerRadius = cornerRadius)
+            .shadow(
+                elevation, shape, clip = false,
+                ambientColor = if (ring) accent else Color.Black, spotColor = if (ring) accent else Color.Black,
+            )
             .background(background, shape)
+            // tvOS-like specular sheen on the upper half of a focused card.
+            .then(
+                if (focused && !ring) {
+                    Modifier.background(Brush.verticalGradient(0f to sheen, 0.55f to Color.Transparent), shape)
+                } else {
+                    Modifier
+                },
+            )
             .border(2.dp, ringColor, shape),
     ) {
         content(focused)

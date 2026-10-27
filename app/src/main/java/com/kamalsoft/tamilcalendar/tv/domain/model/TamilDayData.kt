@@ -25,26 +25,35 @@ data class TamilDayData(
     val otherReligions: Set<Religion> get() = events.mapNotNull { it.religion }.filter { it != Religion.HINDU }.toSet()
 
     /**
-     * The one item a month-grid cell has room for: a local holiday, else a Hindu festival, else another
-     * faith's observance, else a deity observance (Sashti, Pradosham, …). School days don't qualify.
+     * The day's important dates, most important first: local holidays, Hindu festivals, deity
+     * observances (Sashti, Pradosham, …, then Amavasai/Pournami), other faiths' observances, other holidays.
+     * School days and muhurtham are excluded (they have their own screens). Same items as the Important Dates screen.
      */
-    val headline: Pair<String, String>?
+    val importantDates: List<ImportantDate>
         get() {
-            val e = events.filter { it.kind != EventKind.SCHOOL && it.kind != EventKind.MUHURTHAM }
-                .minByOrNull {
-                    when {
-                        it.isLocalHoliday -> 0
-                        it.religion == Religion.HINDU -> 1
-                        it.religion != null -> 2
-                        else -> 3
-                    }
-                }
-            if (e != null) return e.titleTa to e.titleEn
-            val tag = tags.filter { it.deity != null && it != DayTag.POURNAMI }.minByOrNull { it.ordinal }
-                ?: tags.firstOrNull { it == DayTag.AMAVASAI || it == DayTag.POURNAMI }
-            return tag?.let { it.ta to it.en }
+            val listed = events.filter { it.kind != EventKind.SCHOOL && it.kind != EventKind.MUHURTHAM }
+            val out = mutableListOf<ImportantDate>()
+            listed.filter { it.isLocalHoliday }.forEach { out += ImportantDate(it.titleTa, it.titleEn, isHoliday = true, religion = it.religion, deity = it.deity) }
+            listed.filter { !it.isLocalHoliday && it.religion == Religion.HINDU }.forEach { out += ImportantDate(it.titleTa, it.titleEn, religion = Religion.HINDU, deity = it.deity) }
+            tags.filter { it.deity != null && it != DayTag.POURNAMI }.sortedBy { it.ordinal }.forEach { out += ImportantDate(it.ta, it.en, tag = it, deity = it.deity) }
+            tags.filter { it == DayTag.AMAVASAI || it == DayTag.POURNAMI }.forEach { out += ImportantDate(it.ta, it.en, tag = it, deity = it.deity) }
+            listed.filter { !it.isLocalHoliday && it.religion != null && it.religion != Religion.HINDU }
+                .forEach { out += ImportantDate(it.titleTa, it.titleEn, religion = it.religion) }
+            listed.filter { !it.isLocalHoliday && it.religion == null }.forEach { out += ImportantDate(it.titleTa, it.titleEn) }
+            return out.distinctBy { it.titleEn }
         }
 }
+
+/** One line on a day's card / in the Important Dates list. */
+data class ImportantDate(
+    val titleTa: String,
+    val titleEn: String,
+    val isHoliday: Boolean = false,
+    val religion: Religion? = null,
+    val deity: Deity? = null,
+    /** Set for monthly observances (badge icon). */
+    val tag: DayTag? = null,
+)
 
 data class TamilDate(
     /** 0 = Chithirai … 11 = Panguni. */

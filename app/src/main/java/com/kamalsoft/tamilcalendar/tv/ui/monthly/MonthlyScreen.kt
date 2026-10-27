@@ -25,8 +25,10 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.kamalsoft.tamilcalendar.tv.domain.model.Religion
 import com.kamalsoft.tamilcalendar.tv.domain.model.TamilDayData
 import com.kamalsoft.tamilcalendar.tv.ui.components.DpadDirection
 import com.kamalsoft.tamilcalendar.tv.ui.components.Fmt
@@ -66,21 +68,22 @@ fun MonthlyScreen(
         }
     }
 
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(Modifier.fillMaxWidth().height(52.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            HeaderButton("◀", onPreviousMonth)
-            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // Title left, controls right (tvOS-style), in one compact row so the grid gets the height.
+        Row(Modifier.fillMaxWidth().height(52.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.weight(1f)) {
                 Text(
                     "${Fmt.gregorianMonthsTa[month.monthValue - 1]} ${month.year} · ${month.month.getDisplayName(TextStyle.FULL, Locale.US)}",
-                    style = MaterialTheme.typography.headlineSmall, color = TvColors.Gold,
+                    style = MaterialTheme.typography.headlineSmall, color = TvColors.Text, maxLines = 1,
                 )
                 if (gridReady) {
                     val tamilMonths = days.filter { YearMonth.from(it.date) == month }.map { "${it.tamilDate.monthTa} (${it.tamilDate.monthEn})" }.distinct()
-                    Text(tamilMonths.joinToString(" – "), style = MaterialTheme.typography.bodySmall, color = TvColors.TextMuted)
+                    Text(tamilMonths.joinToString(" – "), style = MaterialTheme.typography.labelMedium, color = TvColors.TextMuted, maxLines = 1)
                 }
             }
+            HeaderButton("◀", onPreviousMonth)
+            HeaderButton("இன்று · Today", onToday, width = 150)
             HeaderButton("▶", onNextMonth)
-            HeaderButton("இன்று · Today", onToday, width = 170)
         }
         Row(Modifier.fillMaxWidth()) {
             Fmt.weekdayShortTa.forEachIndexed { i, label ->
@@ -96,9 +99,11 @@ fun MonthlyScreen(
         }
         val focusTarget = days.indexOfFirst { it.date == selected }.takeIf { it >= 0 && YearMonth.from(selected) == month }
             ?: days.indexOfFirst { it.date == month.atDay(1) }
-        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            for (row in 0 until 6) {
-                Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Only as many weeks as the month needs (usually 5): taller cards leave room for the day's important dates.
+        val weeks = (days.indexOfFirst { it.date == month.atEndOfMonth() } / 7) + 1
+        Column(Modifier.fillMaxSize().padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            for (row in 0 until weeks) {
+                Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     for (col in 0 until 7) {
                         val index = row * 7 + col
                         val day = days[index]
@@ -107,6 +112,7 @@ fun MonthlyScreen(
                             inMonth = YearMonth.from(day.date) == month,
                             isToday = day.date == today,
                             isSelected = day.date == selected,
+                            maxDates = if (weeks <= 5) 2 else 1,
                             focusRequester = if (index == focusTarget) entryFocus else null,
                             onClick = { onOpenDate(day.date) },
                             onDirectionalKey = { dir ->
@@ -140,12 +146,14 @@ private fun DayCell(
     inMonth: Boolean,
     isToday: Boolean,
     isSelected: Boolean,
+    maxDates: Int,
     focusRequester: FocusRequester?,
     onClick: () -> Unit,
     onDirectionalKey: (DpadDirection) -> Boolean,
     modifier: Modifier,
 ) {
     val red = day.weekdayIndex == 0 || day.isGovernmentHoliday
+    val dates = day.importantDates
     TvFocusCard(
         onClick = onClick,
         onDirectionalKey = onDirectionalKey,
@@ -154,8 +162,9 @@ private fun DayCell(
         cornerRadius = 10.dp,
         modifier = modifier.alpha(if (inMonth) 1f else 0.4f),
     ) {
-        Column(Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 5.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+        Column(Modifier.fillMaxSize().padding(horizontal = 7.dp, vertical = 4.dp)) {
+            // Date, observance icons, Tamil date.
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "${day.date.dayOfMonth}",
                     style = MaterialTheme.typography.titleMedium,
@@ -166,24 +175,30 @@ private fun DayCell(
                     },
                     modifier = if (isToday) Modifier.background(TvColors.Gold, RoundedCornerShape(6.dp)).padding(horizontal = 5.dp) else Modifier,
                 )
+                Box(Modifier.padding(start = 4.dp)) { TagIcons(day.tags, day.otherReligions, size = 12.dp, max = 3) }
                 Text(
                     if (day.tamilDate.day == 1) day.tamilDate.monthTa else "${day.tamilDate.day}",
                     style = MaterialTheme.typography.labelMedium,
-                    color = if (day.tamilDate.day == 1) TvColors.Gold else TvColors.GoldSoft,
+                    color = if (day.tamilDate.day == 1) TvColors.Gold else TvColors.TextDim,
                     textAlign = TextAlign.End,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f).padding(start = 6.dp),
+                    modifier = Modifier.weight(1f).padding(start = 4.dp),
                 )
             }
-            Box(Modifier.weight(1f))
-            day.headline?.let { (ta, _) ->
+            // The day's important dates (same as the Important Dates screen), most important first.
+            dates.take(maxDates).forEachIndexed { i, d ->
+                val more = dates.size - maxDates
                 Text(
-                    ta, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    color = if (day.isGovernmentHoliday) TvColors.CrimsonSoft else TvColors.GoldSoft,
+                    if (i == maxDates - 1 && more > 0) "${d.titleTa} +$more" else d.titleTa,
+                    fontSize = 12.sp, lineHeight = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    color = when {
+                        d.isHoliday -> TvColors.CrimsonSoft
+                        d.religion != null && d.religion != Religion.HINDU -> TvColors.TextMuted
+                        else -> TvColors.GoldSoft
+                    },
                 )
             }
-            TagIcons(day.tags, day.otherReligions, size = 13.dp)
         }
     }
 }

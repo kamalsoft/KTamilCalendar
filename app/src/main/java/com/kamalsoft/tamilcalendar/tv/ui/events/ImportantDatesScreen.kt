@@ -31,10 +31,8 @@ import com.kamalsoft.tamilcalendar.tv.domain.model.DayTag
 import com.kamalsoft.tamilcalendar.tv.domain.model.EventKind
 import com.kamalsoft.tamilcalendar.tv.domain.model.Religion
 import com.kamalsoft.tamilcalendar.tv.domain.model.TamilDayData
-import com.kamalsoft.tamilcalendar.tv.domain.model.TamilNames
 import com.kamalsoft.tamilcalendar.tv.domain.usecase.forDisplay
 import com.kamalsoft.tamilcalendar.tv.ui.components.Fmt
-import com.kamalsoft.tamilcalendar.tv.ui.components.Pill
 import com.kamalsoft.tamilcalendar.tv.ui.components.TvFocusCard
 import com.kamalsoft.tamilcalendar.tv.ui.components.badgeRes
 import com.kamalsoft.tamilcalendar.tv.ui.components.iconRes
@@ -45,13 +43,14 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 
-/** One row: a dated observance with an icon and a short pill (deity, or "Holiday"). */
+/** One row: a dated observance with an icon; deity / holiday status follow the English title. */
 private data class Item(
     val date: LocalDate,
     val titleTa: String,
     val titleEn: String,
     @DrawableRes val icon: Int?,
-    val pill: String?,
+    /** Shown after the English title: the deity ("முருகன் · Murugan") and/or holiday status. */
+    val subtitle: String? = null,
     val isHoliday: Boolean,
 )
 
@@ -68,11 +67,15 @@ private fun hinduItems(days: List<TamilDayData>): List<Item> = days.flatMap { d 
     val festivals = d.events.filter { it.religion == Religion.HINDU }.map {
         Item(
             d.date, it.titleTa, it.titleEn, R.drawable.ic_nav_festival,
-            it.deity?.let { deity -> "${deity.ta} · ${deity.en}" }, it.isLocalHoliday,
+            subtitle = listOfNotNull(
+                it.deity?.let { deity -> "${deity.ta} · ${deity.en}" },
+                "விடுமுறை · Holiday".takeIf { _ -> it.isLocalHoliday },
+            ).joinToString("  ·  ").ifEmpty { null },
+            isHoliday = it.isLocalHoliday,
         )
     }
     val observances = d.tags.filter { it in listedTags }.sortedBy { it.ordinal }.map {
-        Item(d.date, it.ta, it.en, it.badgeRes(), it.deity?.let { deity -> "${deity.ta} · ${deity.en}" }, false)
+        Item(d.date, it.ta, it.en, it.badgeRes(), subtitle = it.deity?.let { deity -> "${deity.ta} · ${deity.en}" }, isHoliday = false)
     }
     festivals + observances
 }
@@ -97,9 +100,10 @@ private fun otherEntries(days: List<TamilDayData>): List<Entry> {
 
 private fun CalendarEvent.toItem(@DrawableRes icon: Int?) = Item(
     date = date, titleTa = titleTa, titleEn = titleEn, icon = icon,
-    pill = when {
+    // Holiday status rides on the English line so the Tamil title keeps the full width.
+    subtitle = when {
         isLocalHoliday -> "விடுமுறை · Holiday"
-        region != null && isHoliday -> region.en
+        region != null && isHoliday -> "${region.en} holiday"
         else -> null
     },
     isHoliday = isLocalHoliday,
@@ -138,7 +142,7 @@ fun ImportantDatesScreen(
         }
         Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             Column(Modifier.weight(1f).fillMaxHeight()) {
-                SectionTitle("இந்து · Hindu — பண்டிகைகள் & விரதங்கள் · Festivals & observances")
+                SectionTitle("இந்து · Hindu")
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(10.dp)) {
                     items(hindu.size) { i ->
                         ItemRow(hindu[i], today, if (i == 0) entryFocus else null) { onOpenDate(hindu[i].date) }
@@ -146,7 +150,7 @@ fun ImportantDatesScreen(
                 }
             }
             Column(Modifier.weight(1f).fillMaxHeight()) {
-                SectionTitle("பிற மதங்கள் & விடுமுறைகள் · Other faiths & holidays")
+                SectionTitle("பிற மதங்கள் · Other faiths")
                 if (others.isEmpty()) {
                     Text("இந்த மாதம் இல்லை · None this month", style = MaterialTheme.typography.bodyMedium, color = TvColors.TextDim, modifier = Modifier.padding(10.dp))
                 }
@@ -189,22 +193,25 @@ private fun ItemRow(item: Item, today: LocalDate, focusRequester: FocusRequester
         modifier = Modifier.fillMaxWidth().height(58.dp),
     ) {
         Row(Modifier.fillMaxSize().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.width(62.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.width(80.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     "${item.date.dayOfMonth}", style = MaterialTheme.typography.titleMedium,
                     color = if (item.isHoliday) TvColors.CrimsonSoft else TvColors.Gold,
                 )
                 Text(
-                    "${TamilNames.weekdays[item.date.dayOfWeek.value % 7].first.take(3)} ${Fmt.weekdayShortEn(item.date)}",
+                    "${Fmt.weekdayShortTa[item.date.dayOfWeek.value % 7]} · ${Fmt.weekdayShortEn(item.date)}",
                     style = MaterialTheme.typography.labelMedium, color = TvColors.TextDim, maxLines = 1,
                 )
             }
             item.icon?.let { Image(painterResource(it), contentDescription = null, modifier = Modifier.size(22.dp)) }
             Column(Modifier.weight(1f).padding(start = 10.dp)) {
                 Text(item.titleTa, style = MaterialTheme.typography.titleMedium, color = TvColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(item.titleEn, style = MaterialTheme.typography.bodySmall, color = TvColors.TextDim, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                // Deity on the English line keeps the full width for the Tamil title.
+                Text(
+                    listOfNotNull(item.titleEn, item.subtitle).joinToString("  ·  "),
+                    style = MaterialTheme.typography.bodySmall, color = TvColors.TextDim, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
             }
-            item.pill?.let { Pill(it, TvColors.SurfaceSelected) }
         }
     }
 }

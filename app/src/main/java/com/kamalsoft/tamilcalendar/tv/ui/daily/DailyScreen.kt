@@ -311,9 +311,11 @@ private fun ColumnScope.PanchangamColumn(
 @Composable
 private fun ColumnScope.TimingColumn(day: TamilDayData, show: (DetailContent, FocusRequester) -> Unit) {
     val t = day.timings
-    fun windows(list: List<TimingWindow>) = if (list.isEmpty()) "—" else list.joinToString("\n") { Fmt.range(it) }
+    // First window large; the rest on the smaller line below (cards are one value line tall on TV).
+    fun first(list: List<TimingWindow>) = list.firstOrNull()?.let { Fmt.range(it) } ?: "—"
+    fun rest(list: List<TimingWindow>) = list.drop(1).joinToString(" · ") { Fmt.range(it) }.ifEmpty { null }
     InfoCard(
-        label = "நல்ல நேரம் · Nalla Neram", value = windows(t.nallaNeram.take(2)), accent = TvColors.Gold, show = show, valueLines = 2,
+        label = "நல்ல நேரம் · Nalla Neram", value = first(t.nallaNeram), sub = rest(t.nallaNeram), accent = TvColors.Gold, show = show,
         detail = DetailContent(
             "நல்ல நேரம் · Nalla Neram",
             "நல்ல கௌரி நேரங்களில் ராகு காலம் / எமகண்டம் நீக்கப்பட்டது · Good Gowri periods minus Rahu Kalam & Yamagandam",
@@ -321,7 +323,7 @@ private fun ColumnScope.TimingColumn(day: TamilDayData, show: (DetailContent, Fo
         ),
     )
     InfoCard(
-        label = "கௌரி நல்ல நேரம் · Gowri", value = windows(t.gowriNallaNeram.take(2)), accent = TvColors.Gold, show = show, valueLines = 2,
+        label = "கௌரி நல்ல நேரம் · Gowri", value = first(t.gowriNallaNeram), sub = rest(t.gowriNallaNeram), accent = TvColors.Gold, show = show,
         detail = DetailContent(
             "கௌரி நல்ல நேரம் · Gowri Nalla Neram", "பகல் கௌரி பஞ்சாங்கம் · Daytime Gowri Panchangam",
             t.gowriNallaNeram.map { "${it.gowri!!.ta} · ${it.gowri.en}" to "${Fmt.range(it)} · ${Fmt.timeEn(it.start)} – ${Fmt.timeEn(it.end)}" },

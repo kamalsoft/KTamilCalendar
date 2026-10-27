@@ -37,7 +37,7 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
 
-enum class Destination { DAILY, MONTHLY, IMPORTANT_DATES, FESTIVALS, MUHURTHAM, RASI_PALAN, LOCATION }
+enum class Destination { DAILY, MONTHLY, IMPORTANT_DATES, FESTIVALS, MUHURTHAM, RASI_PALAN, LOCATION, THEME, ABOUT }
 
 enum class LoadStatus { LOADING, READY, ERROR }
 
@@ -208,6 +208,11 @@ class CalendarViewModel(private val container: AppContainer) : ViewModel() {
         return first
     }
 
+    /** Saved colour theme name (see AppTheme); applied by MainActivity before the first frame. */
+    fun saveTheme(name: String) {
+        container.settings.edit().putString(KEY_THEME, name).apply()
+    }
+
     fun navigate(to: Destination) {
         _destination.value = to
     }
@@ -230,6 +235,7 @@ class CalendarViewModel(private val container: AppContainer) : ViewModel() {
 
     companion object {
         private const val KEY_HELP_SEEN = "help_seen"
+        const val KEY_THEME = "theme"
 
         val Factory = viewModelFactory {
             initializer { CalendarViewModel((this[APPLICATION_KEY] as TamilCalendarApp).container) }

@@ -176,7 +176,7 @@ adb shell am start -n com.kamalsoft.tamilcalendar.tv/.MainActivity
 ### 4. Open it
 The app appears in **Apps** on the Google TV home screen ("தமிழ் நாள்காட்டி"). To keep it on the home row, highlight it,
 long-press **OK** and choose **Move** / **Add to favorites**. On first launch the remote help appears once. It's
-always available again under **? உதவி · Help** at the bottom of the menu.
+always available again under the **About (ⓘ)** tab.
 
 **Updating:** run the same `adb install -r …` with a newer APK. Settings and data are kept.
 When you're done, you can turn **USB/Wireless debugging** off again. The app keeps working.
@@ -187,14 +187,26 @@ channel or menu keys):
 
 | Remote | What it does |
 |---|---|
-| ▲ ▼ ◀ ▶ | Move between cards. ◀ from the left column opens the menu |
+| ▲ ▼ ◀ ▶ | Move between cards. ▲ from the top row goes to the tab bar, ◀ ▶ there switches sections |
 | OK | Open details for the focused card, or select |
 | ▼ from the bottom row of Today | Slide down to the **weather** page. ▲ slides back |
 | ◀ / இன்று / ▶ buttons | Previous day / today / next day |
-| BACK | Content → menu → Today → **press twice to exit** (a single stray press never closes the app) |
+| BACK | Content → tab bar → Today → **press twice to exit** (a single stray press never closes the app) |
 | CH ▲▼, 1–5, MENU | Optional shortcuts if your remote has them (next/previous day, jump to a section, help) |
 
 The app follows the date at midnight and when the TV wakes from standby, so it can stay open as a wall calendar.
+
+## Look & feel, navigation, location and themes
+The UI follows **Apple TV (tvOS)** conventions:
+* **Top tab bar:** இன்று Today · மாதம் Month · முக்கியம் Important Dates · பண்டிகை Festivals · முகூர்த்தம் Muhurtham ·
+  ராசி Rasi, plus round icons for **Location** (📍), **Theme** (🎨) and **About** (ⓘ). Moving focus along the tabs
+  switches the screen immediately. ▼ or OK enters the content, and ▲ from the top row returns to the tabs.
+* **Focus:** the focused card lifts (scale and deep shadow) with a soft sheen. Temple Night and High Contrast add an
+  accent ring for extra 10-foot visibility.
+* **Themes:** Graphite (Apple TV greys, the default), Temple Night, Peacock, Ocean, Jasmine (light) and High
+  Contrast. Each card previews the theme. OK applies it to every screen immediately, and it's remembered.
+* **About:** version, data sources and accuracy, remote help, and the GitHub link with a **QR code** to scan
+  from your phone.
 
 ## Weather
 The **Today** screen shows the current temperature in its header. Press **▼** for a full weather page: current
@@ -204,6 +216,35 @@ conditions, the next 12 hours, and 7 days (°F, Naperville).
   `data/remote/WeatherApi.kt` to the NWS API (api.weather.gov).
 * Refreshes every 30 minutes while visible. The last forecast is cached, so the screen still shows weather
   (marked "சேமித்த தகவல்", saved data) when the internet is down. A weather failure never affects the calendar.
+
+## Important dates & religious observances
+The **month grid** marks each day's observances with icons, and shows the day's main festival or observance in the cell.
+The **முக்கியம் · Important Dates** tab lists the selected month (◀ ▶ or CH▲▼ to change month).
+* **Hindu monthly observances, by deity:**
+  * Murugan: Sashti (Valarpirai, Sashti at sunset), Krithigai
+  * Shiva: Pradosham, Masa Sivaratri
+  * Perumal: Ekadasi, Thiruvonam, Purattasi Saturdays
+  * Vinayagar: Sankatahara Chathurthi
+  * Amman: Aadi Fridays, Pournami
+  * Also Amavasai
+* **Hindu festivals:** Skanda Sashti, Arudra Darshanam, Masi Magam, Aadi Pooram, Chitra Pournami, Hanuman Jayanthi,
+  Navaratri, Avani Avittam, Onam, Akshaya Tritiya, Holi, Raksha Bandhan, plus the existing list.
+* **Jain:** Mahavir Jayanti, Paryushan (Shvetambara), Samvatsari, Das Lakshana (Digambara), Mahavir Nirvana.
+  **Sikh:** Vaisakhi, Guru Nanak Gurpurab. **Buddhist:** Vesak. All of these come from the same panchangam engine.
+* **Christian:** Easter computus (Ash Wednesday → Pentecost, Orthodox Easter) plus fixed feasts (Epiphany, Annunciation,
+  Assumption, All Saints/Souls, Advent, Christmas).
+* **Jewish:** exact Hebrew-calendar arithmetic (Purim, Passover, Shavuot, Rosh Hashanah, Yom Kippur, Sukkot,
+  Hanukkah). Holidays begin at sundown the evening before.
+* **Islamic:** the month starts the day after the astronomical new moon if it occurs before sunset in Mecca
+  (Umm al-Qura style). This matches the Fiqh Council of North America and Saudi dates for 2025–2026 (Ramadan
+  18 Feb 2026, Eid al-Fitr 20 Mar 2026). Local moon-sighting communities may observe a day later, and the app says so.
+
+Tested reference dates (`TamilCalendarEngineTest`, `WorldReligionsTest`):
+* Islamic (2025): Ramadan 1 Mar, Eid al-Fitr 30 Mar, Eid al-Adha 6 Jun.
+* Jewish: Rosh Hashanah, Yom Kippur, Passover and Hanukkah for 2025 and 2026.
+* Christian: Easter 2025/2026 and Orthodox Easter 2026.
+* Jain (2026): Mahavir Jayanti 31 Mar, Paryushan 8–15 Sep.
+* Tamil: Soorasamharam 27 Oct 2025 (Chennai).
 
 ## Is the Panchangam real data?
 Yes, in the same sense as Drik Panchang or a printed Tamil calendar. **All** panchangams are computed from Sun/Moon
@@ -231,8 +272,9 @@ All focusable elements use `ui/components/TvFocusCard.kt`:
   render on API 28+, so the halo keeps focus visible on API 21–27 boxes.
 * OK/Enter fires on key-up (long-press fires on the first repeat). Arrow keys go to an optional
   `onDirectionalKey` handler first, then to Compose's spatial focus search.
-* BACK: content → drawer → Daily → exit. Entering the drawer always lands on the selected item.
-* Month grid: ▶ on the Saturday column moves to the next month. ◀ on Sunday opens the drawer.
+* BACK: content → tab bar → Today → exit. Entering the tab bar always lands on the current tab.
+* Month grid: ▶ on the Saturday column moves to the next month. Each day card lists that day's important dates
+  (two lines in 5-week months, one plus a "+N" count in 6-week months).
 
 ## Calendar conventions (read before comparing with printed calendars)
 * **Location**: Naperville, IL (41.75°N, 88.15°W, `America/Chicago`). All dates and times, including
