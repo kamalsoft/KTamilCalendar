@@ -34,6 +34,7 @@ import com.kamalsoft.tamilcalendar.tv.ui.components.DpadDirection
 import com.kamalsoft.tamilcalendar.tv.ui.components.Fmt
 import com.kamalsoft.tamilcalendar.tv.ui.components.TagIcons
 import com.kamalsoft.tamilcalendar.tv.ui.components.TvFocusCard
+import com.kamalsoft.tamilcalendar.tv.ui.components.staggeredEnter
 import com.kamalsoft.tamilcalendar.tv.ui.daily.LoadingState
 import com.kamalsoft.tamilcalendar.tv.ui.theme.TvColors
 import java.time.LocalDate
@@ -124,7 +125,7 @@ fun MonthlyScreen(
                                     false
                                 }
                             },
-                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            modifier = Modifier.weight(1f).fillMaxHeight().staggeredEnter(month, row + col),
                         )
                     }
                 }

@@ -28,6 +28,7 @@ import com.kamalsoft.tamilcalendar.tv.ui.components.DetailHost
 import com.kamalsoft.tamilcalendar.tv.ui.components.Fmt
 import com.kamalsoft.tamilcalendar.tv.ui.components.Pill
 import com.kamalsoft.tamilcalendar.tv.ui.components.TvFocusCard
+import com.kamalsoft.tamilcalendar.tv.ui.components.staggeredEnter
 import com.kamalsoft.tamilcalendar.tv.ui.components.rememberDetailHostState
 import com.kamalsoft.tamilcalendar.tv.ui.daily.LoadingState
 import com.kamalsoft.tamilcalendar.tv.ui.theme.TvColors
@@ -83,7 +84,7 @@ fun RasiPalanScreen(
                                         if (p.rasi == 0) entryFocus else self,
                                     )
                                 },
-                                modifier = Modifier.weight(1f).fillMaxHeight(),
+                                modifier = Modifier.weight(1f).fillMaxHeight().staggeredEnter(date, row + col),
                             )
                         }
                     }

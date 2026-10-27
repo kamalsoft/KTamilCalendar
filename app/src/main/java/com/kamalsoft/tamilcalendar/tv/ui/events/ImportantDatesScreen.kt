@@ -34,6 +34,8 @@ import com.kamalsoft.tamilcalendar.tv.domain.model.TamilDayData
 import com.kamalsoft.tamilcalendar.tv.domain.usecase.forDisplay
 import com.kamalsoft.tamilcalendar.tv.ui.components.Fmt
 import com.kamalsoft.tamilcalendar.tv.ui.components.TvFocusCard
+import com.kamalsoft.tamilcalendar.tv.ui.components.staggeredEnter
+import androidx.compose.foundation.layout.Box
 import com.kamalsoft.tamilcalendar.tv.ui.components.badgeRes
 import com.kamalsoft.tamilcalendar.tv.ui.components.iconRes
 import com.kamalsoft.tamilcalendar.tv.ui.daily.LoadingState
@@ -145,7 +147,9 @@ fun ImportantDatesScreen(
                 SectionTitle("இந்து · Hindu")
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(10.dp)) {
                     items(hindu.size) { i ->
-                        ItemRow(hindu[i], today, if (i == 0) entryFocus else null) { onOpenDate(hindu[i].date) }
+                        Box(Modifier.staggeredEnter(month, i)) {
+                            ItemRow(hindu[i], today, if (i == 0) entryFocus else null) { onOpenDate(hindu[i].date) }
+                        }
                     }
                 }
             }
@@ -161,7 +165,7 @@ fun ImportantDatesScreen(
                                 Text(e.text, style = MaterialTheme.typography.labelMedium, color = TvColors.Gold)
                                 e.note?.let { Text(it, style = MaterialTheme.typography.labelMedium, color = TvColors.TextDim) }
                             }
-                            is Entry.Row -> ItemRow(e.item, today, null) { onOpenDate(e.item.date) }
+                            is Entry.Row -> Box(Modifier.staggeredEnter(month, i + 2)) { ItemRow(e.item, today, null) { onOpenDate(e.item.date) } }
                         }
                     }
                 }

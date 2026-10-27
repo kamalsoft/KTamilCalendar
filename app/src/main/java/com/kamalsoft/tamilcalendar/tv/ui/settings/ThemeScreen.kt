@@ -5,7 +5,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,19 +39,22 @@ fun ThemeScreen(current: AppTheme, entryFocus: FocusRequester, onChoose: (AppThe
             "OK அழுத்தி தேர்வு செய்யவும் · Press OK to apply. The choice is remembered.",
             style = MaterialTheme.typography.bodySmall, color = TvColors.TextMuted,
         )
-        val rows = AppTheme.entries.chunked(3)
-        rows.forEach { row ->
-            Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                row.forEach { theme ->
-                    ThemeCard(
-                        theme = theme,
-                        isCurrent = theme == current,
-                        focusRequester = if (theme == current) entryFocus else null,
-                        onClick = { onChoose(theme) },
-                        modifier = Modifier.weight(1f).fillMaxHeight(),
-                    )
-                }
-                repeat(3 - row.size) { Box(Modifier.weight(1f)) }
+        // Ten themes: a scrolling 3-column grid; focus scrolls it (bring-into-view), padding leaves room for the lift.
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(12.dp),
+        ) {
+            items(AppTheme.entries.size) { i ->
+                val theme = AppTheme.entries[i]
+                ThemeCard(
+                    theme = theme,
+                    isCurrent = theme == current,
+                    focusRequester = if (theme == current) entryFocus else null,
+                    onClick = { onChoose(theme) },
+                    modifier = Modifier.fillMaxWidth().height(170.dp),
+                )
             }
         }
     }

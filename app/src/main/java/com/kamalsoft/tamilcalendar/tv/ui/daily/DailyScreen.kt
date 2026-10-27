@@ -1,6 +1,24 @@
 package com.kamalsoft.tamilcalendar.tv.ui.daily
 
 import androidx.compose.foundation.Image
+import com.kamalsoft.tamilcalendar.tv.ui.components.floating
+import com.kamalsoft.tamilcalendar.tv.ui.components.staggeredEnter
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.AnimatedContent
+import com.kamalsoft.tamilcalendar.tv.ui.components.iconRes
+import com.kamalsoft.tamilcalendar.tv.ui.components.badgeRes
+import com.kamalsoft.tamilcalendar.tv.domain.model.Religion
+import com.kamalsoft.tamilcalendar.tv.domain.model.ImportantDate
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
+import kotlinx.coroutines.delay
+import java.time.LocalDateTime
+import androidx.compose.runtime.produceState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
@@ -49,13 +67,15 @@ import com.kamalsoft.tamilcalendar.tv.domain.model.TamilDayData
 import com.kamalsoft.tamilcalendar.tv.domain.model.TamilNames
 import com.kamalsoft.tamilcalendar.tv.domain.model.TimingWindow
 import com.kamalsoft.tamilcalendar.tv.domain.model.WeatherState
+import com.kamalsoft.tamilcalendar.tv.ui.weather.Season
+import com.kamalsoft.tamilcalendar.tv.ui.weather.WeatherScene
 import com.kamalsoft.tamilcalendar.tv.ui.weather.WeatherSection
+import com.kamalsoft.tamilcalendar.tv.ui.weather.seasonFor
 import com.kamalsoft.tamilcalendar.tv.ui.weather.iconRes
 import com.kamalsoft.tamilcalendar.tv.ui.components.DetailContent
 import com.kamalsoft.tamilcalendar.tv.ui.components.DetailHost
 import com.kamalsoft.tamilcalendar.tv.ui.components.Fmt
 import com.kamalsoft.tamilcalendar.tv.ui.components.Pill
-import com.kamalsoft.tamilcalendar.tv.ui.components.TagChip
 import com.kamalsoft.tamilcalendar.tv.ui.components.TvFocusCard
 import com.kamalsoft.tamilcalendar.tv.ui.components.rememberDetailHostState
 import com.kamalsoft.tamilcalendar.tv.ui.theme.TvColors
@@ -131,10 +151,12 @@ fun DailyScreen(
                     HeroCard(
                         day = day,
                         isToday = day.date == today,
+                        zone = ZoneId.of(location.zoneId),
+                        season = seasonFor(day.date, location),
                         weather = weather,
                         focusRequester = entryFocus,
                         onClick = onOpenMonth,
-                        modifier = Modifier.weight(1f).fillMaxWidth().focusProperties { right = firstPanchangamCard },
+                        modifier = Modifier.weight(1f).fillMaxWidth().focusProperties { right = firstPanchangamCard }.staggeredEnter(Unit, 0),
                     )
                     Row(Modifier.fillMaxWidth().height(52.dp), horizontalArrangement = Arrangement.spacedBy(TvDimens.Gap)) {
                         DayButton("◀", onPreviousDay, Modifier.width(56.dp))
@@ -160,6 +182,7 @@ fun DailyScreen(
                     .fillMaxWidth()
                     .height(pageHeight)
                     .onFocusChanged { if (it.hasFocus) weatherPage = true },
+                active = weatherPage,
             )
         }
         DetailHost(details)
@@ -171,22 +194,48 @@ fun DailyScreen(
 private fun HeroCard(
     day: TamilDayData,
     isToday: Boolean,
+    zone: ZoneId,
+    season: Season,
     weather: WeatherState,
     focusRequester: FocusRequester,
     onClick: () -> Unit,
     modifier: Modifier,
 ) {
+    val now = rememberClock(zone)
     TvFocusCard(
         onClick = onClick,
         focusRequester = focusRequester,
         modifier = modifier,
     ) { focused ->
+        // Faint live weather behind the date (rain, stars, leaves…), the same scene as the weather page.
+        weather.report?.current?.let { c ->
+            WeatherScene(
+                condition = c.condition, isDay = c.isDay, season = season, hour = now.hour,
+                modifier = Modifier.matchParentSize(), density = 0.35f, alpha = 0.55f,
+            )
+        }
         Image(
             painter = painterResource(R.drawable.gopuram),
             contentDescription = null,
             modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp).size(150.dp).alpha(if (focused) 0.14f else 0.08f),
         )
-        Column(Modifier.fillMaxSize().padding(24.dp)) {
+        // Slide the card's contents left/right when the day changes (◀ ▶); the focusable card itself stays put.
+        AnimatedContent(
+            targetState = day,
+            transitionSpec = {
+                val dir = if (targetState.date > initialState.date) 1 else -1
+                (slideInHorizontally(tween(280)) { it / 6 * dir } + fadeIn(tween(280))) togetherWith
+                    (slideOutHorizontally(tween(220)) { -it / 6 * dir } + fadeOut(tween(180)))
+            },
+            contentKey = { it.date },
+            label = "heroDay",
+        ) { day ->
+        Column(Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 18.dp)) {
+            // Greeting + live clock: the card doubles as a wall clock.
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(greeting(now.hour), fontSize = 14.sp, color = TvColors.TextDim, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(Fmt.timeEn(now.toLocalTime()), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TvColors.Text, maxLines = 1)
+            }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
                     day.weekdayTa,
@@ -196,7 +245,7 @@ private fun HeroCard(
                 if (isToday) Pill("இன்று · Today", TvColors.Crimson)
             }
             Text("${Fmt.gregorian(day.date)} · ${Fmt.gregorianEn(day.date)}", style = MaterialTheme.typography.bodyMedium, color = TvColors.TextMuted)
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(6.dp))
             Text(day.tamilDate.displayTa, style = MaterialTheme.typography.displayMedium, color = TvColors.Gold)
             Text(
                 "${day.tamilDate.yearDisplayTa} · திருவள்ளுவர் ஆண்டு ${day.tamilDate.thiruvalluvarAandu}",
@@ -206,24 +255,22 @@ private fun HeroCard(
                 "${day.tamilDate.monthEn} ${day.tamilDate.day} · ${day.tamilDate.yearEn} · ${day.weekdayEn}",
                 style = MaterialTheme.typography.bodySmall, color = TvColors.TextDim,
             )
-            Spacer(Modifier.height(14.dp))
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                day.tags.forEach { TagChip(it) }
+            Spacer(Modifier.height(10.dp))
+            // The day's important dates (festivals, observances, other faiths, holidays) as chips.
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                val dates = day.importantDates
+                dates.take(4).forEach { ImportantDateChip(it) }
+                if (dates.size > 4) Pill("+${dates.size - 4}", TvColors.SurfaceSelected)
+                // School status (Naperville) isn't an "important date" but is useful on the day itself.
+                day.events.firstOrNull { it.kind == EventKind.SCHOOL && it.isHoliday }?.let {
+                    Pill("பள்ளி இல்லை · No school", TvColors.Amber.copy(alpha = 0.3f))
+                }
             }
             Spacer(Modifier.weight(1f))
-            day.events.take(3).forEach { e ->
-                val prefix = if (e.kind == EventKind.SCHOOL) "${e.region?.ta}: " else ""
-                Text(
-                    "• $prefix${e.titleTa}" + (e.detail?.let { "  ($it)" } ?: ""),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (e.isLocalHoliday) TvColors.CrimsonSoft else TvColors.GoldSoft,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis,
-                )
-            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // Glanceable weather; the full forecast is one ▼ away.
                 weather.report?.current?.let { c ->
-                    Image(painterResource(c.condition.iconRes(c.isDay)), contentDescription = c.condition.en, modifier = Modifier.size(28.dp))
+                    Image(painterResource(c.condition.iconRes(c.isDay)), contentDescription = c.condition.en, modifier = Modifier.size(28.dp).floating())
                     Text(" ${c.temperature.roundToInt()}°  ", style = MaterialTheme.typography.titleMedium, color = TvColors.Text, maxLines = 1)
                 }
                 Text(
@@ -231,6 +278,7 @@ private fun HeroCard(
                     style = MaterialTheme.typography.labelMedium, color = TvColors.TextDim, maxLines = 1,
                 )
             }
+        }
         }
     }
 }
@@ -256,6 +304,7 @@ private fun ColumnScope.PanchangamColumn(
 ) {
     val p = day.panchangam
     InfoCard(
+        order = 1,
         label = "திதி · Tithi · ${p.paksha.ta}", value = p.tithi.nameTa, sub = "${p.tithi.nameEn} · ${Fmt.untilEn(p.tithi.endsAt, day.date)}",
         accent = TvColors.Gold, show = show, focusRequester = firstCard,
         detail = DetailContent(
@@ -264,6 +313,7 @@ private fun ColumnScope.PanchangamColumn(
         ),
     )
     InfoCard(
+        order = 2,
         label = "நட்சத்திரம் · Nakshatram", value = p.nakshatram.nameTa, sub = "${p.nakshatram.nameEn} · ${Fmt.untilEn(p.nakshatram.endsAt, day.date)}",
         accent = TvColors.Gold, show = show,
         detail = DetailContent(
@@ -275,6 +325,7 @@ private fun ColumnScope.PanchangamColumn(
         ),
     )
     InfoCard(
+        order = 3,
         label = "யோகம் · Yogam", value = p.yogam.nameTa, sub = "${p.yogam.nameEn} · ${Fmt.untilEn(p.yogam.endsAt, day.date)}",
         accent = TvColors.Gold, show = show,
         detail = DetailContent(
@@ -283,6 +334,7 @@ private fun ColumnScope.PanchangamColumn(
         ),
     )
     InfoCard(
+        order = 4,
         label = "சூரியன் · Sun", value = "உதயம் ${Fmt.time(day.sunrise)}", sub = "Rise ${Fmt.timeEn(day.sunrise)} · Set ${Fmt.timeEn(day.sunset)}",
         accent = TvColors.Amber, show = show,
         detail = DetailContent(
@@ -294,6 +346,7 @@ private fun ColumnScope.PanchangamColumn(
         ),
     )
     InfoCard(
+        order = 5,
         label = "சந்திராஷ்டமம்", value = day.chandrashtamam.rasiTa,
         sub = "Chandrashtamam · ${TamilNames.rasis[day.chandrashtamam.rasi].second}",
         accent = TvColors.Crimson, show = show,
@@ -315,6 +368,7 @@ private fun ColumnScope.TimingColumn(day: TamilDayData, show: (DetailContent, Fo
     fun first(list: List<TimingWindow>) = list.firstOrNull()?.let { Fmt.range(it) } ?: "—"
     fun rest(list: List<TimingWindow>) = list.drop(1).joinToString(" · ") { Fmt.range(it) }.ifEmpty { null }
     InfoCard(
+        order = 2,
         label = "நல்ல நேரம் · Nalla Neram", value = first(t.nallaNeram), sub = rest(t.nallaNeram), accent = TvColors.Gold, show = show,
         detail = DetailContent(
             "நல்ல நேரம் · Nalla Neram",
@@ -323,14 +377,16 @@ private fun ColumnScope.TimingColumn(day: TamilDayData, show: (DetailContent, Fo
         ),
     )
     InfoCard(
+        order = 3,
         label = "கௌரி நல்ல நேரம் · Gowri", value = first(t.gowriNallaNeram), sub = rest(t.gowriNallaNeram), accent = TvColors.Gold, show = show,
         detail = DetailContent(
             "கௌரி நல்ல நேரம் · Gowri Nalla Neram", "பகல் கௌரி பஞ்சாங்கம் · Daytime Gowri Panchangam",
             t.gowriNallaNeram.map { "${it.gowri!!.ta} · ${it.gowri.en}" to "${Fmt.range(it)} · ${Fmt.timeEn(it.start)} – ${Fmt.timeEn(it.end)}" },
         ),
     )
-    listOf(t.rahuKalam to TvColors.Crimson, t.yamagandam to TvColors.Crimson, t.kuligai to TvColors.Amber).forEach { (w, color) ->
+    listOf(t.rahuKalam to TvColors.Crimson, t.yamagandam to TvColors.Crimson, t.kuligai to TvColors.Amber).forEachIndexed { i, (w, color) ->
         InfoCard(
+            order = 4 + i,
             label = "${w.type.ta} · ${w.type.en}", value = Fmt.range(w), sub = "${Fmt.timeEn(w.start)} – ${Fmt.timeEn(w.end)}",
             accent = color, show = show,
             detail = DetailContent("${w.type.ta} · ${w.type.en}", null, listOf("நேரம் · Time" to "${Fmt.range(w)} · ${Fmt.timeEn(w.start)} – ${Fmt.timeEn(w.end)}")),
@@ -340,6 +396,8 @@ private fun ColumnScope.TimingColumn(day: TamilDayData, show: (DetailContent, Fo
 
 @Composable
 private fun ColumnScope.InfoCard(
+    /** Position in the entrance ripple. */
+    order: Int,
     label: String,
     value: String,
     accent: Color,
@@ -354,7 +412,7 @@ private fun ColumnScope.InfoCard(
         onClick = { show(detail, self) },
         focusRequester = self,
         accent = accent,
-        modifier = Modifier.weight(1f).fillMaxWidth(),
+        modifier = Modifier.weight(1f).fillMaxWidth().staggeredEnter(Unit, order),
     ) {
         Row(Modifier.fillMaxSize()) {
             Box(
@@ -403,5 +461,44 @@ fun ErrorState(focusRequester: FocusRequester, onRetry: () -> Unit) {
                 Text("மீண்டும் முயற்சி · Retry", style = MaterialTheme.typography.titleMedium, color = TvColors.Text, modifier = Modifier.align(Alignment.Center))
             }
         }
+    }
+}
+
+/** Ticks once a minute, aligned to the minute boundary, in the location's time zone. */
+@Composable
+private fun rememberClock(zone: ZoneId): LocalDateTime {
+    val state = produceState(LocalDateTime.now(zone), zone) {
+        while (true) {
+            value = LocalDateTime.now(zone)
+            delay(60_000L - (System.currentTimeMillis() % 60_000L) + 50)
+        }
+    }
+    return state.value
+}
+
+private fun greeting(hour: Int): String = when (hour) {
+    in 4..11 -> "காலை வணக்கம்"
+    in 12..15 -> "மதிய வணக்கம்"
+    in 16..19 -> "மாலை வணக்கம்"
+    else -> "இனிய இரவு"
+}
+
+@Composable
+private fun ImportantDateChip(d: ImportantDate) {
+    val icon = d.tag?.badgeRes()
+        ?: d.religion?.takeIf { it != Religion.HINDU }?.iconRes()
+        ?: if (d.isHoliday) R.drawable.badge_holiday else R.drawable.ic_nav_festival
+    Row(
+        Modifier
+            .background(if (d.isHoliday) TvColors.Crimson.copy(alpha = 0.22f) else TvColors.MidnightDeep.copy(alpha = 0.55f), RoundedCornerShape(50))
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Image(painterResource(icon), contentDescription = null, modifier = Modifier.size(16.dp))
+        Text(
+            d.titleTa, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            color = if (d.isHoliday) TvColors.CrimsonSoft else TvColors.Text, modifier = Modifier.widthIn(max = 200.dp),
+        )
     }
 }

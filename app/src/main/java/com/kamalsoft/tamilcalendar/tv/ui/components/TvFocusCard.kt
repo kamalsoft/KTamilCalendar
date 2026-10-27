@@ -103,7 +103,9 @@ fun TvFocusCard(
         selected -> accent.copy(alpha = 0.45f)
         else -> Color.Transparent
     }
-    val sheen = TvColors.Text.copy(alpha = if (TvColors.palette.isLight) 0.0f else 0.07f)
+    // Breathing only while focused (the infinite transition is not composed otherwise: zero idle cost).
+    val breath = if (focused) rememberBreath() else 0f
+    val sheen = TvColors.Text.copy(alpha = if (TvColors.palette.isLight) 0.0f else 0.05f + 0.05f * breath)
     val shape = RoundedCornerShape(cornerRadius)
 
     Box(
@@ -156,7 +158,7 @@ fun TvFocusCard(
                 scaleX = scale
                 scaleY = scale
             }
-            .goldHalo(visible = focused && ring, color = accent, cornerRadius = cornerRadius)
+            .goldHalo(visible = focused && ring, color = accent, cornerRadius = cornerRadius, strength = 0.7f + 0.3f * breath)
             .shadow(
                 elevation, shape, clip = false,
                 ambientColor = if (ring) accent else Color.Black, spotColor = if (ring) accent else Color.Black,
@@ -177,13 +179,13 @@ fun TvFocusCard(
 }
 
 /** Three translucent strokes outside the card bounds: a cheap glow that renders on every API level. */
-private fun Modifier.goldHalo(visible: Boolean, color: Color, cornerRadius: Dp): Modifier =
+private fun Modifier.goldHalo(visible: Boolean, color: Color, cornerRadius: Dp, strength: Float = 1f): Modifier =
     if (!visible) this else drawBehind {
         val radius = cornerRadius.toPx()
         listOf(3.dp to 0.30f, 6.dp to 0.14f, 10.dp to 0.06f).forEach { (spread, alpha) ->
             val s = spread.toPx()
             drawRoundRect(
-                color = color.copy(alpha = alpha),
+                color = color.copy(alpha = alpha * strength),
                 topLeft = Offset(-s, -s),
                 size = Size(size.width + 2 * s, size.height + 2 * s),
                 cornerRadius = CornerRadius(radius + s),

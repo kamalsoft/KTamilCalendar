@@ -3,6 +3,39 @@
 A 10-foot, D-pad-only Tamil calendar and panchangam. It works fully offline: on first launch the app
 computes a year of data on the device from an astronomical engine and stores it in Room.
 
+## Demo
+
+![Tamil Calendar demo on Google TV](docs/demo.gif)
+
+▶️ **[Full demo video (MP4, 1 min 30 s)](docs/demo.mp4)**: Today screen, weather with animated forecast preview,
+Month grid with important dates, Festivals, Muhurtham, Rasi Palan, themes, About.
+Recorded on the Android TV emulator with the remote (D-pad only).
+
+## Features
+* **Panchangam:** Tamil date, tithi, nakshatram, yogam, Nalla Neram, Gowri, Rahu Kalam, Yamagandam, Kuligai and
+  Chandrashtamam, computed on the TV and verified against the Swiss Ephemeris.
+* **Opens where you are:** asks for location permission on first launch. If the TV has no location fix, it falls
+  back to an approximate city from the internet connection. You can also search for any city by typing.
+* **Important dates on every day:** Hindu festivals and deity observances (Murugan, Shiva, Perumal, Vinayagar,
+  Amman), Christian, Islamic, Jain, Sikh, Buddhist and Jewish dates, US/Illinois holidays and Naperville school days.
+* **Weather (English):** now, 12 hours, 7 days. **Animated scenes** follow the condition (sun, stars, clouds, rain,
+  storm, snow, fog), the time of day, and the season (autumn leaves, spring petals, winter sparkles). Focusing a day
+  previews that day's weather.
+* **Apple TV-style UI:** top tabs, lift-and-glow focus, card ripple entrances, live clock. **10 themes**
+  (Graphite, Temple Night, Peacock, Ocean, Jasmine, High Contrast, Kanchi Silk, Lotus, Banana Leaf, Saffron Dawn).
+* **Any screen from 480p to 8K:** the UI is drawn on a 960×540 design canvas scaled to the real screen. That fixes
+  boxes that report the wrong pixel density, and everything is vector art, so it stays sharp at 4K/8K. Tested at
+  720×480, 1280×720, 1920×1080 (mdpi and xhdpi), 3840×2160, 7680×4320 and 4:3.
+* **Bilingual:** Tamil with English throughout.
+
+## Disclaimer
+For information only. The panchangam is **calculated**, not issued by a religious authority. Confirm muhurtham and
+temple festival days with your priest or temple. Islamic dates are calculated and may differ by a day from local
+moon sighting. Weather comes from Open-Meteo, provided as-is without warranty. With your permission the TV's
+location is used; otherwise an approximate city from your internet connection (ipapi.co). It is stored only on the
+TV. No accounts, ads or analytics. Not affiliated with Apple, Google, the school districts, or any temple or
+government body. The app shows this on first launch and under **About (ⓘ)**.
+
 | | |
 |---|---|
 | minSdk / targetSdk / compileSdk | 21 / 30 / 34 |
@@ -203,8 +236,11 @@ The UI follows **Apple TV (tvOS)** conventions:
   switches the screen immediately. ▼ or OK enters the content, and ▲ from the top row returns to the tabs.
 * **Focus:** the focused card lifts (scale and deep shadow) with a soft sheen. Temple Night and High Contrast add an
   accent ring for extra 10-foot visibility.
-* **Themes:** Graphite (Apple TV greys, the default), Temple Night, Peacock, Ocean, Jasmine (light) and High
-  Contrast. Each card previews the theme. OK applies it to every screen immediately, and it's remembered.
+* **Themes:** Graphite (Apple TV greys, the default), Temple Night, Peacock, Ocean, Jasmine (light), High
+  Contrast, Kanchi Silk, Lotus, Banana Leaf and Saffron Dawn (light). Each card previews the theme. OK applies it
+  to every screen immediately, and it's remembered.
+* **Location:** auto-detected by default (device location with permission; otherwise approximate from the internet
+  connection). Choosing a city under 📍 turns auto-detect off, and **Use my location** turns it back on.
 * **About:** version, data sources and accuracy, remote help, and the GitHub link with a **QR code** to scan
   from your phone.
 

@@ -60,9 +60,24 @@ private fun sections(location: GeoLocation) = listOf(
     Section(
         "தரவு மூலங்கள் · Data sources",
         listOf(
-            "Weather & place search: Open-Meteo.com (NOAA models in the US).",
+            "Weather & place search: Open-Meteo.com (NOAA models in the US). Approximate location: ipapi.co.",
             "US federal / Illinois holidays: computed from the legal rules.",
             "School calendars: Naperville 203 and Indian Prairie 204 official 2026–27 calendars.",
+        ),
+    ),
+    Section(
+        "அறிவிப்பு · Disclaimer",
+        listOf(
+            "For information only. The panchangam is calculated, not issued by a religious authority: confirm muhurtham and temple festival days with your priest or temple.",
+            "Islamic dates are calculated and may differ by a day from local moon sighting. Weather is provided as-is, without warranty.",
+            "Not affiliated with Apple, Google, the school districts, or any temple or government body.",
+        ),
+    ),
+    Section(
+        "தனியுரிமை · Privacy",
+        listOf(
+            "Location: with permission, the TV's city-level location; otherwise an approximate city from the internet connection (ipapi.co). Stored only on this TV.",
+            "No account, no ads, no analytics. Network calls: Open-Meteo (weather, place search) and ipapi.co (approximate location).",
         ),
     ),
     Section(

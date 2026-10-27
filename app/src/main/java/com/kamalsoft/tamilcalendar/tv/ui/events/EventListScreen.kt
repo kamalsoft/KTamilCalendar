@@ -26,6 +26,8 @@ import com.kamalsoft.tamilcalendar.tv.domain.model.TamilNames
 import com.kamalsoft.tamilcalendar.tv.ui.components.Fmt
 import com.kamalsoft.tamilcalendar.tv.ui.components.Pill
 import com.kamalsoft.tamilcalendar.tv.ui.components.TvFocusCard
+import com.kamalsoft.tamilcalendar.tv.ui.components.staggeredEnter
+import androidx.compose.foundation.layout.Box
 import com.kamalsoft.tamilcalendar.tv.ui.daily.LoadingState
 import com.kamalsoft.tamilcalendar.tv.ui.theme.TvColors
 import java.time.LocalDate
@@ -53,7 +55,9 @@ fun EventListScreen(
             contentPadding = PaddingValues(vertical = 12.dp, horizontal = 16.dp),
         ) {
             itemsIndexed(events, key = { _, e -> "${e.date}-${e.titleEn}-${e.source}-${e.region}" }) { index, e ->
-                EventRow(e, isToday = today in e.date..(e.endDate ?: e.date), focusRequester = if (index == 0) entryFocus else null) { onOpenDate(e.date) }
+                Box(Modifier.staggeredEnter(Unit, index)) {
+                    EventRow(e, isToday = today in e.date..(e.endDate ?: e.date), focusRequester = if (index == 0) entryFocus else null) { onOpenDate(e.date) }
+                }
             }
         }
     }

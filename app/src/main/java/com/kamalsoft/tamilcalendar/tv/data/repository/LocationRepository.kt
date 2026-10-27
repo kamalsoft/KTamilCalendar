@@ -26,6 +26,11 @@ class LocationRepository(
         prefs.edit().putString(KEY, gson.toJson(location)).apply()
     }
 
+    /** Auto: follow where the TV is (default). Turned off when the user picks a place by hand. */
+    var autoDetect: Boolean
+        get() = prefs.getBoolean(KEY_AUTO, true)
+        set(value) = prefs.edit().putBoolean(KEY_AUTO, value).apply()
+
     suspend fun search(query: String): List<GeoLocation> = withContext(io) {
         api.search(query.trim()).results.orEmpty().mapNotNull { r ->
             val zone = r.timezone?.takeIf { runCatching { ZoneId.of(it) }.isSuccess } ?: return@mapNotNull null
@@ -49,5 +54,6 @@ class LocationRepository(
 
     private companion object {
         const val KEY = "location_json"
+        const val KEY_AUTO = "location_auto"
     }
 }

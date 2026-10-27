@@ -48,7 +48,9 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.kamalsoft.tamilcalendar.tv.R
+import com.kamalsoft.tamilcalendar.tv.ui.components.rememberBreath
 import com.kamalsoft.tamilcalendar.tv.ui.theme.TvColors
+import androidx.compose.ui.draw.shadow
 
 /** Short tab labels (the tab bar is one line, like tvOS). */
 val Destination.tabTa: String
@@ -159,6 +161,9 @@ private fun TabItem(
     content: @Composable (contentColor: Color) -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
+    // OK only counts when this tab saw the key going down, so a stray key-up (e.g. from a system dialog
+    // that just closed) can't trigger it.
+    var okDown by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(if (focused) 1.08f else 1f, tween(150), label = "tabScale")
     val bg by animateColorAsState(
         when {
@@ -168,6 +173,8 @@ private fun TabItem(
         },
         tween(150), label = "tabBg",
     )
+    // Focused tab glows softly, like the focused card (only composed while focused).
+    val breath = if (focused) rememberBreath() else 0f
     val contentColor = when {
         focused -> TvColors.Midnight
         selected -> TvColors.Text
@@ -179,17 +186,23 @@ private fun TabItem(
             .onFocusChanged {
                 if (it.isFocused && !focused) onFocused()
                 focused = it.isFocused
+                if (!it.isFocused) okDown = false
             }
             .onKeyEvent { e ->
                 val code = e.nativeKeyEvent.keyCode
                 val isOk = code == AndroidKeyEvent.KEYCODE_DPAD_CENTER || code == AndroidKeyEvent.KEYCODE_ENTER ||
                     code == AndroidKeyEvent.KEYCODE_NUMPAD_ENTER
-                if (isOk && e.type == KeyEventType.KeyUp) onClick()
+                if (isOk && e.type == KeyEventType.KeyDown) okDown = true
+                if (isOk && e.type == KeyEventType.KeyUp && okDown) {
+                    okDown = false
+                    onClick()
+                }
                 isOk
             }
             .focusable()
             .pointerInput(Unit) { detectTapGestures { onFocused(); onClick() } }
             .graphicsLayer { scaleX = scale; scaleY = scale }
+            .shadow(if (focused) (6 + 6 * breath).dp else 0.dp, if (round) CircleShape else RoundedCornerShape(50), clip = false)
             .background(bg, if (round) CircleShape else RoundedCornerShape(50))
             .then(if (round) Modifier.size(36.dp) else Modifier.height(36.dp).padding(horizontal = 12.dp)),
         contentAlignment = Alignment.Center,

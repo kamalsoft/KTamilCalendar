@@ -106,6 +106,49 @@ enum class AppTheme(val ta: String, val en: String, val palette: Palette) {
             focusRing = true,
         ),
     ),
+    /** Kanchipuram silk: deep maroon with temple gold. */
+    KANCHI_SILK(
+        "காஞ்சிப் பட்டு", "Kanchi Silk",
+        Palette(
+            background = Color(0xFF2A0A12), backgroundDeep = Color(0xFF14040A), backgroundMid = Color(0xFF3B0E1A),
+            surface = Color(0xFF451424), surfaceFocused = Color(0xFF6A2036), surfaceSelected = Color(0xFF55192D),
+            accent = Color(0xFFF2C14E), accentSoft = Color(0xFFE8B04A),
+            alert = Color(0xFFFF5C7A), alertSoft = Color(0xFFFF8BA0), amber = Color(0xFFF6A04D),
+            text = Color(0xFFFFF7EC), textMuted = Color(0xFFE9CFC2), textDim = Color(0xFFB8938A),
+            focusRing = true,
+        ),
+    ),
+    LOTUS(
+        "தாமரை", "Lotus",
+        Palette(
+            background = Color(0xFF1E1028), backgroundDeep = Color(0xFF0E0714), backgroundMid = Color(0xFF2A1638),
+            surface = Color(0xFF2E1A3D), surfaceFocused = Color(0xFF4A2B60), surfaceSelected = Color(0xFF3A2150),
+            accent = Color(0xFFFF8FC7), accentSoft = Color(0xFFFFB3D9),
+            alert = Color(0xFFFF5E78), alertSoft = Color(0xFFFF8C9E), amber = Color(0xFFFFB86B),
+            text = Color(0xFFFFF5FB), textMuted = Color(0xFFE2CBE8), textDim = Color(0xFFA88DB3),
+        ),
+    ),
+    BANANA_LEAF(
+        "வாழை இலை", "Banana Leaf",
+        Palette(
+            background = Color(0xFF0B1F12), backgroundDeep = Color(0xFF04100A), backgroundMid = Color(0xFF123020),
+            surface = Color(0xFF16351F), surfaceFocused = Color(0xFF24502F), surfaceSelected = Color(0xFF1C4128),
+            accent = Color(0xFFE9D66B), accentSoft = Color(0xFFF2E394),
+            alert = Color(0xFFFF6B57), alertSoft = Color(0xFFFF9585), amber = Color(0xFFF4A340),
+            text = Color(0xFFF4FFF2), textMuted = Color(0xFFC9E3C8), textDim = Color(0xFF8DAE8C),
+        ),
+    ),
+    SAFFRON_DAWN(
+        "காவி விடியல்", "Saffron Dawn (light)",
+        Palette(
+            background = Color(0xFFFFF1E0), backgroundDeep = Color(0xFFFFD9B0), backgroundMid = Color(0xFFFFE6C9),
+            surface = Color(0xFFFFFBF5), surfaceFocused = Color(0xFFFFE3C2), surfaceSelected = Color(0xFFFFEBD3),
+            accent = Color(0xFFC2410C), accentSoft = Color(0xFFD9620E),
+            alert = Color(0xFFB91C1C), alertSoft = Color(0xFFC53030), amber = Color(0xFFB45309),
+            text = Color(0xFF2D1A0C), textMuted = Color(0xFF5E4330), textDim = Color(0xFF85674F),
+            isLight = true,
+        ),
+    ),
     ;
 
     companion object {

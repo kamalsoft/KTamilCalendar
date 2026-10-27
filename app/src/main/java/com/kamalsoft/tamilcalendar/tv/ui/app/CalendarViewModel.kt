@@ -137,9 +137,62 @@ class CalendarViewModel(private val container: AppContainer) : ViewModel() {
 
     /** Switches every calculation (panchangam, holidays, weather) to [place] and returns to Today. */
     fun chooseLocation(place: GeoLocation) {
+        container.locations.autoDetect = false // a hand-picked place wins until "Use my location"
         container.changeLocation(place)
         _locationQuery.value = ""
         _destination.value = Destination.DAILY
+    }
+
+    // ------------------------------------------------------------------ auto location
+
+    val autoLocation: Boolean get() = container.locations.autoDetect
+
+    private val _locationStatus = MutableStateFlow<String?>(null)
+    /** Last detection result, shown on the Location screen. */
+    val locationStatus: StateFlow<String?> = _locationStatus.asStateFlow()
+
+    /** Emitted when the user asks for their location; the Activity handles the permission prompt. */
+    private val _locationRequests = kotlinx.coroutines.flow.MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val locationRequests: kotlinx.coroutines.flow.SharedFlow<Unit> = _locationRequests
+
+    fun useMyLocation() {
+        container.locations.autoDetect = true
+        _locationStatus.value = "இடம் கண்டறியப்படுகிறது… · Detecting your location…"
+        _locationRequests.tryEmit(Unit)
+    }
+
+    /**
+     * Detects the TV's location and switches to it. On launch ([userInitiated] = false) it only switches
+     * when the place really changed (> 25 km or another time zone), so an unchanged TV doesn't recompute.
+     */
+    fun detectLocation(userInitiated: Boolean) {
+        if (!container.locations.autoDetect) return
+        viewModelScope.launch {
+            val result = container.locationDetector.detect()
+            if (result == null) {
+                _locationStatus.value = "இடத்தைக் கண்டறிய முடியவில்லை · Couldn't detect the location — search for your city below"
+                return@launch
+            }
+            val current = session.value.location
+            val moved = distanceKm(current, result.location) > 25 || current.zoneId != result.location.zoneId
+            Log.i("CalendarViewModel", "Detected ${result.location.displayName} (${result.source}), moved=$moved, user=$userInitiated")
+            if (userInitiated || moved) container.changeLocation(result.location)
+            val how = if (result.source == com.kamalsoft.tamilcalendar.tv.data.location.LocationDetector.Source.DEVICE) {
+                "சாதன இருப்பிடம் · device location"
+            } else {
+                "இணைய இணைப்பு மூலம் தோராயமாக · approximate, from the internet connection"
+            }
+            _locationStatus.value = "✓ ${result.location.displayName} ($how)"
+        }
+    }
+
+    private fun distanceKm(a: GeoLocation, b: GeoLocation): Double {
+        val r = 6371.0
+        val dLat = Math.toRadians(b.latitude - a.latitude)
+        val dLon = Math.toRadians(b.longitude - a.longitude)
+        val h = Math.sin(dLat / 2).let { it * it } +
+            Math.cos(Math.toRadians(a.latitude)) * Math.cos(Math.toRadians(b.latitude)) * Math.sin(dLon / 2).let { it * it }
+        return 2 * r * Math.asin(Math.sqrt(h))
     }
 
     // ------------------------------------------------------------------ loading / dates

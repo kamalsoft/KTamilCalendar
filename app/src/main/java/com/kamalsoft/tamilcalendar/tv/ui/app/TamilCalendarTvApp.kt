@@ -5,6 +5,10 @@ import android.os.SystemClock
 import android.view.KeyEvent as AndroidKeyEvent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import com.kamalsoft.tamilcalendar.tv.ui.theme.ambientBackground
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -42,16 +46,16 @@ import com.kamalsoft.tamilcalendar.tv.ui.theme.TvColors
 import com.kamalsoft.tamilcalendar.tv.ui.theme.TvDimens
 import kotlinx.coroutines.delay
 
-private val HELP = DetailContent(
-    title = "ரிமோட் பயன்பாடு · Remote help",
-    subtitle = "D-pad, OK, BACK மட்டும் போதும்",
+/** Shown once on first launch (and kept in About). */
+private val DISCLAIMER = DetailContent(
+    title = "அறிவிப்பு · Disclaimer",
+    subtitle = "தகவலுக்காக மட்டும் · For information only",
     lines = listOf(
-        "▲ ▼ ◀ ▶" to "நகர்த்த · Move",
-        "OK" to "தேர்வு / விவரங்கள் · Select / details",
-        "▲ (மேல் வரிசை)" to "மேல் தாவல்கள் · Top tabs: ◀ ▶ to switch sections",
-        "▼ (இன்றைய திரை)" to "கீழே வானிலை · Weather below the calendar",
-        "BACK" to "தாவல்கள் → இன்று → இரண்டு முறை அழுத்தி வெளியேறு · Tabs → Today → press twice to exit",
-        "CH ▲▼ / 1–9 / MENU" to "ரிமோட்டில் இருந்தால்: நாள் மாற்ற / பிரிவுகள் · If your remote has them",
+        "பஞ்சாங்கம் · Panchangam" to "Calculated on this TV from astronomy; not a religious authority. Confirm muhurtham and temple festival days with your priest or temple.",
+        "பிற மதங்கள் · Other faiths" to "Islamic dates are calculated and may differ by a day from local moon sighting.",
+        "இடம் · Location" to "With your permission the TV's location is used; otherwise an approximate city from your internet connection (ipapi.co). It is stored only on this TV.",
+        "வானிலை · Weather" to "From Open-Meteo, provided as-is without warranty.",
+        "ரிமோட் · Remote" to "▲ for the top tabs · OK to select · BACK to go back. More under About (ⓘ).",
     ),
 )
 
@@ -76,6 +80,7 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
     val imperial by vm.imperialUnits.collectAsStateWithLifecycle()
     val locationQuery by vm.locationQuery.collectAsStateWithLifecycle()
     val locationSearch by vm.locationSearch.collectAsStateWithLifecycle()
+    val locationStatus by vm.locationStatus.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     val contentFocus = remember { FocusRequester() }
@@ -115,7 +120,7 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
     }
 
     LaunchedEffect(status) {
-        if (status == LoadStatus.READY && vm.consumeFirstLaunch()) overlay.show(HELP, contentFocus)
+        if (status == LoadStatus.READY && vm.consumeFirstLaunch()) overlay.show(DISCLAIMER, contentFocus)
     }
 
     // Confirm a location change and put focus back on Today, which is being recalculated for the new place.
@@ -155,7 +160,7 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
     Box(
         Modifier
             .fillMaxSize()
-            .background(TvColors.Background)
+            .ambientBackground()
             .onPreviewKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                 userKeyPresses++
@@ -202,81 +207,90 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
                     bottom = TvDimens.SafeVertical,
                 ),
         ) {
-            if (status == LoadStatus.ERROR) {
-                ErrorState(focusRequester = contentFocus, onRetry = { vm.retry(); focusContent() })
-            } else when (destination) {
-                Destination.DAILY -> DailyScreen(
-                    day = day,
-                    today = today,
-                    location = location,
-                    weather = weather,
-                    imperialUnits = imperial,
-                    entryFocus = contentFocus,
-                    onPreviousDay = { vm.shiftDay(-1) },
-                    onNextDay = { vm.shiftDay(1) },
-                    onToday = vm::goToday,
-                    onOpenMonth = { go(Destination.MONTHLY) },
-                )
-                Destination.MONTHLY -> MonthlyScreen(
-                    month = visibleMonth,
-                    days = month,
-                    today = today,
-                    selected = selectedDate,
-                    entryFocus = contentFocus,
-                    onPreviousMonth = { vm.shiftMonth(-1) },
-                    onNextMonth = { vm.shiftMonth(1) },
-                    onToday = vm::goToday,
-                    onOpenDate = { vm.openDate(it); focusContent() },
-                )
-                Destination.IMPORTANT_DATES -> ImportantDatesScreen(
-                    month = visibleMonth,
-                    days = month,
-                    today = today,
-                    entryFocus = contentFocus,
-                    onPreviousMonth = { vm.shiftMonth(-1) },
-                    onNextMonth = { vm.shiftMonth(1) },
-                    onOpenDate = { vm.openDate(it); focusContent() },
-                )
-                Destination.FESTIVALS -> EventListScreen(
-                    title = "பண்டிகைகள் & விடுமுறைகள் · Festivals & Holidays",
-                    subtitle = "அடுத்த 12 மாதங்கள் · Next 12 months · சிவப்பு / Red = local holiday · மஞ்சள் / Amber = school",
-                    events = festivals,
-                    today = today,
-                    entryFocus = contentFocus,
-                    onOpenDate = { vm.openDate(it); focusContent() },
-                )
-                Destination.MUHURTHAM -> EventListScreen(
-                    title = "சுப முகூர்த்த நாட்கள் · Subha Muhurtham",
-                    subtitle = "பஞ்சாங்க விதிப்படி கணிக்கப்பட்டவை · Computed by panchangam rules — confirm with your priest",
-                    events = muhurthams,
-                    today = today,
-                    entryFocus = contentFocus,
-                    onOpenDate = { vm.openDate(it); focusContent() },
-                )
-                Destination.RASI_PALAN -> RasiPalanScreen(
-                    date = selectedDate,
-                    palan = rasiPalan,
-                    entryFocus = contentFocus,
-                    onPreviousDay = { vm.shiftDay(-1) },
-                    onNextDay = { vm.shiftDay(1) },
-                )
-                Destination.THEME -> ThemeScreen(
-                    current = AppTheme.entries.firstOrNull { it.palette == TvColors.palette } ?: AppTheme.GRAPHITE,
-                    entryFocus = contentFocus,
-                    onChoose = { theme ->
-                        TvColors.palette = theme.palette
-                        vm.saveTheme(theme.name)
-                    },
-                )
-                Destination.ABOUT -> AboutScreen(location = location, entryFocus = contentFocus)
-                Destination.LOCATION -> LocationScreen(
-                    current = location,
-                    query = locationQuery,
-                    search = locationSearch,
-                    entryFocus = contentFocus,
-                    onQueryChange = vm::onLocationQueryChange,
-                    onChoose = vm::chooseLocation,
-                )
+            // Fade-and-rise on page change. Only the new page is composed (no cross-fade), so focus
+            // targets are never duplicated during the animation.
+            val enter = remember(destination) { Animatable(0f) }
+            LaunchedEffect(destination) { enter.animateTo(1f, tween(260)) }
+            Box(Modifier.fillMaxSize().graphicsLayer { alpha = enter.value; translationY = (1f - enter.value) * 14.dp.toPx() }) {
+                if (status == LoadStatus.ERROR) {
+                    ErrorState(focusRequester = contentFocus, onRetry = { vm.retry(); focusContent() })
+                } else when (destination) {
+                    Destination.DAILY -> DailyScreen(
+                        day = day,
+                        today = today,
+                        location = location,
+                        weather = weather,
+                        imperialUnits = imperial,
+                        entryFocus = contentFocus,
+                        onPreviousDay = { vm.shiftDay(-1) },
+                        onNextDay = { vm.shiftDay(1) },
+                        onToday = vm::goToday,
+                        onOpenMonth = { go(Destination.MONTHLY) },
+                    )
+                    Destination.MONTHLY -> MonthlyScreen(
+                        month = visibleMonth,
+                        days = month,
+                        today = today,
+                        selected = selectedDate,
+                        entryFocus = contentFocus,
+                        onPreviousMonth = { vm.shiftMonth(-1) },
+                        onNextMonth = { vm.shiftMonth(1) },
+                        onToday = vm::goToday,
+                        onOpenDate = { vm.openDate(it); focusContent() },
+                    )
+                    Destination.IMPORTANT_DATES -> ImportantDatesScreen(
+                        month = visibleMonth,
+                        days = month,
+                        today = today,
+                        entryFocus = contentFocus,
+                        onPreviousMonth = { vm.shiftMonth(-1) },
+                        onNextMonth = { vm.shiftMonth(1) },
+                        onOpenDate = { vm.openDate(it); focusContent() },
+                    )
+                    Destination.FESTIVALS -> EventListScreen(
+                        title = "பண்டிகைகள் & விடுமுறைகள் · Festivals & Holidays",
+                        subtitle = "அடுத்த 12 மாதங்கள் · Next 12 months · சிவப்பு / Red = local holiday · மஞ்சள் / Amber = school",
+                        events = festivals,
+                        today = today,
+                        entryFocus = contentFocus,
+                        onOpenDate = { vm.openDate(it); focusContent() },
+                    )
+                    Destination.MUHURTHAM -> EventListScreen(
+                        title = "சுப முகூர்த்த நாட்கள் · Subha Muhurtham",
+                        subtitle = "பஞ்சாங்க விதிப்படி கணிக்கப்பட்டவை · Computed by panchangam rules — confirm with your priest",
+                        events = muhurthams,
+                        today = today,
+                        entryFocus = contentFocus,
+                        onOpenDate = { vm.openDate(it); focusContent() },
+                    )
+                    Destination.RASI_PALAN -> RasiPalanScreen(
+                        date = selectedDate,
+                        palan = rasiPalan,
+                        entryFocus = contentFocus,
+                        onPreviousDay = { vm.shiftDay(-1) },
+                        onNextDay = { vm.shiftDay(1) },
+                    )
+                    Destination.THEME -> ThemeScreen(
+                        current = AppTheme.entries.firstOrNull { it.palette == TvColors.palette } ?: AppTheme.GRAPHITE,
+                        entryFocus = contentFocus,
+                        onChoose = { theme ->
+                            TvColors.palette = theme.palette
+                            vm.saveTheme(theme.name)
+                        },
+                    )
+                    Destination.ABOUT -> AboutScreen(location = location, entryFocus = contentFocus)
+                    Destination.LOCATION -> LocationScreen(
+                        current = location,
+                        query = locationQuery,
+                        search = locationSearch,
+                        entryFocus = contentFocus,
+                        autoDetect = vm.autoLocation,
+                        detectStatus = locationStatus,
+                        onUseMyLocation = vm::useMyLocation,
+                        onQueryChange = vm::onLocationQueryChange,
+                        onChoose = vm::chooseLocation,
+                    )
+                }
             }
         }
         DetailHost(overlay)

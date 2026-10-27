@@ -2,6 +2,7 @@ package com.kamalsoft.tamilcalendar.tv.di
 
 import android.content.Context
 import com.kamalsoft.tamilcalendar.tv.data.local.CalendarDatabase
+import com.kamalsoft.tamilcalendar.tv.data.location.LocationDetector
 import com.kamalsoft.tamilcalendar.tv.data.remote.GeocodingApi
 import com.kamalsoft.tamilcalendar.tv.data.remote.NetworkModule
 import com.kamalsoft.tamilcalendar.tv.data.remote.WeatherApi
@@ -27,6 +28,8 @@ class AppContainer(context: Context) {
     private val seedLock = Mutex()
 
     val settings = appContext.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+
+    val locationDetector = LocationDetector(appContext)
 
     val locations = LocationRepository(GeocodingApi.create(), settings, default = GeoLocation.NAPERVILLE, io = Dispatchers.IO)
 

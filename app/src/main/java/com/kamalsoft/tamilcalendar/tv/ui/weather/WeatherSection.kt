@@ -2,6 +2,11 @@ package com.kamalsoft.tamilcalendar.tv.ui.weather
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,6 +33,8 @@ import com.kamalsoft.tamilcalendar.tv.domain.model.GeoLocation
 import com.kamalsoft.tamilcalendar.tv.domain.model.WeatherCondition
 import com.kamalsoft.tamilcalendar.tv.domain.model.WeatherState
 import com.kamalsoft.tamilcalendar.tv.ui.components.TvFocusCard
+import com.kamalsoft.tamilcalendar.tv.ui.components.floating
+import com.kamalsoft.tamilcalendar.tv.ui.components.staggeredEnter
 import com.kamalsoft.tamilcalendar.tv.ui.theme.TvColors
 import com.kamalsoft.tamilcalendar.tv.ui.theme.TvDimens
 import java.time.LocalDate
@@ -66,13 +73,31 @@ fun WeatherSection(
     zone: ZoneId,
     entryFocus: FocusRequester,
     modifier: Modifier = Modifier,
+    /** False while the page is scrolled out of view: the animated scene stops drawing. */
+    active: Boolean = true,
 ) {
     val tempUnit = if (imperial) "°F" else "°C"
     val windUnit = if (imperial) "mph" else "km/h"
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(TvDimens.Gap)) {
+    // Focusing a forecast day previews that day's weather in the animated scene.
+    var preview by remember { mutableStateOf<DayForecast?>(null) }
+    val season = seasonFor(preview?.date ?: today, location)
+    val current = state.report?.current
+    Box(modifier) {
+    WeatherScene(
+        condition = preview?.condition ?: current?.condition ?: WeatherCondition.CLEAR,
+        isDay = if (preview != null) true else current?.isDay ?: true,
+        season = season,
+        hour = if (preview != null) 12 else java.time.LocalTime.now(zone).hour,
+        modifier = Modifier.matchParentSize(),
+        active = active && state.report != null,
+    )
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(TvDimens.Gap)) {
         val report = state.report
         Column {
-            Text("Weather · ${location.nameEn}", style = MaterialTheme.typography.headlineSmall, color = TvColors.Gold)
+            Text(
+                "Weather · ${location.nameEn}" + (preview?.let { " · ${it.date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.US)} forecast" } ?: ""),
+                style = MaterialTheme.typography.headlineSmall, color = TvColors.Gold,
+            )
             val status = when {
                 report == null && state.isLoading -> "Loading…"
                 report == null -> "No internet connection — will retry automatically"
@@ -95,9 +120,9 @@ fun WeatherSection(
 
         Row(Modifier.fillMaxWidth().height(200.dp), horizontalArrangement = Arrangement.spacedBy(TvDimens.Gap)) {
             val c = report.current
-            TvFocusCard(onClick = {}, focusRequester = entryFocus, modifier = Modifier.weight(1f).fillMaxHeight()) {
+            TvFocusCard(onClick = {}, onFocused = { preview = null }, focusRequester = entryFocus, modifier = Modifier.weight(1f).fillMaxHeight()) {
                 Row(Modifier.fillMaxSize().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Image(painterResource(c.condition.iconRes(c.isDay)), contentDescription = c.condition.en, modifier = Modifier.size(96.dp))
+                    Image(painterResource(c.condition.iconRes(c.isDay)), contentDescription = c.condition.en, modifier = Modifier.size(96.dp).floating())
                     Column(Modifier.padding(start = 20.dp)) {
                         Text(c.temperature.deg() + tempUnit.removePrefix("°"), fontSize = 52.sp, fontWeight = FontWeight.Bold, color = TvColors.Text)
                         Text(c.condition.en, style = MaterialTheme.typography.titleMedium, color = TvColors.Gold)
@@ -108,7 +133,7 @@ fun WeatherSection(
                     }
                 }
             }
-            TvFocusCard(onClick = {}, modifier = Modifier.weight(1.3f).fillMaxHeight()) {
+            TvFocusCard(onClick = {}, onFocused = { preview = null }, modifier = Modifier.weight(1.3f).fillMaxHeight()) {
                 Column(Modifier.fillMaxSize().padding(16.dp)) {
                     Text("Next 12 hours", style = MaterialTheme.typography.labelMedium, color = TvColors.Gold)
                     Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -126,18 +151,21 @@ fun WeatherSection(
         }
 
         Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            report.daily.take(7).forEach { d -> DayTile(d, isToday = d.date == today, modifier = Modifier.weight(1f).fillMaxHeight()) }
+            report.daily.take(7).forEachIndexed { i, d ->
+                DayTile(d, isToday = d.date == today, onFocused = { preview = d }, modifier = Modifier.weight(1f).fillMaxHeight().staggeredEnter(report.fetchedAt, i))
+            }
         }
         Text(
             "Source: Open-Meteo.com (NOAA models) · Press ▲ to return to the calendar",
             style = MaterialTheme.typography.labelMedium, color = TvColors.TextDim,
         )
     }
+    }
 }
 
 @Composable
-private fun DayTile(d: DayForecast, isToday: Boolean, modifier: Modifier) {
-    TvFocusCard(onClick = {}, selected = isToday, cornerRadius = 12.dp, modifier = modifier) {
+private fun DayTile(d: DayForecast, isToday: Boolean, onFocused: () -> Unit, modifier: Modifier) {
+    TvFocusCard(onClick = {}, onFocused = onFocused, selected = isToday, cornerRadius = 12.dp, modifier = modifier) {
         Column(Modifier.fillMaxSize().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceBetween) {
             Text(
                 if (isToday) "Today" else d.date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.US),

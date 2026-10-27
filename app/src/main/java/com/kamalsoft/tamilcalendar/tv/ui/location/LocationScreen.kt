@@ -62,6 +62,9 @@ fun LocationScreen(
     query: String,
     search: LocationSearch,
     entryFocus: FocusRequester,
+    autoDetect: Boolean,
+    detectStatus: String?,
+    onUseMyLocation: () -> Unit,
     onQueryChange: (String) -> Unit,
     onChoose: (GeoLocation) -> Unit,
 ) {
@@ -147,6 +150,27 @@ fun LocationScreen(
                     )
                 }
                 if (editing) Pill("Search ⏎", TvColors.SurfaceSelected)
+            }
+        }
+
+        // Follow the TV's location (default), or re-enable it after a hand-picked city.
+        TvFocusCard(
+            onClick = onUseMyLocation, selected = autoDetect, cornerRadius = 12.dp,
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+        ) {
+            Row(Modifier.fillMaxSize().padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                Image(
+                    painterResource(R.drawable.ic_nav_location), contentDescription = null,
+                    colorFilter = ColorFilter.tint(TvColors.Gold), modifier = Modifier.size(24.dp),
+                )
+                Column(Modifier.weight(1f).padding(start = 14.dp)) {
+                    Text("என் இடத்தைப் பயன்படுத்து · Use my location", style = MaterialTheme.typography.titleMedium, color = TvColors.Text, maxLines = 1)
+                    Text(
+                        detectStatus ?: if (autoDetect) "தானியங்கி: இயக்கத்தில் · Auto-detect is on" else "தானியங்கி: அணைக்கப்பட்டது · Auto-detect is off (city chosen by hand)",
+                        style = MaterialTheme.typography.labelMedium, color = TvColors.TextDim, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                if (autoDetect) Pill("✓ Auto", TvColors.SurfaceSelected)
             }
         }
 
