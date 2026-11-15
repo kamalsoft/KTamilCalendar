@@ -14,7 +14,7 @@ Kotlin, Jetpack Compose + `androidx.tv:tv-material`, MVVM, Room, Retrofit. minSd
 
 ## Map
 - `shared/` pure-JVM module used by the APK and the web server: `core/astro/` panchangam engine (Astro.kt math, TamilCalendarEngine.kt rules + festivals), `core/holidays/` US/IL holidays, world religions (Christian/Jewish/Islamic), `domain/model/` TamilDayData, AppSettings (+ filtering), LocationPolicy. Keep it free of Android imports.
-- `web/` static web app for GitHub Pages: `Site.kt` writes month JSON (`./gradlew :web:site`), the installable PWA lives in `src/main/resources/web/` (vanilla JS, no Compose). Deployed by `.github/workflows/pages.yml`.
+- `web/` static web app for GitHub Pages: the calendar engine is ported to JavaScript in `src/main/resources/web/engine/` (verified against the Kotlin engine by `web/tools/check_engine.mjs`); `app/` holds settings, weather, sloka/music, reminders; `app.js` is the UI. `engine/content.js` is generated from the Kotlin sources by `web/tools/gen_web_data.py`. Deployed by `.github/workflows/pages.yml`.
 - `data/` Room cache (DB version bump = wipe), repositories, location detector, weather
 - `di/` AppContainer + per-location CalendarSession
 - `ui/` app shell (TopTabBar for TV, CompactNav for phones, TamilCalendarTvApp), screens per folder, components (TvFocusCard, Motion, Text)

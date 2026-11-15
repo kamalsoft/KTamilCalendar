@@ -16,9 +16,9 @@ import java.time.LocalDate
 import java.time.YearMonth
 
 /**
- * Writes the calendar as static JSON for GitHub Pages: `data/<place>/<yyyy-MM>.json` per place and month.
- * Each file covers the month's grid (Sunday before the 1st to Saturday after the last day), so the page
- * needs one request per month. Usage: `Site <outputDir>`.
+ * Reference output for the browser engine: `data/<place>/<yyyy-MM>.json` per place and month, computed by the
+ * Kotlin engine. The page computes days itself; web/tools/check_engine.mjs compares the two field by field.
+ * Run with `./gradlew :web:referenceData`. Usage: `Site <outputDir>`.
  */
 fun main(args: Array<String>) {
     val out = File(args.single())

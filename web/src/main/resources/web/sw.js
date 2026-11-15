@@ -1,11 +1,24 @@
 // Offline copy for the installed app. Network first, so a deploy shows up on the next load;
 // the last good copy of each file is kept for when the phone is offline.
-const CACHE = 'ktamilcalendar-v2';
+const CACHE = 'ktamilcalendar-v3';
 const SHELL = [
   './',
   'index.html',
   'style.css',
   'app.js',
+  'app/store.js',
+  'app/weather.js',
+  'app/sloka.js',
+  'app/reminders.js',
+  'engine/astro.js',
+  'engine/civil.js',
+  'engine/content.js',
+  'engine/engine.js',
+  'engine/calendar.js',
+  'engine/holidays.js',
+  'engine/locations.js',
+  'engine/rasi.js',
+  'engine/school_calendars.json',
   'manifest.webmanifest',
   'apple-touch-icon.png',
   'icon-192.png',
@@ -32,7 +45,10 @@ self.addEventListener('fetch', (e) => {
   e.respondWith(
     fetch(e.request)
       .then((res) => {
-        if (res.ok) caches.open(CACHE).then((c) => c.put(e.request, res.clone()));
+        if (res.ok) {
+          const copy = res.clone(); // clone before the page reads the body
+          caches.open(CACHE).then((c) => c.put(e.request, copy));
+        }
         return res;
       })
       .catch(() => caches.match(e.request)),

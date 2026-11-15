@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Tamil Calendar · தமிழ் நாட்காட்டி</title>
-  <meta name="description" content="Tamil calendar and panchangam: tithi, nakshatram, yogam, Rahu Kalam and festivals.">
+  <meta name="description" content="Tamil calendar and panchangam: tithi, nakshatram, yogam, Rahu Kalam, Rasi Palan, weather and festivals.">
   <meta name="theme-color" content="#1C1C1E">
   <meta name="color-scheme" content="dark light">
   <!-- iPhone: "Add to Home Screen" in Safari opens a full-screen app without browser chrome -->
@@ -25,30 +25,26 @@
       <span class="ta">தமிழ் நாட்காட்டி</span>
       <span class="en">Tamil Calendar</span>
     </div>
-    <select id="place" aria-label="Location · இடம்">
-      <option value="chennai">சென்னை · Chennai</option>
-      <option value="singapore">சிங்கப்பூர் · Singapore</option>
-      <option value="colombo">கொழும்பு · Colombo</option>
-      <option value="naperville">நேப்பர்வில் · Naperville</option>
-      <option value="london">லண்டன் · London</option>
-    </select>
+    <button id="place-chip" class="place-chip" aria-label="Location · இடம்"></button>
   </header>
 
-  <main class="layout">
-    <section class="month" aria-label="Month · மாதம்">
-      <div class="bar">
-        <button id="prev" class="nav" aria-label="Previous month">‹</button>
-        <h1 id="monthTitle"></h1>
-        <button id="next" class="nav" aria-label="Next month">›</button>
-      </div>
-      <button id="today" class="today">இன்று · Today</button>
-      <div id="weekdays" class="weekdays"></div>
-      <div id="grid" class="grid"></div>
-      <p id="status" class="status" hidden></p>
-    </section>
-    <section id="detail" class="detail" aria-live="polite"></section>
-  </main>
+  <nav id="tabs" class="tabs" aria-label="Sections"></nav>
 
-  <script src="app.js"></script>
+  <main id="view" class="layout"></main>
+
+  <div id="banner" class="banner" role="status" hidden></div>
+
+  <div id="ambient" class="ambient" hidden aria-label="Ambient clock"></div>
+
+  <div id="disclaimer" class="disclaimer" role="dialog" aria-modal="true" hidden>
+    <div class="disclaimer-card">
+      <h2>மறுப்பு அறிவிப்பு · Disclaimer</h2>
+      <p>Panchangam values are computed from Sun and Moon positions and checked against the Swiss Ephemeris. Printed calendars in your area may differ by a few minutes or a day. Festival and holiday dates follow official lists where available; Islamic dates depend on local moon sighting.</p>
+      <p class="small">Your settings and places stay on this device.</p>
+      <button id="disclaimer-ok" class="pill on">Continue · தொடரவும்</button>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
 </body>
 </html>

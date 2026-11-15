@@ -283,24 +283,33 @@ About). Swipe to scroll, tap to open, and use the system back gesture.
 
 ## Web app (any browser, installable on iPhone)
 
-The same calendar runs as a static web app, published with GitHub Pages at
-**https://kamalsoft.github.io/KTamilCalendar/**. The Kotlin engine (`web/`) writes one JSON file per place and
-month into `web/build/site/data/`, and the page reads those files.
+The calendar also runs as a web app at **https://kamalsoft.github.io/KTamilCalendar/**. Everything is computed in
+the browser (`web/src/main/resources/web/engine/`), so any place and any date work. It is a static site, so it runs
+on GitHub Pages with no server.
+
+What it covers: Today (panchangam, timings, Chandrashtamam, daily sloka with read-aloud and generated temple music,
+weather), Month, Festivals & holidays, Important dates, Rasi Palan with the Rasi chart and gochara, Location (city
+search, "use my location", quick places, recent places), Theme (10 colour themes), Settings, About, and an ambient
+clock when idle.
 
 ```bash
-./gradlew :web:site        # builds web/build/site (app files + month data for 2026–2028)
-./gradlew :web:test        # JSON writer test
-cd web/build/site && python3 -m http.server 8080    # preview at http://localhost:8080
+./gradlew :web:site                                  # builds web/build/site
+cd web/build/site && python3 -m http.server 8080     # preview at http://localhost:8080
+./gradlew :web:test                                  # JSON writer test
+./gradlew :web:referenceData && node web/tools/check_engine.mjs chennai 2026-11   # JS engine == Kotlin engine
+node web/tools/gen_web_data.py                       # regenerate engine/content.js after changing names/texts/themes
 ```
 
 Deploys happen from `.github/workflows/pages.yml` on every push to `main` that touches the calendar code. One-time
 setup: repo Settings → Pages → Source: **GitHub Actions**.
 
-**On iPhone:** open the site in Safari → Share → **Add to Home Screen**. It opens full screen, like an app, and keeps
-the months you have loaded available offline.
+**On iPhone:** open the site in Safari → Share → **Add to Home Screen**. It opens full screen, like an app, and the
+loaded months and settings stay available offline.
 
-Places are the five on the Android Location screen's quick list (`GeoLocation.QUICK`). Dates outside 2026–2028 show
-"no data". Custom locations, Rasi Palan, reminders and settings are not in the web version yet.
+Limits of the web version:
+- Reminders, and the daily sloka music, only run while the page is open. A closed web page can't wake the phone.
+- City search, weather and "use my location" need an internet connection.
+- The audio and read-aloud depend on the device's voices and audio support.
 
 ## Look & feel, navigation, location and themes
 The UI follows **Apple TV (tvOS)** conventions:

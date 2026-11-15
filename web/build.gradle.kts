@@ -19,23 +19,29 @@ dependencies {
     testImplementation(libs.junit)
 }
 
-// The static site (app files + generated month data) that GitHub Pages serves: web/build/site.
+// The static site that GitHub Pages serves (web/build/site). The calendar itself runs in the browser;
+// school_calendars.json is the same file the Android app ships.
 val siteDir = layout.buildDirectory.dir("site")
 
 val copyAppFiles by tasks.registering(Copy::class) {
     from("src/main/resources/web")
+    from("../app/src/main/assets/school_calendars.json") { into("engine") }
     into(siteDir)
-}
-
-val generateMonthData by tasks.registering(JavaExec::class) {
-    dependsOn(copyAppFiles)
-    classpath = sourceSets.main.get().runtimeClasspath
-    mainClass.set("com.kamalsoft.tamilcalendar.tv.web.SiteKt")
-    args(siteDir.get().asFile.absolutePath)
 }
 
 tasks.register("site") {
     description = "Builds the GitHub Pages site into web/build/site."
     group = "build"
-    dependsOn(generateMonthData)
+    dependsOn(copyAppFiles)
+}
+
+// Reference output for tools/check_engine.mjs: the Kotlin engine's month files, used to verify the JS port.
+val referenceDir = layout.buildDirectory.dir("reference")
+
+val referenceData by tasks.registering(JavaExec::class) {
+    description = "Writes the Kotlin engine's month output to web/build/reference (for the JS parity check)."
+    group = "verification"
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("com.kamalsoft.tamilcalendar.tv.web.SiteKt")
+    args(referenceDir.get().asFile.absolutePath)
 }

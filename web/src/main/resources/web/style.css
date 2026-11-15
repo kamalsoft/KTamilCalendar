@@ -1,62 +1,55 @@
-/* Colours mirror the Android app's palettes (ui/theme/Theme.kt): graphite by default, cream in light mode. */
+/* Colours are set at runtime from the chosen theme (engine/content.js → app.js applyTheme). Defaults = Graphite. */
 :root {
-  --bg: #1C1C1E;
-  --surface: #2A2A2D;
-  --surface-hi: #48484A;
-  --accent: #FFD60A;
-  --alert: #FF453A;
-  --amber: #FF9F0A;
-  --text: #FFFFFF;
-  --muted: #D1D1D6;
-  --dim: #98989F;
-}
-
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
-    --bg: #FFF8E7;
-    --surface: #FFFFFF;
-    --surface-hi: #FFF1C9;
-    --accent: #9A6A00;
-    --alert: #B3122E;
-    --amber: #B45309;
-    --text: #2B2118;
-    --muted: #5C4D3C;
-    --dim: #7D6B57;
-  }
+  --bg: #1C1C1E; --bg-deep: #000000; --bg-mid: #0E0E10;
+  --surface: #2A2A2D; --surface-hi: #48484A; --surface-sel: #333336;
+  --accent: #FFD60A; --accent-soft: #FFE066;
+  --alert: #FF453A; --alert-soft: #FF6961; --amber: #FF9F0A;
+  --text: #FFFFFF; --muted: #D1D1D6; --dim: #98989F;
 }
 
 * { box-sizing: border-box; }
-
 html, body { margin: 0; background: var(--bg); color: var(--text); }
-
 body {
   font-family: "Noto Sans Tamil", system-ui, -apple-system, sans-serif;
   min-height: 100vh;
-  /* Keep content clear of the notch and home indicator in the installed (standalone) app. */
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   -webkit-text-size-adjust: 100%;
 }
+button, select, input { font: inherit; color: inherit; }
+a { color: var(--accent); }
+small { color: var(--dim); }
+.small { font-size: 13px; color: var(--dim); margin: 6px 0; }
+.error { color: var(--alert); }
+.page { margin: 6px 0 10px; font-size: 20px; }
+.pre { white-space: pre-line; margin: 4px 0 10px; font-size: 14px; }
+.alert-text { color: var(--alert); }
+.good { color: var(--accent); }
+.bad { color: var(--alert); }
+.mixed { color: var(--amber); }
 
-button, select { font: inherit; color: inherit; }
-
-.top {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 12px 16px; border-bottom: 1px solid var(--surface);
-}
-.brand { display: flex; flex-direction: column; line-height: 1.2; }
+/* ---- header and tabs */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--surface); }
+.brand { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
 .brand .ta { font-size: 16px; font-weight: 700; color: var(--accent); white-space: nowrap; }
 .brand .en { font-size: 12px; color: var(--dim); }
-#place {
-  background: var(--surface); border: 1px solid var(--surface-hi); border-radius: 10px;
-  padding: 8px 10px; min-width: 0; max-width: 58%; text-overflow: ellipsis;
+.place-chip {
+  background: var(--surface); border: 1px solid var(--surface-hi); border-radius: 999px;
+  padding: 8px 14px; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;
 }
+.tabs { display: flex; gap: 8px; overflow-x: auto; padding: 10px 16px; scrollbar-width: none; border-bottom: 1px solid var(--surface); }
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  flex: none; background: transparent; border: 1px solid var(--surface-hi); border-radius: 12px; padding: 6px 12px;
+  cursor: pointer; font-size: 14px; line-height: 1.2; text-align: center;
+}
+.tab small { display: block; font-size: 10px; }
+.tab.on { border-color: var(--accent); color: var(--accent); }
 
-/* minmax(0, …) and min-width: 0 stop long Tamil labels from widening the page past the screen. */
+/* ---- layout */
 .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 12px 16px 32px; max-width: 1100px; margin: 0 auto; }
-.month, .detail { min-width: 0; }
+.layout > * { min-width: 0; }
 @media (min-width: 900px) {
-  .layout { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; }
-  .detail { position: sticky; top: 16px; }
+  .layout.today-wide { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; }
 }
 
 .bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -69,16 +62,22 @@ button, select { font: inherit; color: inherit; }
   margin: 10px 0; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--accent);
   background: transparent; color: var(--accent); cursor: pointer; font-size: 14px;
 }
+.row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+.row.wrap { flex-wrap: wrap; }
+.pill {
+  background: var(--surface); border: 1px solid var(--surface-hi); border-radius: 999px; padding: 7px 14px;
+  cursor: pointer; font-size: 14px;
+}
+.pill.on { border-color: var(--accent); color: var(--accent); }
 
+/* ---- month grid */
 .weekdays, .grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
 .weekdays { text-align: center; margin-bottom: 4px; }
 .weekdays div { display: flex; flex-direction: column; font-size: 12px; color: var(--muted); }
 .weekdays small { font-size: 10px; color: var(--dim); }
-
 .cell {
   min-height: 64px; padding: 6px 4px; border-radius: 10px; border: 1px solid transparent;
-  background: var(--surface); display: flex; flex-direction: column; align-items: center; gap: 2px;
-  cursor: pointer; touch-action: manipulation;
+  background: var(--surface); display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; touch-action: manipulation;
 }
 .cell .g { font-size: 16px; font-weight: 600; }
 .cell .t { font-size: 11px; color: var(--accent); }
@@ -91,37 +90,120 @@ button, select { font: inherit; color: inherit; }
 .cell.today { border-color: var(--accent); }
 .cell.selected { background: var(--surface-hi); }
 
-.status { color: var(--dim); text-align: center; }
-
-.detail {
-  background: var(--surface); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 14px;
-}
-.detail:empty { display: none; }
+/* ---- detail cards */
+.detail { background: var(--surface); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
 .detail h2 { margin: 0; font-size: 20px; }
-.detail .en-date { margin: 0; color: var(--dim); font-size: 13px; }
-.detail .ta-date { margin: 2px 0 0; color: var(--accent); font-size: 15px; }
 .detail h3 { margin: 0 0 6px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
-
+.ta-date { margin: 2px 0 0; color: var(--accent); font-size: 15px; }
 .chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
-.chip {
-  font-size: 13px; padding: 4px 10px; border-radius: 999px; background: var(--surface-hi); color: var(--text);
-}
+.chip { font-size: 13px; padding: 4px 10px; border-radius: 999px; background: var(--surface-hi); }
 .chip.holiday { background: var(--alert); color: #FFFFFF; }
-
 .facts { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .facts div { background: var(--bg); border-radius: 10px; padding: 8px 10px; min-width: 0; overflow-wrap: anywhere; }
 .facts dt { font-size: 12px; color: var(--dim); }
 .facts dd { margin: 2px 0 0; font-size: 14px; }
-.facts small { color: var(--dim); }
-
 .timings { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .timings li { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
 .timings li span { min-width: 0; overflow-wrap: anywhere; }
 .timings time { color: var(--muted); white-space: nowrap; }
-.timings .auspicious { color: var(--accent); }
-.timings .inauspicious { color: var(--alert); }
-.timings .mixed { color: var(--amber); }
-
 .warn { margin: 0; font-size: 14px; color: var(--amber); }
+.small-detail { margin-top: 12px; }
 
-.error { color: var(--alert); }
+/* ---- sloka */
+.sloka .sloka-title { margin: 0; font-weight: 600; color: var(--accent); }
+.sloka .sloka-text { margin: 6px 0; font-size: 15px; line-height: 1.7; }
+.sloka .sloka-meaning { margin: 0 0 8px; color: var(--muted); font-size: 14px; }
+
+/* ---- weather, with animated scenes */
+.weather { position: relative; overflow: hidden; border-radius: 16px; padding: 16px; background: linear-gradient(160deg, var(--surface), var(--bg-mid)); }
+.weather h3 { margin: 12px 0 6px; font-size: 13px; color: var(--muted); }
+.wx-now b { font-size: 36px; }
+.wx-now span { display: block; font-size: 16px; }
+.wx-list { list-style: none; margin: 0; padding: 0; display: flex; gap: 8px; overflow-x: auto; }
+.wx-list.days { flex-direction: column; gap: 4px; }
+.wx-list li { display: flex; flex-direction: column; align-items: center; min-width: 64px; font-size: 13px; }
+.wx-list.days li { flex-direction: row; justify-content: space-between; min-width: 0; }
+.scene-rain { background: linear-gradient(160deg, #1d2a3a, var(--bg-mid)); }
+.scene-storm { background: linear-gradient(160deg, #1a1a2e, #2b1d3f); }
+.scene-snow { background: linear-gradient(160deg, #39516b, var(--bg-mid)); }
+.scene-fog { background: linear-gradient(160deg, #3b3f46, var(--bg-mid)); }
+.scene-sun { background: linear-gradient(160deg, #5a4a12, var(--bg-mid)); }
+.scene-stars { background: linear-gradient(160deg, #0b1030, #000); }
+.particles { position: absolute; inset: 0; pointer-events: none; }
+.particles i { position: absolute; top: -10%; width: 8px; height: 8px; border-radius: 50%; opacity: .7; animation: fall 9s linear infinite; }
+.particles.autumn i { background: var(--amber); border-radius: 0 60% 0 60%; }
+.particles.spring i { background: #f7b6c9; }
+.particles.winter i { background: #ffffff; width: 5px; height: 5px; box-shadow: 0 0 6px #fff; }
+@keyframes fall { from { transform: translateY(0) rotate(0); } to { transform: translateY(260px) rotate(360deg); } }
+.weather:not(.animated) .particles { display: none; }
+
+/* ---- rasi */
+.chart { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.chart-cell, .chart-centre {
+  aspect-ratio: 1 / 1; border-radius: 10px; background: var(--surface); border: 1px solid var(--surface-hi);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px; cursor: pointer; padding: 2px;
+}
+.chart-cell.on { border-color: var(--accent); }
+.chart-cell b { color: var(--accent); font-size: 12px; }
+.chart-centre { background: transparent; border: none; }
+.rasi-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.rasi-row { background: var(--surface); border-radius: 12px; padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; }
+.rasi-row small { grid-column: 1 / -1; }
+.rasi-row.good b { color: var(--accent); }
+.rasi-row.caution b { color: var(--alert); }
+.rasi-row.chandrashtamam b { color: var(--amber); }
+
+/* ---- lists */
+.events { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.event { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; background: var(--surface); border-radius: 12px; padding: 10px 12px; }
+.event time { color: var(--dim); font-size: 13px; }
+.event.holiday time, .event.holiday span { color: var(--alert); }
+.event span b { font-weight: 600; }
+.search { display: flex; gap: 8px; margin: 8px 0; }
+.search input { flex: 1; min-width: 0; background: var(--surface); border: 1px solid var(--surface-hi); border-radius: 12px; padding: 10px 12px; }
+.results { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.result { width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--surface-hi); border-radius: 12px; padding: 10px 12px; cursor: pointer; display: flex; flex-direction: column; }
+.theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.theme-card { border-radius: 14px; padding: 14px; border: 2px solid transparent; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 8px; }
+.theme-card.on { border-color: var(--accent); }
+.swatch { display: inline-block; width: 22px; height: 22px; border-radius: 50%; margin-right: 4px; }
+
+/* ---- settings */
+.group { background: var(--surface); border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.group h3 { margin: 0; font-size: 14px; color: var(--muted); }
+.toggle { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+.toggle input { width: 20px; height: 20px; accent-color: var(--accent); }
+.field { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 15px; }
+.field select { background: var(--bg); border: 1px solid var(--surface-hi); border-radius: 8px; padding: 6px 8px; max-width: 60%; }
+
+/* ---- ambient clock */
+.ambient {
+  position: fixed; inset: 0; z-index: 50; background: radial-gradient(ellipse at 50% 30%, var(--bg-mid), var(--bg-deep));
+  display: flex; align-items: center; justify-content: center; text-align: center; cursor: pointer;
+}
+.ambient[hidden] { display: none; }
+.amb-inner { display: flex; flex-direction: column; gap: 10px; padding: 24px; }
+.amb-clock { font-size: 15vmin; font-weight: 200; color: var(--accent); line-height: 1; }
+.amb-date { font-size: 4vmin; color: var(--text); }
+.amb-line { font-size: 3vmin; color: var(--muted); }
+.amb-tap { font-size: 2.2vmin; color: var(--dim); margin-top: 16px; }
+.ambient .amb-inner { animation: drift 40s ease-in-out infinite alternate; }
+@keyframes drift { from { transform: translate(-6px, -4px); } to { transform: translate(6px, 4px); } }
+
+/* ---- banner, disclaimer */
+.banner {
+  position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 40;
+  background: var(--surface-hi); color: var(--text); border-radius: 14px; padding: 12px 14px; box-shadow: 0 6px 24px #0008;
+}
+.banner[hidden] { display: none; }
+.disclaimer { position: fixed; inset: 0; z-index: 60; background: #000a; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.disclaimer[hidden] { display: none; }
+.disclaimer-card { background: var(--surface); border-radius: 18px; padding: 20px; max-width: 480px; display: flex; flex-direction: column; gap: 10px; }
+.disclaimer-card h2 { margin: 0; font-size: 18px; }
+.disclaimer-card .pill { align-self: flex-end; }
+
+/* ---- phone-width guard: long Tamil labels must not widen the page */
+@media (max-width: 480px) {
+  .facts { grid-template-columns: 1fr; }
+  .event { grid-template-columns: 80px minmax(0, 1fr); }
+}
