@@ -182,6 +182,8 @@ class TamilCalendarEngine(
             moonRasiEndsAt = endOf(c.sunriseJd, ((moonRasi + 1) % 12) * 30.0, Astro::moonSidereal, maxDays = 3.0),
             sunRasi = Astro.floorDiv(Astro.sunSidereal(c.sunriseJd), 30.0),
             lagnam = lagnaSegments(c.sunriseJd, next.sunriseJd),
+            karanam = Astro.floorDiv(Astro.elongation(c.sunriseJd), 6.0),
+            sraardhaTithi = sraardhaTithiOf(c.date),
         )
 
         val timings = timingsFor(c.date, sunrise, sunset)
@@ -263,6 +265,17 @@ class TamilCalendarEngine(
         Astro.findCrossing(fromJd, maxDays, 0.25, target, angle)?.let {
             LocalDateTime.ofInstant(Astro.instantOf(it), zone)
         }
+
+    /**
+     * Sraardha tithi (docs/BACKLOG.md item 1): the tithi that covers the whole window 13:30–16:00 local, so it
+     * is the same at both ends of it. Amavasai is not used, and no tithi covering the window gives null.
+     */
+    private fun sraardhaTithiOf(date: LocalDate): Int? {
+        fun tithiAt(time: LocalTime): Int =
+            Astro.floorDiv(Astro.elongation(Astro.julianDay(date.atTime(time).atZone(zone).toInstant())), 12.0)
+        val start = tithiAt(LocalTime.of(13, 30))
+        return if (start == tithiAt(LocalTime.of(16, 0)) && start != 29) start else null
+    }
 
     /**
      * The rising signs from sunrise to the next sunrise. The ascendant is sampled every 10 minutes (a sign takes
@@ -532,7 +545,7 @@ class TamilCalendarEngine(
 
     companion object {
         /** Engine output version; bump to force the offline DB to regenerate. */
-        const val VERSION = 4
+        const val VERSION = 5
 
         private const val NAK_SPAN = 360.0 / 27.0
         private const val LAGNA_STEP_DAYS = 10.0 / 1440.0

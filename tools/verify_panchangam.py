@@ -78,3 +78,13 @@ for r in rows:
         else: lagna_miss.append((r["date"], rasi))
 a = [abs(x) for x in lagna_err]
 print(f"lagna     n={len(lagna_err):4d}  mean|Δ|={statistics.mean(a):5.2f} min  max|Δ|={max(a):5.2f} min  not found={len(lagna_miss)} {lagna_miss[:4]}")
+
+# Sraardha tithi: the tithi that is the same at 13:30 and 16:00 local (Amavasai excluded), else none (-1).
+def tithi_at(date, h, m): return int(elong(jd_of(dt.datetime.combine(date, dt.time(h, m), TZ))) // 12)
+sr_bad = []
+for r in rows:
+    date = dt.date.fromisoformat(r["date"])
+    a, b = tithi_at(date, 13, 30), tithi_at(date, 16, 0)
+    want = a if a == b and a != 29 else -1
+    if int(r["sraardha"]) != want: sr_bad.append((r["date"], r["sraardha"], want))
+print(f"sraardha  days={len(rows)}  mismatches={len(sr_bad)} {sr_bad[:4]}")

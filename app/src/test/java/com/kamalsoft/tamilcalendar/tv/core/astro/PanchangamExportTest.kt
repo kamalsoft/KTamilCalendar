@@ -15,14 +15,14 @@ class PanchangamExportTest {
         val from = LocalDate.now()
         val days = TamilCalendarEngine(GeoLocation.NAPERVILLE, TimingConvention.SUNRISE_BASED).compute(from, from.plusDays(364))
         File(path!!).printWriter().use { w ->
-            w.println("date,sunrise,sunset,tithi,tithiEnd,nak,nakEnd,yoga,yogaEnd,tmonth,tday,lagna")
+            w.println("date,sunrise,sunset,tithi,tithiEnd,nak,nakEnd,yoga,yogaEnd,tmonth,tday,lagna,karanam,sraardha")
             days.forEach { d ->
                 val p = d.panchangam
                 w.println(
                     listOf(
                         d.date, d.sunrise, d.sunset, p.tithi.index, p.tithi.endsAt, p.nakshatram.index, p.nakshatram.endsAt,
                         p.yogam.index, p.yogam.endsAt, d.tamilDate.monthIndex, d.tamilDate.day,
-                        p.lagnam.joinToString(";") { "${it.rasi}@${it.start}" },
+                        p.lagnam.joinToString(";") { "${it.rasi}@${it.start}" }, p.karanam, p.sraardhaTithi ?: -1,
                     ).joinToString(","),
                 )
             }

@@ -61,6 +61,8 @@ class CalendarMapper(
         chandrashtamaStars = d.chandrashtamam.nakshatras.joinToString(","),
         tags = (d.tags - DayTag.GOVT_HOLIDAY - DayTag.SCHOOL_HOLIDAY).joinToString(",") { it.name },
         lagnam = d.panchangam.lagnam.joinToString(",") { "${it.rasi}@${it.start.toEpoch()}" },
+        karanam = d.panchangam.karanam,
+        sraardhaTithi = d.panchangam.sraardhaTithi ?: -1,
     )
 
     fun toTimingEntities(d: TamilDayData): List<TimingEntity> = d.timings.all().map {
@@ -118,6 +120,8 @@ class CalendarMapper(
                     val (rasi, epoch) = s.split('@')
                     LagnaSegment(rasi.toInt(), LocalDateTime.ofInstant(Instant.ofEpochSecond(epoch.toLong()), zone))
                 },
+                karanam = e.karanam,
+                sraardhaTithi = e.sraardhaTithi.takeIf { it >= 0 },
             ),
             timings = DayTimings(
                 nallaNeram = windows.filter { it.type == TimingType.NALLA_NERAM },

@@ -104,6 +104,10 @@ data class Panchangam(
     val sunRasi: Int,
     /** The rising signs (Lagna) from sunrise to the next sunrise, in order. */
     val lagnam: List<LagnaSegment> = emptyList(),
+    /** Karanam at sunrise, index 0..59 (see [DayRules.karanaName]). */
+    val karanam: Int = 0,
+    /** Tithi (0..28, Amavasai excluded) that covers the whole Sraardha window, or null. */
+    val sraardhaTithi: Int? = null,
 ) {
     val moonRasiTa: String get() = TamilNames.rasis[moonRasi].first
     val moonRasiEn: String get() = TamilNames.rasis[moonRasi].second

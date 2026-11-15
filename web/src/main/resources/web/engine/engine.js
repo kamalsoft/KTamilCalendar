@@ -68,6 +68,8 @@ export class TamilCalendarEngine {
       moonRasiEndsAt: this.endOf(c.sunriseJd, ((moonRasi + 1) % 12) * 30, A.moonSidereal, 3),
       sunRasi: A.floorDiv(A.sunSidereal(c.sunriseJd), 30),
       lagnam: this.lagnaSegments(c.sunriseJd, next.sunriseJd),
+      karanam: A.floorDiv(A.elongation(c.sunriseJd), 6),
+      sraardhaTithi: this.sraardhaTithiOf(c.day),
     };
 
     const timings = this.timingsFor(c.day, sunrise, sunset);
@@ -144,6 +146,13 @@ export class TamilCalendarEngine {
   endOf(fromJd, target, angle, maxDays = 2) {
     const t = A.findCrossing(fromJd, maxDays, 0.25, target, angle);
     return t === null ? null : this.localDateTime(t);
+  }
+
+  /** Sraardha tithi: the tithi that covers the whole window 13:30–16:00 local, Amavasai excluded (see Kotlin). */
+  sraardhaTithiOf(day) {
+    const tithiAt = (sec) => A.floorDiv(A.elongation(A.julianDay(zonedMs(day, sec, this.zone))), 12);
+    const start = tithiAt(13 * 3600 + 30 * 60);
+    return start === tithiAt(16 * 3600) && start !== 29 ? start : null;
   }
 
   /** The rising signs from sunrise to the next sunrise (same scan as Kotlin's lagnaSegments). */
@@ -334,7 +343,7 @@ export class TamilCalendarEngine {
   }
 }
 
-function tithiNamesOf(index) {
+export function tithiNamesOf(index) {
   if (index === 14) return ['பௌர்ணமி', 'Pournami'];
   if (index === 29) return ['அமாவாசை', 'Amavasai'];
   return names.tithis[index % 15];

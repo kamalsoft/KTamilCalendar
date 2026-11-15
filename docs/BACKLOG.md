@@ -1,20 +1,22 @@
 # Priority backlog
 
-Open items in priority order. Each one needs a decision or source before it is built.
+## Done (uncommitted in this round)
 
-1. **Sraardha Thithi** (day view). Rule from the Vande Guru Paramparaam post: the tithi that covers the whole of Aparaana Kaalam (about 1:30–4:00 pm). Open decisions:
-   - Use the fixed 1:30–4:00 pm window, or compute Aparaana Kaalam from sunrise and sunset?
-   - What to show on Amavasai, Mahalaya, or when no tithi covers the window?
-   - Our engine's existing "aparahna" time is a different calculation, so it is not reused.
+1. **Sraardha Thithi**: the tithi that is the same at 13:30 and 16:00 local, Amavasai excluded. Source: Vande Guru Paramparaam post. Verified against Swiss Ephemeris for 365 days (0 mismatches).
+2. **Soolam**: the weekday table, with remedies from the Tamil almanac source. Matches the prokerala page for Monday, Saturday and Sunday.
+3. **Parigaram**: weekday remedy and Abhijit window, in the Soolam card.
+4. **Subakariyam (day level)**: Kari Naal days, and the Karanam (with Vishti flag). Shown on Today and in the APK day screen.
+5. **Naal**: Karanam, Kari Naal and the Sraardha tithi, shown on Today and in the APK day screen.
+6. **Duplicate school days (web Festivals)**: one school closure per day, whatever the district calls it. The APK Festivals screen is not changed yet.
 
-2. **Soolam (Dik Shoolam)** (day view). The prokerala page gives directions only for Monday (East), Saturday (East) and Sunday (West). Tuesday to Friday and the remedies are missing, and its Chennai timings look wrong. Needs a source with the full seven-day table.
+## Open, in priority order
 
-3. **Parigaram** (remedy). No rule source yet.
+7. **Month grid reference**. The FlipHTML5 flipbook could not be read. Needs a screenshot of one grid page to match. Next in line after the items above.
 
-4. **Subakariyam** (auspicious activities). No rule source yet.
+## Follow-ups (not blocking)
 
-5. **Naal**. No definition yet.
-
-6. **Duplicate institute days** (Festivals). "County Institute Day" and "Institute Day" both show on the same day in Naperville, because the school calendar names them differently in Tamil. Decide whether to merge school events on the same day.
-
-7. **Month grid reference**. The FlipHTML5 flipbook could not be read. Needs a screenshot of one grid page to match.
+- **Sraardha window.** The post's fixed 1:30–4:00 pm is used, as approved. The later Sraardha source instead computes Aparaana Kaalam as the 4th fifth of the day (from sunrise and sunset). The source's own example (sunrise 6:55 am, sunset 4:25 pm) gives 12:37–2:31 pm. Switch the window if you want that rule.
+- **Sraardha coverage.** A tithi covers the 13:30–16:00 window on about 87% of days, so the card shows a tithi on most days. Rules for Mahalaya and Amavasai are not implemented.
+- **Subakariyam steps 5–6.** Thara Balam and Chandrashtamam need the user's birth star, and Lagna Shuddhi needs a window search. Both need a settings input before they can be built.
+- **Karanam Tamil spellings** and the **Kari Naal table** come from the pasted sources and should be checked against a printed Panchangam.
+- **APK Festivals** school dedupe, to match the web.

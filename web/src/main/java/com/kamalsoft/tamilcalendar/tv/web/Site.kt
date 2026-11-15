@@ -78,6 +78,8 @@ private fun dayJson(d: TamilDayData): Map<String, Any?> = mapOf(
     "paksha" to label(d.panchangam.paksha.ta, d.panchangam.paksha.en),
     "moonRasi" to label(d.panchangam.moonRasiTa, d.panchangam.moonRasiEn),
     "lagnam" to d.panchangam.lagnam.map { mapOf("rasi" to it.rasi, "start" to it.start.toString()) },
+    "karanam" to d.panchangam.karanam,
+    "sraardhaTithi" to (d.panchangam.sraardhaTithi ?: -1),
     "timings" to d.timings.all().map(::timingJson),
     "chandrashtamam" to mapOf(
         "rasi" to label(TamilNames.rasis[d.chandrashtamam.rasi]),

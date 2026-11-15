@@ -1,10 +1,12 @@
 // Tamil calendar web app: the UI. All calculations run in the browser (engine/), so any place and date works.
 import { PLACES, placeLabel, localHolidayRegions, timingConvention, usesImperialUnits } from './engine/locations.js';
 import { ICON, TAG_ORDER, RELIGION_ORDER } from './engine/icons.js';
+import { tithiNamesOf } from './engine/engine.js';
+import { soolam, abhijit, karanaName, isVishti, isKariNaal } from './engine/rules.js';
 import { monthDays, importantDates, applying } from './engine/calendar.js';
 import { rasiPalan, skyPositions, grahasIn, gochara } from './engine/rasi.js';
 import { CONTENT } from './engine/content.js';
-import { epochDay, isoOf, parseIso, dayOfWeek, dayOfMonth, monthOf, yearOf, fromEpochDay, wallClock, zonedMs, MS_DAY } from './engine/civil.js';
+import { epochDay, isoOf, parseIso, dayOfWeek, dayOfMonth, monthOf, yearOf, fromEpochDay, wallClock, zonedMs, hms, MS_DAY } from './engine/civil.js';
 import { loadSettings, saveSettings } from './app/store.js';
 import { fetchWeather, sceneOf, labelOf } from './app/weather.js';
 import { slokaFor, speak, stopSpeaking, TempleMusic } from './app/sloka.js';
@@ -189,6 +191,12 @@ function viewToday() {
   // The rising sign at sunrise, and when the next sign rises.
   const lagna = d.panchangam.lagnam;
   const lagnaValue = lagna.length ? `${esc(lb(...CONTENT.names.rasis[lagna[0].rasi]))} <small>→ ${endOf(lagna[1]?.start)}</small>` : '—';
+  // Day rules (engine/rules.js, docs/BACKLOG.md): Soolam, Karanam, Sraardham and Abhijit.
+  const sool = soolam(d.weekdayIndex);
+  const [karanaTa, karanaEn] = karanaName(p.karanam);
+  const sraardha = p.sraardhaTithi;
+  const secOf = (t) => { const [h, m, s] = t.split(':').map(Number); return h * 3600 + m * 60 + s; };
+  const [abhijitFrom, abhijitTo] = abhijit(secOf(d.sunrise), secOf(d.sunset));
   const facts = [
     ['🌅', lb('உதயம்', 'Sunrise'), timeOf(d.sunrise)],
     ['🌇', lb('அஸ்தமனம்', 'Sunset'), timeOf(d.sunset)],
@@ -197,6 +205,10 @@ function viewToday() {
     ['☉', lb('யோகம்', 'Yogam'), `${esc(lb(p.yogam.nameTa, p.yogam.nameEn))} <small>→ ${endOf(p.yogam.endsAt)}</small>`],
     ['☾', lb('சந்திர ராசி', 'Moon sign'), esc(lb(...CONTENT.names.rasis[p.moonRasi]))],
     ['⬆', lb('லக்னம்', 'Lagnam'), lagnaValue],
+    ['⚑', lb('சூலம்', 'Soolam'), `${esc(lb(...sool.direction))} <small>${esc(lb(sool.remedyTa, sool.remedyEn))}</small>`],
+    ['☯', lb('கரணம்', 'Karanam'), `${esc(lb(karanaTa, karanaEn))}${isVishti(p.karanam) ? ' <small>· Vishti</small>' : ''}${isKariNaal(d.tamilDate.monthIndex, d.tamilDate.day) ? ' <small>· கரி நாள் · Kari Naal</small>' : ''}`],
+    ['✺', lb('சிராத்தம்', 'Sraardham'), sraardha == null ? '—' : esc(lb(...tithiNamesOf(sraardha)))],
+    ['✧', lb('அபிஜித்', 'Abhijit'), `${timeOf(hms(abhijitFrom))} – ${timeOf(hms(abhijitTo))}`],
   ].map(([icon, label, value]) => `<div class="tile"><span class="ico">${icon}</span><dt>${esc(label)}</dt><dd>${value}</dd></div>`).join('');
   const row = (t) => {
       const cls = t.type === 'NALLA_NERAM' || t.type === 'GOWRI_NALLA_NERAM' ? 'good' : t.type === 'KULIGAI' ? 'mixed' : 'bad';
@@ -350,6 +362,7 @@ function viewMonth() {
     <div class="weekdays">${weekdays}</div><div class="grid">${cells.join('')}</div>
     ${printTable(y, m, from, to)}
     <div class="detail small-detail">${sel ? `<h2>${esc(dateLong(sel.epochDay))}</h2><p class="ta-date">${esc(lb(CONTENT.names.months[sel.tamilDate.monthIndex][0] + ' ' + sel.tamilDate.day, CONTENT.names.months[sel.tamilDate.monthIndex][1] + ' ' + sel.tamilDate.day))}</p>
+      <p class="small">${esc(lb('சூலம்', 'Soolam'))}: ${esc(lb(...soolam(sel.weekdayIndex).direction))} · ${esc(lb('சிராத்தம்', 'Sraardham'))}: ${sel.panchangam.sraardhaTithi == null ? '—' : esc(lb(...tithiNamesOf(sel.panchangam.sraardhaTithi)))}</p>
       <ul class="chips">${importantDates(sel).map((x) => `<li class="chip${x.holiday ? ' holiday' : ''}">${esc(lbo(x.title))}</li>`).join('') || `<li class="small">${esc(lb('சிறப்பு நாள் இல்லை', 'No observance'))}</li>`}</ul>
       <button class="pill" data-act="open-today">${lb('விவரம்', 'Details')} ›</button>` : ''}</div>`;
 }
@@ -406,8 +419,10 @@ function viewFestivals() {
       if (e.kind === 'MUHURTHAM') continue;
       if (state.kindFilter !== 'ALL' && e.kind !== state.kindFilter) continue;
       if (state.kindFilter === 'ALL' && e.kind === 'SCHOOL' && govt) continue;
-      if (seen.has(e.date + e.titleTa)) continue;
-      seen.add(e.date + e.titleTa);
+      // One school closure per day, whatever the district calls it (Winter Break and Winter Vacation are one).
+      const key = e.kind === 'SCHOOL' ? `${e.date}|SCHOOL` : e.date + e.titleTa;
+      if (seen.has(key)) continue;
+      seen.add(key);
       entries.push(e);
     }
   }
@@ -698,8 +713,8 @@ function viewAbout() {
 // ---------------------------------------------------------------- offline year packs
 // A pack is one year of days for one place and timing convention, kept in Cache Storage. The app reads it
 // instead of recomputing; without a pack everything is still computed on the device.
-// v2: packs saved before the Lagna field existed are dropped; save the offline years again.
-const PACK_CACHE = 'ktc-packs-v2';
+// v3: packs saved before the Karanam and Sraardha fields existed are dropped; save the offline years again.
+const PACK_CACHE = 'ktc-packs-v3';
 const packUrl = (placeId, convention, year) => `pack/${encodeURIComponent(placeId)}/${convention}/${year}.json`;
 const packYears = [2026, 2027, 2028];
 

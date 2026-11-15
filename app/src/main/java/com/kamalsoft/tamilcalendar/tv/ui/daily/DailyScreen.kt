@@ -68,7 +68,9 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import com.kamalsoft.tamilcalendar.tv.ui.components.Text
 import com.kamalsoft.tamilcalendar.tv.R
+import com.kamalsoft.tamilcalendar.tv.domain.model.DayRules
 import com.kamalsoft.tamilcalendar.tv.domain.model.EventKind
+import com.kamalsoft.tamilcalendar.tv.domain.model.Panchangam
 import com.kamalsoft.tamilcalendar.tv.domain.model.GeoLocation
 import com.kamalsoft.tamilcalendar.tv.domain.model.TamilDayData
 import com.kamalsoft.tamilcalendar.tv.domain.model.TamilNames
@@ -445,6 +447,44 @@ private fun ColumnScope.PanchangamColumn(
                 "${TamilNames.rasis[s.rasi].first} · ${TamilNames.rasis[s.rasi].second}" to
                     "${Fmt.time(s.start.toLocalTime())} – ${end?.let { Fmt.time(it.toLocalTime()) } ?: "—"}"
             },
+        ),
+    )
+    val soolam = DayRules.soolam(day.date.dayOfWeek)
+    InfoCard(
+        order = 7,
+        label = "சூலம் · Soolam", value = soolam.direction.ta, sub = "${soolam.direction.en} · avoid travel facing it",
+        accent = TvColors.Crimson, show = show,
+        detail = DetailContent(
+            "சூலம் · Soolam — ${soolam.direction.ta}", "Avoid starting a journey facing ${soolam.direction.en}",
+            listOf(
+                "பரிகாரம் · Remedy" to "${soolam.remedyTa} · ${soolam.remedyEn}",
+                "வார பரிகாரம் · Weekday remedy" to DayRules.weekdayRemedy(day.date.dayOfWeek),
+                "அபிஜித் · Abhijit" to DayRules.abhijit(day.sunrise, day.sunset).let { (a, b) -> "${Fmt.time(a)} – ${Fmt.time(b)}" },
+            ),
+        ),
+    )
+    val karana = DayRules.karanaName(p.karanam)
+    val kariNaal = DayRules.isKariNaal(day.tamilDate.monthIndex, day.tamilDate.day)
+    InfoCard(
+        order = 8,
+        label = "கரணம் · Karanam", value = karana.first,
+        sub = karana.second + if (DayRules.isVishti(p.karanam)) " · Vishti: avoid for starts" else "",
+        accent = TvColors.Gold, show = show,
+        detail = DetailContent(
+            "கரணம் · Karanam — ${karana.first}", karana.second,
+            listOf("கரி நாள் · Kari Naal" to if (kariNaal) "Yes: no Subakariyam today" else "No"),
+        ),
+    )
+    val sraardha = p.sraardhaTithi
+    InfoCard(
+        order = 9,
+        label = "சிராத்தம் · Sraardham",
+        value = sraardha?.let { Panchangam.tithiNames(it).first } ?: "—",
+        sub = sraardha?.let { "${Panchangam.tithiNames(it).second} · 1:30–4:00 PM" } ?: "No tithi covers 1:30–4:00 PM",
+        accent = TvColors.Gold, show = show,
+        detail = DetailContent(
+            "சிராத்தம் · Sraardham tithi", "The tithi that covers the whole window 1:30–4:00 PM",
+            listOf("சாளரம் · Window" to "1:30 PM – 4:00 PM"),
         ),
     )
 }
