@@ -50,9 +50,6 @@ small { color: var(--dim); }
 /* ---- layout */
 .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 12px 16px 32px; max-width: 1100px; margin: 0 auto; }
 .layout > * { min-width: 0; }
-@media (min-width: 900px) {
-  .layout.today-wide { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; }
-}
 
 .bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .bar h1 { margin: 0; font-size: 18px; font-weight: 700; text-align: center; flex: 1; }
@@ -290,10 +287,11 @@ small { color: var(--dim); }
 .install a.pill { text-decoration: none; }
 
 /* ---- Today: hero, now card, timeline, fact tiles */
-.today-grid { display: grid; gap: 14px; }
-@media (min-width: 900px) {
-  .today-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
-  .today-grid > .hero, .today-grid > .now-card, .today-grid > .chandra { grid-column: 1 / -1; }
+.today-grid { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 860px; margin: 0 auto; }
+.today-grid > * { margin: 0; min-width: 0; }
+.today-grid .timings li { gap: 12px; }
+@media (min-width: 700px) {
+  .today-grid .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 .hero { border-radius: var(--card-radius); padding: 20px; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 35%, var(--surface)), var(--surface) 70%); border: 1px solid var(--card-border); }
 .hero-week { margin: 0; color: var(--accent); font-size: 14px; letter-spacing: .04em; }
@@ -329,3 +327,25 @@ a.pill, .detail a, .group a { overflow-wrap: anywhere; max-width: 100%; }
 a.pill { display: inline-block; text-decoration: none; }
 .qr-card > div:last-child { min-width: 0; flex: 1; }
 .qr-card a { overflow-wrap: anywhere; }
+.more summary { cursor: pointer; color: var(--accent); font-size: 14px; padding: 4px 0; }
+.more[open] summary { margin-bottom: 6px; }
+
+/* ---- Today: a compact panchangam panel */
+.hero { padding: 14px 16px; }
+.hero h2 { font-size: 22px; }
+.hero-year { margin-bottom: 4px; font-size: 14px; }
+.today-grid .detail { padding: 12px 14px; gap: 10px; }
+.today-grid .tiles { gap: 8px; }
+.today-grid .tile { padding: 7px 9px; }
+.today-grid .tile .ico { font-size: 14px; }
+.today-grid .tile dd { font-size: 14px; }
+.today-grid .timings { gap: 3px; }
+.today-grid .timings li { font-size: 13px; }
+.today-grid .now-card { padding: 10px 14px; }
+.today-grid .now-line { font-size: 15px; }
+.chandra { font-size: 13px; }
+
+/* ---- Today: panel tabs (Panchangam / Sloka / Weather), one row */
+.panel-tabs { display: flex; gap: 8px; flex-wrap: nowrap; }
+.panel-tabs .pill { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; padding: 6px 8px; line-height: 1.2; }
+.panel-tabs .pill small { font-size: 11px; }

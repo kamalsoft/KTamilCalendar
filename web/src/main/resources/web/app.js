@@ -40,6 +40,7 @@ const state = {
   kindFilter: 'ALL',
   weatherKey: '',
   spokenKey: '',
+  todayPanel: 'panchangam',
   packDays: new Map(),   // epoch day -> day, from the saved year pack of the current place
   packKey: '',
   lastInput: Date.now(),
@@ -115,7 +116,6 @@ function render() {
   applyTheme();
   const view = { today: viewToday, month: viewMonth, festivals: viewFestivals, important: viewImportant, muhurtham: viewMuhurtham, rasi: viewRasi, location: viewLocation, theme: viewTheme, settings: viewSettings, about: viewAbout }[state.tab];
   $('view').innerHTML = view();
-  $('view').classList.toggle('today-wide', state.tab === 'today');
   if (state.tab === 'today') {
     loadWeatherIfNeeded();
     maybeReadSloka();
@@ -184,27 +184,37 @@ function viewToday() {
     ['☉', lb('யோகம்', 'Yogam'), `${esc(lb(p.yogam.nameTa, p.yogam.nameEn))} <small>→ ${endOf(p.yogam.endsAt)}</small>`],
     ['☾', lb('சந்திர ராசி', 'Moon sign'), esc(lb(...CONTENT.names.rasis[p.moonRasi]))],
   ].map(([icon, label, value]) => `<div class="tile"><span class="ico">${icon}</span><dt>${esc(label)}</dt><dd>${value}</dd></div>`).join('');
-  const timings = [...d.timings.nallaNeram, d.timings.rahuKalam, d.timings.yamagandam, d.timings.kuligai]
-    .concat(d.timings.gowriNallaNeram).map((t) => {
+  const row = (t) => {
       const cls = t.type === 'NALLA_NERAM' || t.type === 'GOWRI_NALLA_NERAM' ? 'good' : t.type === 'KULIGAI' ? 'mixed' : 'bad';
       const label = lb(CONTENT.enums.TimingType.find((x) => x[0] === t.type)[1], CONTENT.enums.TimingType.find((x) => x[0] === t.type)[2]);
       const gowri = t.gowri !== null ? ` · ${lb(CONTENT.enums.Gowri[t.gowri][1], CONTENT.enums.Gowri[t.gowri][2])}` : '';
       return `<li class="${cls}"><span>${esc(label + gowri)}</span><time>${timeOf(t.start)} – ${timeOf(t.end)}</time></li>`;
-    }).join('');
+  };
+  // The main timings in full; the eight Gowri windows sit in a collapsed section so the page stays short.
+  const timings = [...d.timings.nallaNeram, d.timings.rahuKalam, d.timings.yamagandam, d.timings.kuligai].map(row).join('');
+  const gowri = d.timings.gowriNallaNeram.map(row).join('');
   const chandra = d.chandrashtamam;
   const weatherCard = state.settings.weather ? (isToday ? weatherHtml() : forecastHtml(d.epochDay)) : '';
+  // Three panels, one shown at a time, so the page stays short.
+  const panels = [['panchangam', 'பஞ்சாங்கம்', 'Panchangam'], ['sloka', 'ஸ்லோகம்', 'Sloka'], ['weather', 'வானிலை', 'Weather']];
+  const tabRow = `<div class="panel-tabs" role="tablist">${panels.map(([id, ta, en]) =>
+    `<button class="pill${state.todayPanel === id ? ' on' : ''}" role="tab" aria-selected="${state.todayPanel === id}" data-act="today-panel" data-p="${id}">${esc(ta)}${state.settings.tamilOnly ? '' : `<small>${esc(en)}</small>`}</button>`).join('')}</div>`;
+  let body;
+  if (state.todayPanel === 'sloka') body = slokaCard(slokaFor(d));
+  else if (state.todayPanel === 'weather') body = state.settings.weather ? weatherCard : `<p class="small">${esc(lb('வானிலை அமைப்புகளில் முடக்கப்பட்டுள்ளது', 'Weather is turned off in Settings'))}</p>`;
+  else body = `${nowCard}
+      <section class="detail"><h3>${esc(lb('நாள் நேரம்', 'Day timeline'))}</h3>${timelineHtml(d, nowSec)}</section>
+      <section class="detail"><div class="tiles">${facts}</div></section>
+      <section class="detail"><h3>${esc(lb('நேரங்கள்', 'Timings'))}</h3><ul class="timings">${timings}</ul>
+        <details class="more"><summary>${esc(lb('கௌரி நல்ல நேரம் (8)', 'Gowri Nalla Neram (8 periods)'))}</summary><ul class="timings">${gowri}</ul></details></section>
+      <p class="warn chandra">${esc(lb('சந்திராஷ்டமம்', 'Chandrashtamam'))} — ${esc(lb(...CONTENT.names.rasis[chandra.rasi]))}
+        <br><small>${esc(chandra.nakshatras.map((k) => lb(...CONTENT.names.nakshatras[k])).join(', '))}</small></p>
+      ${reminderNote()}`;
   return `${nav}
     <div class="today-grid">
       ${hero}
-      ${nowCard}
-      <section class="detail"><h3>${esc(lb('நாள் நேரம்', 'Day timeline'))}</h3>${timelineHtml(d, nowSec)}</section>
-      <section class="detail"><div class="tiles">${facts}</div></section>
-      <section class="detail"><h3>${esc(lb('நேரங்கள்', 'Timings'))}</h3><ul class="timings">${timings}</ul></section>
-      <p class="warn chandra">${esc(lb('சந்திராஷ்டமம்', 'Chandrashtamam'))} — ${esc(lb(...CONTENT.names.rasis[chandra.rasi]))}
-        <br><small>${esc(chandra.nakshatras.map((k) => lb(...CONTENT.names.nakshatras[k])).join(', '))}</small></p>
-      ${slokaCard(slokaFor(d))}
-      ${weatherCard}
-      ${reminderNote()}
+      ${tabRow}
+      ${body}
     </div>`;
 }
 const pakshaName = (p) => (p === 'SHUKLA' ? ['வளர்பிறை', 'Shukla Paksha'] : ['தேய்பிறை', 'Krishna Paksha']);
@@ -423,6 +433,7 @@ function viewLocation() {
     <div class="row wrap">${presets}</div>
     <div class="row"><button class="pill" data-act="place-auto">📍 ${esc(lb('என் இடம்', 'Use my location'))}</button></div>
     <form id="search-form" class="search"><input id="search" type="search" placeholder="${esc(lb('நகரம் தேடுக', 'Search a city'))}" value="${esc(state.search.query)}" autocomplete="off"><button class="pill" type="submit">${esc(lb('தேடு', 'Search'))}</button></form>
+    ${state.search.busy ? `<p class="small">${esc(lb('தேடுகிறது…', 'Searching…'))}</p>` : ''}
     ${state.search.error ? `<p class="small error">${esc(state.search.error)}</p>` : ''}
     <ul class="results">${results}</ul>
     ${recent ? `<h3>${esc(lb('சமீபத்தியவை', 'Recent'))}</h3><div class="row wrap">${recent}</div>` : ''}
@@ -780,18 +791,41 @@ function autoLocate() {
   }, () => { state.search.error = lb('இருப்பிட அனுமதி தேவை', 'Location permission was refused'); rerender(); });
 }
 
-async function searchPlaces(q) {
-  state.search = { query: q, results: [], error: '' };
-  if (!q.trim()) return rerender();
-  try {
-    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=8&language=en&format=json`);
-    const j = await r.json();
-    state.search.results = (j.results || []).map((x) => ({ name: x.name, latitude: x.latitude, longitude: x.longitude, zoneId: x.timezone, countryCode: x.country_code, admin1: x.admin1 || '', country: x.country || '', countryName: x.country || '' }));
-    if (!state.search.results.length) state.search.error = lb('எதுவும் கிடைக்கவில்லை', 'No matching places');
-  } catch (e) {
-    state.search.error = lb('தேட முடியவில்லை (இணைய இணைப்பு?)', 'Search needs an internet connection');
-  }
+async function searchPlaces(raw) {
+  const q = raw.trim();
+  const token = ++searchToken; // a slower earlier search must not overwrite a newer one
+  state.search = { query: q, results: [], error: '', busy: !!q };
+  if (!q) return rerender();
   rerender();
+  try {
+    const found = await geocode(q);
+    if (token !== searchToken) return;
+    state.search.results = found.map((x) => ({ name: x.name, latitude: x.latitude, longitude: x.longitude, zoneId: x.timezone, countryCode: x.country_code, admin1: x.admin1 || '', country: x.country || '', countryName: x.country || '' }));
+    if (!state.search.results.length) {
+      state.search.error = /[\u0B80-\u0BFF]/.test(q)
+        ? lb('தமிழில் தேட முடியாது. ஆங்கிலத்தில் நகரின் பெயரை எழுதவும் (எ.கா. Chennai)', 'Search by the English name, e.g. Chennai')
+        : lb('எதுவும் கிடைக்கவில்லை', 'No matching places');
+    }
+  } catch (e) {
+    if (token !== searchToken) return;
+    state.search.error = lb('தேட முடியவில்லை. இணைய இணைப்பை சரிபார்க்கவும்', 'Search failed. Check your internet connection and try again.');
+  }
+  state.search.busy = false;
+  rerender();
+}
+let searchToken = 0;
+
+/** Place search. Tamil names are often spelt differently in English (Thiruvallur / Tiruvallur), so if the
+ *  first spelling finds nothing, the common variants are tried in turn. */
+async function geocode(q) {
+  const variants = [...new Set([q, q.replace(/^thi/i, 'Ti').replace(/th/gi, 't'), q.replace(/^thi/i, 'Ti')])];
+  for (const v of variants) {
+    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(v)}&count=8&language=en&format=json`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const j = await r.json();
+    if (j.results && j.results.length) return j.results;
+  }
+  return [];
 }
 
 function onClick(e) {
@@ -801,6 +835,7 @@ function onClick(e) {
   const a = el.dataset.act;
   state.lastInput = Date.now();
   if (a === 'tab') { state.tab = el.dataset.tab; rerender(); }
+  else if (a === 'today-panel') { state.todayPanel = el.dataset.p; rerender(); }
   else if (a === 'day') { state.day += Number(el.dataset.d); rerender(); }
   else if (a === 'day-today') { state.day = todayEpoch(); rerender(); }
   else if (a === 'open-today') { state.day = Number(el.closest('[data-d]')?.dataset.d ?? state.day); state.tab = 'today'; rerender(); }
