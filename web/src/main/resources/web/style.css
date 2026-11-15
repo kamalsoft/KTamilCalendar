@@ -74,19 +74,34 @@ small { color: var(--dim); }
 .weekdays { text-align: center; margin-bottom: 4px; }
 .weekdays div { display: flex; flex-direction: column; font-size: 12px; color: var(--muted); }
 .weekdays small { font-size: 10px; color: var(--dim); }
+.weekdays .sun { color: var(--alert-soft); }
+.month-sub { margin: 2px 0 10px; font-size: 13px; color: var(--muted); text-align: center; }
 .cell {
-  min-height: 64px; padding: 6px 4px; border-radius: 10px; border: 1px solid transparent;
+  min-height: 84px; padding: 6px 4px; border-radius: 10px; border: 1px solid transparent;
   background: var(--surface); display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; touch-action: manipulation;
 }
+.cell .top { display: flex; align-items: center; justify-content: space-between; gap: 4px; width: 100%; min-width: 0; }
 .cell .g { font-size: 16px; font-weight: 600; }
-.cell .t { font-size: 11px; color: var(--accent); }
-.cell .m { font-size: 9px; color: var(--amber); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-.cell .marks { display: flex; gap: 3px; margin-top: auto; }
-.cell .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
-.cell .dot.alert { background: var(--alert); }
+.cell .ico-row { display: flex; flex: none; gap: 2px; align-items: center; }
+.cell .ico-i { display: inline-flex; width: 16px; height: 16px; }
+.cell .ico-i svg { width: 100%; height: 100%; display: block; }
+/* Narrow cells (phones): the symbols drop to their own line under the date. */
+.cell { container-type: inline-size; }
+@container (max-width: 96px) {
+  .cell .top { flex-wrap: wrap; justify-content: center; }
+  .cell .ico-row { flex-basis: 100%; justify-content: center; order: 1; }
+  .cell .ico-i { width: 11px; height: 11px; }
+}
+.cell .t { font-size: 11px; color: var(--dim); }
+.cell .tm { font-size: 10px; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.cell .evs { display: flex; flex-direction: column; align-items: center; width: 100%; min-width: 0; margin-top: auto; }
+.cell .ev { font-size: 11px; line-height: 1.25; color: var(--accent-soft); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cell .ev.alert { color: var(--alert-soft); }
+.cell .ev.muted { color: var(--muted); }
 .cell.other { opacity: 0.4; }
-.cell.holiday .g { color: var(--alert); }
+.cell.sun .g, .cell.holiday .g { color: var(--alert-soft); }
 .cell.today { border-color: var(--accent); }
+.cell.today .g { background: var(--accent); color: var(--bg-deep); border-radius: 6px; padding: 0 5px; }
 .cell.selected { background: var(--surface-hi); }
 
 /* ---- detail cards */
@@ -105,6 +120,25 @@ small { color: var(--dim); }
 .timings li { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
 .timings li span { min-width: 0; overflow-wrap: anywhere; }
 .timings time { color: var(--muted); white-space: nowrap; }
+/* Each window is a tile: a coloured edge and a faint tint in its kind's colour. */
+.timings li { padding: 9px 12px; border-radius: 10px; border-left: 4px solid currentColor; background: var(--bg); align-items: center; }
+.timings li.good { background: color-mix(in srgb, var(--accent) 12%, var(--bg)); }
+.timings li.bad { background: color-mix(in srgb, var(--alert) 12%, var(--bg)); }
+.timings li.mixed { background: color-mix(in srgb, var(--amber) 12%, var(--bg)); }
+.timings li span { font-weight: 600; }
+.timings time { font-size: 13px; font-variant-numeric: tabular-nums; }
+/* Timing cards: a grid so the whole day's windows show without scrolling. */
+.today-grid .timings.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.timings.cards li { flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 2px; }
+.timings.cards li span { font-size: 15px; }
+.grp { margin: 10px 0 4px; font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+.grp:first-of-type { margin-top: 0; }
+.today-split { display: grid; gap: 14px; }
+@media (min-width: 700px) {
+  .today-grid .timings.cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .today-split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+.chandra { padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--amber) 14%, var(--bg)); }
 .warn { margin: 0; font-size: 14px; color: var(--amber); }
 .small-detail { margin-top: 12px; }
 

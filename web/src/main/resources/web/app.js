@@ -1,5 +1,6 @@
 // Tamil calendar web app: the UI. All calculations run in the browser (engine/), so any place and date works.
 import { PLACES, placeLabel, localHolidayRegions, timingConvention, usesImperialUnits } from './engine/locations.js';
+import { ICON, TAG_ORDER, RELIGION_ORDER } from './engine/icons.js';
 import { monthDays, importantDates, applying } from './engine/calendar.js';
 import { rasiPalan, skyPositions, grahasIn, gochara } from './engine/rasi.js';
 import { CONTENT } from './engine/content.js';
@@ -199,9 +200,12 @@ function viewToday() {
       const gowri = t.gowri !== null ? ` · ${lb(CONTENT.enums.Gowri[t.gowri][1], CONTENT.enums.Gowri[t.gowri][2])}` : '';
       return `<li class="${cls}"><span>${esc(label + gowri)}</span><time>${timeOf(t.start)} – ${timeOf(t.end)}</time></li>`;
   };
-  // The main timings in full; the eight Gowri windows sit in a collapsed section so the page stays short.
-  const timings = [...d.timings.nallaNeram, d.timings.rahuKalam, d.timings.yamagandam, d.timings.kuligai].map(row).join('');
-  const gowri = d.timings.gowriNallaNeram.map(row).join('');
+  // Good windows first (Nalla Neram and Gowri), then the windows to avoid. Every card is visible; nothing is collapsed.
+  const byStart = (a, b) => secOf(a.start) - secOf(b.start);
+  const goodList = [...d.timings.nallaNeram, ...d.timings.gowriNallaNeram].sort(byStart);
+  const avoidList = [d.timings.rahuKalam, d.timings.yamagandam, d.timings.kuligai].sort(byStart);
+  const good = goodList.map(row).join('');
+  const avoid = avoidList.map(row).join('');
   const chandra = d.chandrashtamam;
   const weatherCard = state.settings.weather ? (isToday ? weatherHtml() : forecastHtml(d.epochDay)) : '';
   // Three panels, one shown at a time, so the page stays short.
@@ -212,10 +216,17 @@ function viewToday() {
   if (state.todayPanel === 'sloka') body = slokaCard(slokaFor(d));
   else if (state.todayPanel === 'weather') body = state.settings.weather ? weatherCard : `<p class="small">${esc(lb('வானிலை அமைப்புகளில் முடக்கப்பட்டுள்ளது', 'Weather is turned off in Settings'))}</p>`;
   else body = `${nowCard}
-      <section class="detail"><h3>${esc(lb('நாள் நேரம்', 'Day timeline'))}</h3>${timelineHtml(d, nowSec)}</section>
-      <section class="detail"><div class="tiles">${facts}</div></section>
-      <section class="detail"><h3>${esc(lb('நேரங்கள்', 'Timings'))}</h3><ul class="timings">${timings}</ul>
-        <details class="more"><summary>${esc(lb('கௌரி நல்ல நேரம் (8)', 'Gowri Nalla Neram (8 periods)'))}</summary><ul class="timings">${gowri}</ul></details></section>
+      <section class="detail timings-board">
+        <h3>${esc(lb('நேரங்கள்', 'Timings'))}</h3>
+        <p class="grp">${esc(lb('நல்ல நேரம்', 'Good windows'))} · ${goodList.length}</p>
+        <ul class="timings cards">${good}</ul>
+        <p class="grp">${esc(lb('தவிர்க்க', 'Avoid'))} · ${avoidList.length}</p>
+        <ul class="timings cards">${avoid}</ul>
+      </section>
+      <div class="today-split">
+        <section class="detail"><h3>${esc(lb('நாள் நேரம்', 'Day timeline'))}</h3>${timelineHtml(d, nowSec)}</section>
+        <section class="detail"><div class="tiles">${facts}</div></section>
+      </div>
       <p class="warn chandra">${esc(lb('சந்திராஷ்டமம்', 'Chandrashtamam'))} — ${esc(lb(...CONTENT.names.rasis[chandra.rasi]))}
         <br><small>${esc(chandra.nakshatras.map((k) => lb(...CONTENT.names.nakshatras[k])).join(', '))}</small></p>
       ${reminderNote()}`;
@@ -283,28 +294,51 @@ function reminderNote() {
 }
 
 // ---- month
+/** The symbols in a month cell, as on the APK: the day's observances, then one per other faith; at most three. */
+function dayIcons(d) {
+  const faiths = importantDates(d).map((x) => x.religion).filter((r) => r && r !== 'HINDU');
+  const keys = [...TAG_ORDER.filter((t) => t !== 'GOVT_HOLIDAY' && d.tags.includes(t)), ...RELIGION_ORDER.filter((r) => faiths.includes(r))];
+  return keys.slice(0, 3).map((k) => `<span class="ico-i" role="img" aria-label="${esc(ICON[k].en)}">${ICON[k].svg}</span>`).join('');
+}
+
 function viewMonth() {
   const [y, m] = state.monthOf || [yearOf(todayEpoch()), monthOf(todayEpoch()) - 1];
-  const [from, to] = gridRange(y, m);
+  // Only as many weeks as the month needs (usually 5), as the APK month grid does.
+  const first = epochDay(y, m + 1, 1);
+  const weeks = Math.ceil((dayOfWeek(first) + epochDay(y, m + 2, 0) - first + 1) / 7);
+  const from = first - dayOfWeek(first);
+  const to = from + weeks * 7 - 1;
   const days = new Map(daysBetween(from, to).map((d) => [d.epochDay, d]));
-  const weekdays = CONTENT.names.weekdays.map((w, i) => `<div>${WEEKDAYS_TA_SHORT[i]}<small>${w[1].slice(0, 3)}</small></div>`).join('');
+  const weekdays = CONTENT.names.weekdays.map((w, i) => `<div class="${i === 0 ? 'sun' : ''}">${WEEKDAYS_TA_SHORT[i]}<small>${w[1].slice(0, 3)}</small></div>`).join('');
+  const tamilMonths = [...new Set([...days.values()].filter((d) => monthOf(d.epochDay) === m + 1)
+    .map((d) => `${CONTENT.names.months[d.tamilDate.monthIndex][0]} (${CONTENT.names.months[d.tamilDate.monthIndex][1]})`))].join(' – ');
   const today = todayEpoch();
   const cells = [];
   for (let e = from; e <= to; e++) {
     const d = days.get(e);
     const cls = ['cell'];
     if (monthOf(e) !== m + 1) cls.push('other');
+    if (dayOfWeek(e) === 0) cls.push('sun');
     if (d && d.holiday) cls.push('holiday');
     if (e === today) cls.push('today');
     if (e === state.day) cls.push('selected');
-    const marks = d ? (d.holiday ? '<i class="dot alert"></i>' : '') + (importantDates(d).length ? '<i class="dot"></i>' : '') : '';
-    const tamil = d ? `<span class="t">${d.tamilDate.day}</span>` : '';
-    const monthStart = d && d.tamilDate.day === 1 ? `<span class="m">${esc(CONTENT.names.months[d.tamilDate.monthIndex][0])}</span>` : '';
-    cells.push(`<button class="${cls.join(' ')}" data-act="pick-day" data-d="${e}"><span class="g">${dayOfMonth(e)}</span>${tamil}${monthStart}<span class="marks">${marks}</span></button>`);
+    // The day's important dates as titles in the cell, most important first; extras shown as "+N", as on the APK.
+    const events = d ? importantDates(d) : [];
+    const maxDates = weeks <= 5 ? 2 : 1;
+    const more = events.length - maxDates;
+    const titles = events.slice(0, maxDates).map((x, i) => {
+      const text = i === maxDates - 1 && more > 0 ? `${x.title.ta} +${more}` : x.title.ta;
+      const kind = x.holiday ? ' alert' : x.religion && x.religion !== 'HINDU' ? ' muted' : '';
+      return `<span class="ev${kind}">${esc(text)}</span>`;
+    }).join('');
+    const tamil = d && d.tamilDate.day === 1 ? `<span class="tm">${esc(CONTENT.names.months[d.tamilDate.monthIndex][0])}</span>` : d ? `<span class="t">${d.tamilDate.day}</span>` : '';
+    const icons = d ? dayIcons(d) : '';
+    cells.push(`<button class="${cls.join(' ')}" data-act="pick-day" data-d="${e}"><span class="top"><span class="g">${dayOfMonth(e)}</span><span class="ico-row">${icons}</span>${tamil}</span><span class="evs">${titles}</span></button>`);
   }
   const sel = dayData(state.day) || dayData(today);
   return `<div class="bar"><button class="nav" data-act="month" data-m="-1" aria-label="Previous month">‹</button>
-    <h1>${esc(MONTHS_TA[m])} · ${MONTHS_EN[m]} ${y}</h1><button class="nav" data-act="month" data-m="1" aria-label="Next month">›</button></div>
+    <h1>${esc(MONTHS_TA[m])} ${y} · ${MONTHS_EN[m]}</h1><button class="nav" data-act="month" data-m="1" aria-label="Next month">›</button></div>
+    <p class="month-sub">${esc(tamilMonths)}</p>
     <button class="today" data-act="month-today">${lb('இன்று', 'Today')}</button>
     <div class="row no-print"><button class="pill" data-act="print-month">🖨 ${esc(lb('அச்சிடு', 'Print month'))}</button></div>
     <div class="weekdays">${weekdays}</div><div class="grid">${cells.join('')}</div>
@@ -356,14 +390,18 @@ function viewFestivals() {
   const filters = kinds.map((k) => `<button class="pill${state.kindFilter === k ? ' on' : ''}" data-act="kind" data-k="${k}">${esc(k === 'ALL' ? lb('அனைத்தும்', 'All') : kindLabel(k))}</button>`).join('');
   // One entry per observance and date (the same one can come from two sources), then consecutive days
   // of the same observance (school breaks, multi-day festivals) merge into one range, as in the APK.
+  // Keyed by the Tamil title: school calendars name the same break differently per district (Winter Break / Winter
+  // Vacation), and the Tamil names agree. A school closure on a government holiday is already listed as the holiday.
   const seen = new Set();
   const entries = [];
   for (const d of daysFrom(start, 120)) {
+    const govt = d.events.some((x) => x.kind === 'GOVT_HOLIDAY');
     for (const e of d.events) {
       if (e.kind === 'MUHURTHAM') continue;
       if (state.kindFilter !== 'ALL' && e.kind !== state.kindFilter) continue;
-      if (seen.has(e.date + e.titleEn)) continue;
-      seen.add(e.date + e.titleEn);
+      if (state.kindFilter === 'ALL' && e.kind === 'SCHOOL' && govt) continue;
+      if (seen.has(e.date + e.titleTa)) continue;
+      seen.add(e.date + e.titleTa);
       entries.push(e);
     }
   }

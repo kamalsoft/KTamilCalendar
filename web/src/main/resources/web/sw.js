@@ -18,6 +18,7 @@ const SHELL = [
   'engine/engine.js',
   'engine/calendar.js',
   'engine/holidays.js',
+  'engine/icons.js',
   'engine/locations.js',
   'engine/rasi.js',
   'engine/school_calendars.json',
