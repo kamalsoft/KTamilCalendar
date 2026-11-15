@@ -137,21 +137,60 @@ small { color: var(--dim); }
 @keyframes fall { from { transform: translateY(0) rotate(0); } to { transform: translateY(260px) rotate(360deg); } }
 .weather:not(.animated) .particles { display: none; }
 
-/* ---- rasi */
-.chart { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
-.chart-cell, .chart-centre {
-  aspect-ratio: 1 / 1; border-radius: 10px; background: var(--surface); border: 1px solid var(--surface-hi);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px; cursor: pointer; padding: 2px;
+/* ---- rasi: the APK's 4×4 chart. Each tile is tinted by its outlook; the centre summarises the sky. */
+.rasi-grid {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr));
+  gap: 8px; width: 100%; max-width: min(100%, 820px); aspect-ratio: 1; margin: 0 auto;
 }
-.chart-cell.on { border-color: var(--accent); }
-.chart-cell b { color: var(--accent); font-size: 12px; }
-.chart-centre { background: transparent; border: none; }
-.rasi-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.rasi-row { background: var(--surface); border-radius: 12px; padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; }
-.rasi-row small { grid-column: 1 / -1; }
-.rasi-row.good b { color: var(--accent); }
-.rasi-row.caution b { color: var(--alert); }
-.rasi-row.chandrashtamam b { color: var(--amber); }
+/* Wide screens have room: bigger tiles, larger type in the cards, and a wider modal. */
+@media (min-width: 700px) {
+  .rasi-tile b { font-size: 18px; }
+  .rasi-tile small { font-size: 13px; }
+  .rasi-tile i { font-size: 15px; }
+  .rasi-tile .planets { font-size: 17px; }
+  .rasi-centre { font-size: 16px; gap: 6px; padding: 14px; }
+  .rasi-centre h3 { font-size: 22px; }
+  .rasi-centre small { font-size: 13px; }
+  .rasi-card { width: min(820px, 100%); padding: 26px; gap: 14px; }
+  .rasi-card .bar h2 { font-size: 26px; }
+  .rasi-card .pre { font-size: 17px; line-height: 1.6; }
+  .rasi-card .chip { font-size: 15px; }
+}
+@media (min-width: 700px) and (min-height: 700px) {
+  .rasi-grid { max-width: min(100%, 900px); }
+}
+.rasi-tile {
+  background: color-mix(in srgb, var(--tint) 22%, var(--surface)); border: 1px solid var(--surface-hi); border-radius: 12px;
+  padding: 6px 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: pointer; min-width: 0;
+}
+.rasi-tile b { color: var(--tint); font-size: 13px; line-height: 1.2; text-align: center; }
+.rasi-tile small { font-size: 10px; color: var(--dim); }
+.rasi-tile i { font-style: normal; font-size: 11px; color: var(--text); }
+.rasi-tile .planets { font-size: 12px; font-weight: 700; color: var(--accent-soft); min-height: 1em; }
+.rasi-tile small { color: var(--muted); }
+.rasi-centre {
+  border: 1px solid var(--surface-hi); border-radius: 14px; padding: 6px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; gap: 2px; font-size: 11px; min-width: 0; overflow: hidden;
+}
+.rasi-centre h3 { margin: 0; color: var(--accent); font-size: 14px; text-transform: none; letter-spacing: 0; }
+.rasi-centre small { font-size: 9px; }
+.rasi-centre p { margin: 0; }
+.rasi-modal {
+  position: fixed; inset: 0; z-index: 55; background: #000a; display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.rasi-card {
+  background: var(--surface); border-radius: 18px; padding: 18px; width: min(560px, 100%); max-height: 90vh; overflow: auto;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.rasi-card .bar h2 { margin: 0; font-size: 20px; color: var(--accent); }
+.rasi-card .chip { flex: none; }
+.rasi-card .nav { width: 36px; height: 36px; font-size: 16px; }
+.center { text-align: center; }
+.chip.good { background: var(--accent); color: var(--bg-deep); }
+.chip.neutral { background: var(--surface-hi); }
+.chip.caution { background: var(--amber); color: var(--bg-deep); }
+.chip.chandrashtamam { background: var(--alert); color: #FFFFFF; }
+.bad { color: var(--alert); }
 
 /* ---- lists */
 .events { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }

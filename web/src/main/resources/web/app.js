@@ -20,7 +20,6 @@ const ALWAYS_SHOWN = new Set(['today', 'location', 'theme', 'settings', 'about']
 const MONTHS_TA = ['ஜனவரி', 'பிப்ரவரி', 'மார்ச்', 'ஏப்ரல்', 'மே', 'ஜூன்', 'ஜூலை', 'ஆகஸ்ட்', 'செப்டம்பர்', 'அக்டோபர்', 'நவம்பர்', 'டிசம்பர்'];
 const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const WEEKDAYS_TA_SHORT = ['ஞா', 'தி', 'செ', 'பு', 'வி', 'வெ', 'ச'];
-const RASI_CHART = [11, 0, 1, 2, 10, -1, -1, 3, 9, -1, -1, 4, 8, 7, 6, 5]; // South Indian layout, 4x4 (-1 = centre)
 
 const state = {
   settings: loadSettings(),
@@ -35,6 +34,7 @@ const state = {
   weatherErr: '',
   music: null,
   rasi: null,
+  rasiTab: 0,
   search: { query: '', results: [], error: '' },
   kindFilter: 'ALL',
   weatherKey: '',
@@ -258,29 +258,61 @@ function viewImportant() {
 }
 
 // ---- rasi palan, chart and gochara
+/** Tile position of each rasi on the 4×4 chart (row, column), as in the APK's RasiPalanScreen. */
+const RASI_POS = { 11: [0, 0], 0: [0, 1], 1: [0, 2], 2: [0, 3], 10: [1, 0], 3: [1, 3], 9: [2, 0], 4: [2, 3], 8: [3, 0], 7: [3, 1], 6: [3, 2], 5: [3, 3] };
+const OUTLOOK_TINT = { GOOD: 'var(--accent)', NEUTRAL: 'var(--muted)', CAUTION: 'var(--amber)', CHANDRASHTAMAM: 'var(--alert)' };
+
 function viewRasi() {
-  const d = dayData(todayEpoch());
+  const d = dayData(state.day) || dayData(todayEpoch());
   const palan = rasiPalan(d.panchangam.moonRasi);
+  const byRasi = new Map(palan.map((p) => [p.rasi, p]));
   const sky = skyPositions(d.epochDay, state.place.zoneId);
-  const cells = RASI_CHART.map((r) => {
-    if (r < 0) return '<div class="chart-centre"></div>';
-    const labels = grahasIn(sky, r).join(' ');
-    return `<button class="chart-cell${state.rasi === r ? ' on' : ''}" data-act="rasi" data-r="${r}"><small>${esc(CONTENT.names.rasis[r][0])}</small><b>${esc(labels)}</b></button>`;
+  const nav = `<div class="bar"><button class="nav" data-act="day" data-d="-1" aria-label="Previous day">‹</button>
+    <h1>${esc(lb('ராசி பலன்', 'Rasi Palan'))} · ${esc(dateLong(d.epochDay))}</h1><button class="nav" data-act="day" data-d="1" aria-label="Next day">›</button></div>
+    <p class="small center">${esc(lb('ஒரு ராசியைத் தட்டுக', 'Tap a rasi for today, month and year'))}</p>`;
+  const tiles = Object.entries(RASI_POS).map(([r, [row, col]]) => {
+    const p = byRasi.get(Number(r));
+    const planets = grahasIn(sky, Number(r)).join(' ');
+    return `<button class="rasi-tile" style="grid-row:${row + 1};grid-column:${col + 1};--tint:${OUTLOOK_TINT[p.outlook]}" data-act="rasi-open" data-r="${r}">
+      <b>${esc(CONTENT.names.rasis[r][0])}</b>${state.settings.tamilOnly ? '' : `<small>${esc(CONTENT.names.rasis[r][1])}</small>`}
+      <i>${esc(outlookWords(p.outlook)[0])}</i><span class="planets">${esc(planets)}</span></button>`;
   }).join('');
-  const list = palan.map((p) => `<li class="rasi-row ${p.outlook.toLowerCase()}"><span>${esc(lb(...CONTENT.names.rasis[p.rasi]))}</span><b>${esc(lb(...outlookWords(p.outlook)))}</b><small>${esc(lb(p.messageTa, p.messageEn))}</small></li>`).join('');
-  let detail = '';
-  if (state.rasi !== null) {
-    const g = gochara(state.rasi, sky);
-    detail = `<section class="detail"><h2>${esc(lb(...CONTENT.names.rasis[state.rasi]))}</h2>
-      <h3>${esc(lb('இந்த மாதம்', 'This month'))} · <span class="${g.month.outlook.toLowerCase()}">${esc(lb(...outlookWords(g.month.outlook)))}</span></h3><p class="pre">${esc(lb(g.month.ta, g.month.en))}</p>
-      <h3>${esc(lb('இந்த ஆண்டு', 'This year'))} · <span class="${g.year.outlook.toLowerCase()}">${esc(lb(...outlookWords(g.year.outlook)))}</span></h3><p class="pre">${esc(lb(g.year.ta, g.year.en))}</p>
-      <button class="pill" data-act="rasi-read">🔊 ${esc(lb('படி', 'Read'))}</button></section>`;
-  }
-  return `<h1 class="page">${esc(lb('ராசி பலன்', 'Rasi Palan'))}</h1>
-    <p class="small">${esc(lb('சந்திர ராசி', 'Moon sign'))}: ${esc(lb(...CONTENT.names.rasis[d.panchangam.moonRasi]))} · ${esc(dateLong(d.epochDay))}</p>
-    <div class="chart">${cells}</div>
-    ${detail}
-    <h3>${esc(lb('ராசி பலன்', 'Rasi Palan today'))}</h3><ul class="rasi-list">${list}</ul>`;
+  const moon = palan.find((p) => p.moonHouse === 1);
+  const ashtama = palan.find((p) => p.outlook === 'CHANDRASHTAMAM');
+  // Same lines as the APK's centre panel: Tamil names, the English labels only where the APK shows them.
+  const centre = `<section class="rasi-centre" style="grid-row:2 / span 2;grid-column:2 / span 2">
+    <h3>ராசி சக்கரம்</h3>
+    <small>Rasi chart · today's transits</small>
+    ${moon ? `<p>சந்திரன் · Moon: ${esc(CONTENT.names.rasis[moon.rasi][0])}</p>` : ''}
+    <p>குரு ${esc(CONTENT.names.rasis[sky.jupiter][0])} · சனி ${esc(CONTENT.names.rasis[sky.saturn][0])}</p>
+    <p>ராகு ${esc(CONTENT.names.rasis[sky.rahu][0])} · கேது ${esc(CONTENT.names.rasis[sky.ketu][0])}</p>
+    ${ashtama ? `<p class="bad">சந்திராஷ்டமம்: ${esc(CONTENT.names.rasis[ashtama.rasi][0])}</p>` : ''}
+  </section>`;
+  return `${nav}<div class="rasi-grid">${tiles}${centre}</div>${state.rasi !== null ? rasiModal(d, byRasi.get(state.rasi), sky) : ''}`;
+}
+
+/** The expanded rasi (APK's RasiDetail): Today, Month and Year tabs with read-aloud. */
+function rasiModal(d, p, sky) {
+  const g = gochara(p.rasi, sky);
+  const tabs = [
+    { ta: 'இன்று', en: 'Today', text: [p.messageTa, p.messageEn], outlook: p.outlook, note: '' },
+    { ta: 'மாதம்', en: 'Month', text: [g.month.ta, g.month.en], outlook: g.month.outlook, note: 'சந்திர ராசியிலிருந்து கோசாரம் · Rule-based gochara from current planetary transits' },
+    { ta: 'ஆண்டு', en: 'Year', text: [g.year.ta, g.year.en], outlook: g.year.outlook, note: 'சந்திர ராசியிலிருந்து கோசாரம் · Rule-based gochara from current planetary transits' },
+  ][state.rasiTab];
+  const tabButtons = [0, 1, 2].map((t) => {
+    const label = lb(...[['இன்று', 'Today'], ['மாதம்', 'Month'], ['ஆண்டு', 'Year']][t]);
+    return `<button class="pill${state.rasiTab === t ? ' on' : ''}" data-act="rasi-tab" data-t="${t}">${esc(label)}</button>`;
+  }).join('');
+  return `<div class="rasi-modal" role="dialog" aria-modal="true" aria-label="${esc(lb(...CONTENT.names.rasis[p.rasi]))}">
+    <div class="rasi-card">
+      <div class="bar"><h2>${esc(lb(...CONTENT.names.rasis[p.rasi]))}</h2>
+        <span class="chip ${tabs.outlook.toLowerCase()}">${esc(lb(...outlookWords(tabs.outlook)))}</span>
+        <button class="nav" data-act="rasi-close" aria-label="Close">✕</button></div>
+      <div class="row wrap">${tabButtons}</div>
+      <p class="pre">${esc(lb(...tabs.text))}</p>
+      ${tabs.note ? `<p class="small">${esc(tabs.note)}</p>` : ''}
+      <button class="pill" data-act="rasi-read">🔊 ${esc(lb('வாசி', 'Read aloud'))}</button>
+    </div></div>`;
 }
 const outlookWords = (o) => ({ GOOD: ['நன்மை', 'Good'], NEUTRAL: ['சமம்', 'Neutral'], CAUTION: ['கவனம்', 'Caution'], CHANDRASHTAMAM: ['சந்திராஷ்டமம்', 'Chandrashtamam'] })[o];
 
@@ -497,6 +529,7 @@ async function searchPlaces(q) {
 }
 
 function onClick(e) {
+  if (e.target.classList && e.target.classList.contains('rasi-modal')) return closeRasi();
   const el = e.target.closest('[data-act]');
   if (!el) return;
   const a = el.dataset.act;
@@ -509,8 +542,10 @@ function onClick(e) {
   else if (a === 'month') { const [y, m] = state.monthOf || [yearOf(state.day), monthOf(state.day) - 1]; const n = new Date(Date.UTC(y, m + Number(el.dataset.m), 1)); state.monthOf = [n.getUTCFullYear(), n.getUTCMonth()]; rerender(); }
   else if (a === 'month-today') { const t = todayEpoch(); state.monthOf = [yearOf(t), monthOf(t) - 1]; state.day = t; rerender(); }
   else if (a === 'kind') { state.kindFilter = el.dataset.k; rerender(); }
-  else if (a === 'rasi') { state.rasi = Number(el.dataset.r); rerender(); }
-  else if (a === 'rasi-read') { const d = dayData(todayEpoch()); const g = gochara(state.rasi, skyPositions(d.epochDay, state.place.zoneId)); speakText(g.month.ta); }
+  else if (a === 'rasi-open') { state.rasi = Number(el.dataset.r); state.rasiTab = 0; rerender(); }
+  else if (a === 'rasi-tab') { state.rasiTab = Number(el.dataset.t); rerender(); }
+  else if (a === 'rasi-close') { closeRasi(); }
+  else if (a === 'rasi-read') { toggleRasiSpeech(); }
   else if (a === 'sloka-read') { const d = dayData(state.day); speak(slokaFor(d)); }
   else if (a === 'sloka-music') toggleMusic();
   else if (a === 'place-preset') setPlace(PLACES.find((p) => p.key === el.dataset.key));
@@ -521,6 +556,23 @@ function onClick(e) {
   else if (a === 'notify-allow') { if ('Notification' in window) Notification.requestPermission().then(() => rerender()); }
   else if (a === 'disclaimer') { state.settings.disclaimerSeen = false; saveSettings(state.settings); showDisclaimer(); }
   else if (a === 'reset-settings') { if (confirm(lb('அமைப்புகளை மீட்டமைக்கவா?', 'Reset all settings?'))) { localStorage.removeItem('ktc.settings.v2'); location.reload(); } }
+}
+
+function closeRasi() {
+  stopSpeaking();
+  state.rasi = null;
+  rerender();
+}
+
+/** Reads the open rasi's current tab aloud, or stops if it is already speaking. */
+function toggleRasiSpeech() {
+  if (!('speechSynthesis' in window)) return;
+  if (window.speechSynthesis.speaking) { stopSpeaking(); return rerender(); }
+  const d = dayData(state.day) || dayData(todayEpoch());
+  const p = rasiPalan(d.panchangam.moonRasi)[state.rasi];
+  const g = gochara(state.rasi, skyPositions(d.epochDay, state.place.zoneId));
+  const text = [[p.messageTa], [g.month.ta], [g.year.ta]][state.rasiTab][0];
+  speakText(text);
 }
 
 function speakText(text) {
@@ -581,6 +633,7 @@ async function boot() {
   });
   $('view').addEventListener('input', (e) => { if (e.target.id === 'search') state.search.query = e.target.value; });
   $('ambient').addEventListener('click', () => showAmbient(false));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && state.rasi !== null) closeRasi(); });
   $('disclaimer-ok').addEventListener('click', () => { state.settings.disclaimerSeen = true; saveSettings(state.settings); $('disclaimer').hidden = true; });
   $('place-chip').addEventListener('click', () => { state.tab = 'location'; rerender(); });
   for (const ev of ['pointerdown', 'keydown', 'touchstart']) document.addEventListener(ev, () => { state.lastInput = Date.now(); }, { passive: true });
