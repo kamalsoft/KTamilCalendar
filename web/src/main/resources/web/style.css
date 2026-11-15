@@ -349,3 +349,24 @@ a.pill { display: inline-block; text-decoration: none; }
 .panel-tabs { display: flex; gap: 8px; flex-wrap: nowrap; }
 .panel-tabs .pill { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; padding: 6px 8px; line-height: 1.2; }
 .panel-tabs .pill small { font-size: 11px; }
+
+/* ---- compare places */
+.cmp-grid { display: grid; grid-template-columns: auto 1fr 1fr; gap: 6px 10px; font-size: 14px; }
+.cmp-grid .cmp-l { color: var(--dim); }
+.cmp-grid b { color: var(--accent); }
+/* ---- update banner */
+.update { position: fixed; left: 12px; right: 12px; top: calc(12px + env(safe-area-inset-top)); z-index: 45; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--surface-hi); border-radius: 14px; padding: 10px 14px; box-shadow: 0 6px 24px #0008; }
+.update[hidden] { display: none; }
+.update span { font-size: 14px; }
+/* ---- printable month: only the table prints */
+.print-only { display: none; }
+@media print {
+  body { background: #fff; color: #000; }
+  .top, .tabs, .no-print, .banner, .update, .ambient, .disclaimer { display: none !important; }
+  .layout > *:not(.print-only) { display: none !important; }
+  .print-only { display: block !important; }
+  .print-only table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .print-only th, .print-only td { border: 1px solid #999; padding: 3px 4px; text-align: left; vertical-align: top; }
+  .print-only h2 { color: #000; font-size: 18px; margin: 0; }
+  .print-only p { margin: 2px 0 8px; }
+}

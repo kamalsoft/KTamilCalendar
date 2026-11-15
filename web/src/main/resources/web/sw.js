@@ -1,6 +1,6 @@
 // Offline copy for the installed app. Network first, so a deploy shows up on the next load;
 // the last good copy of each file is kept for when the phone is offline.
-const CACHE = 'ktamilcalendar-v4';
+const CACHE = 'ktamilcalendar-v5';
 const SHELL = [
   './',
   'index.html',
@@ -29,7 +29,7 @@ const SHELL = [
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)));
-  self.skipWaiting();
+  // No skipWaiting here: the page asks the user (see the update banner) and then sends SKIP_WAITING.
 });
 
 self.addEventListener('activate', (e) => {
@@ -38,6 +38,10 @@ self.addEventListener('activate', (e) => {
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
+});
+
+self.addEventListener('message', (e) => {
+  if (e.data === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('fetch', (e) => {

@@ -41,6 +41,9 @@ const state = {
   weatherKey: '',
   spokenKey: '',
   todayPanel: 'panchangam',
+  mhFrom: null, mhTo: null,     // muhurtham date range
+  cmpKey: null, cmpDay: null,   // compare: other place and day
+  findQuery: '',                // festival search
   packDays: new Map(),   // epoch day -> day, from the saved year pack of the current place
   packKey: '',
   lastInput: Date.now(),
@@ -94,6 +97,12 @@ function daysBetween(from, to) {
 function dayData(d) {
   const [from, to] = gridRange(yearOf(d), monthOf(d) - 1);
   return daysBetween(from, to).find((x) => x.epochDay === d);
+}
+/** Days from epoch [from] to [to] inclusive, in chunks of one grid (cached per chunk). */
+function daysInRange(from, to) {
+  const out = [];
+  for (let a = from; a <= to; a += 42) out.push(...daysBetween(a, Math.min(to, a + 41)));
+  return out;
 }
 function daysFrom(start, count) {
   const out = [];
@@ -297,13 +306,50 @@ function viewMonth() {
   return `<div class="bar"><button class="nav" data-act="month" data-m="-1" aria-label="Previous month">‹</button>
     <h1>${esc(MONTHS_TA[m])} · ${MONTHS_EN[m]} ${y}</h1><button class="nav" data-act="month" data-m="1" aria-label="Next month">›</button></div>
     <button class="today" data-act="month-today">${lb('இன்று', 'Today')}</button>
+    <div class="row no-print"><button class="pill" data-act="print-month">🖨 ${esc(lb('அச்சிடு', 'Print month'))}</button></div>
     <div class="weekdays">${weekdays}</div><div class="grid">${cells.join('')}</div>
+    ${printTable(y, m, from, to)}
     <div class="detail small-detail">${sel ? `<h2>${esc(dateLong(sel.epochDay))}</h2><p class="ta-date">${esc(lb(CONTENT.names.months[sel.tamilDate.monthIndex][0] + ' ' + sel.tamilDate.day, CONTENT.names.months[sel.tamilDate.monthIndex][1] + ' ' + sel.tamilDate.day))}</p>
       <ul class="chips">${importantDates(sel).map((x) => `<li class="chip${x.holiday ? ' holiday' : ''}">${esc(lbo(x.title))}</li>`).join('') || `<li class="small">${esc(lb('சிறப்பு நாள் இல்லை', 'No observance'))}</li>`}</ul>
       <button class="pill" data-act="open-today">${lb('விவரம்', 'Details')} ›</button>` : ''}</div>`;
 }
 
+/** The month as a printable table (shown only in print). */
+function printTable(y, m, from, to) {
+  const rows = daysBetween(from, to).filter((d) => monthOf(d.epochDay) === m + 1).map((d) => {
+    const notes = importantDates(d).map((x) => lbo(x.title)).join('; ');
+    return `<tr><td>${esc(dateShort(isoOf(d.epochDay)))}</td><td>${esc(lb(...CONTENT.names.weekdays[d.weekdayIndex]))}</td>
+      <td>${esc(lb(CONTENT.names.months[d.tamilDate.monthIndex][0] + ' ' + d.tamilDate.day, CONTENT.names.months[d.tamilDate.monthIndex][1] + ' ' + d.tamilDate.day))}</td>
+      <td>${esc(lb(d.panchangam.tithi.nameTa, d.panchangam.tithi.nameEn))}</td><td>${esc(lb(d.panchangam.nakshatram.nameTa, d.panchangam.nakshatram.nameEn))}</td><td>${esc(notes)}</td></tr>`;
+  }).join('');
+  return `<section class="print-only"><h2>${esc(MONTHS_EN[m])} ${y} · ${esc(MONTHS_TA[m])}</h2>
+    <p>${esc(state.place.nameEn)} · Tulasi Tamil Panchangam</p>
+    <table><thead><tr><th>Date</th><th>Day</th><th>Tamil date</th><th>Tithi</th><th>Nakshatram</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+}
+
 // ---- festivals & holidays (next 120 days)
+/** Next occurrences (within a year) of festivals or observances whose name matches the query. */
+function findResults(q) {
+  const needle = q.trim().toLowerCase();
+  if (needle.length < 2) return '';
+  const today = todayEpoch();
+  const seen = new Set();
+  const hits = [];
+  for (const d of daysInRange(today, today + 365)) {
+    for (const e of d.events) {
+      if (e.kind === 'MUHURTHAM') continue;
+      if (!(e.titleEn.toLowerCase().includes(needle) || e.titleTa.includes(q.trim()))) continue;
+      if (seen.has(e.date + e.titleEn)) continue;
+      seen.add(e.date + e.titleEn);
+      hits.push({ epoch: d.epochDay, e });
+    }
+    if (hits.length >= 8) break;
+  }
+  if (!hits.length) return `<p class="small">${esc(lb('இந்த ஆண்டில் இல்லை', 'No occurrence in the next year'))}</p>`;
+  return `<ul class="events">${hits.map(({ epoch, e }) => `<li class="event"><time>${esc(dateShort(e.date))}</time>
+      <span><button class="result" data-act="pick-day" data-d="${epoch}"><b>${esc(lb(e.titleTa, e.titleEn))}</b></button></span></li>`).join('')}</ul>`;
+}
+
 function viewFestivals() {
   const start = todayEpoch();
   const kinds = ['ALL', 'FESTIVAL', 'VIRATHAM', 'GOVT_HOLIDAY', 'RELIGIOUS', 'SCHOOL'];
@@ -329,6 +375,8 @@ function viewFestivals() {
   }
   const rows = runs.map((r) => `<li class="event${r.isLocalHoliday ? ' holiday' : ''}"><time>${esc(dateShort(r.date))}${r.end !== r.date ? `<br>– ${esc(dateShort(r.end))}` : ''}</time><span>${esc(lb(r.titleTa, r.titleEn))}${r.religion && r.religion !== 'HINDU' ? ` <small>· ${esc(lb(...CONTENT.enums.Religion.find((x) => x[0] === r.religion).slice(1, 3)))}</small>` : ''}</span></li>`);
   return `<h1 class="page">${esc(lb('விழாக்கள் & விடுமுறைகள்', 'Festivals & holidays'))}</h1>
+    <div class="search"><input id="find" type="search" placeholder="${esc(lb('விழாவின் பெயர் தேடுக', 'Find a festival, e.g. Pongal'))}" value="${esc(state.findQuery)}" autocomplete="off"></div>
+    <div id="find-results">${findResults(state.findQuery)}</div>
     <div class="row wrap">${filters}</div>
     <ul class="events">${rows.join('') || `<li class="small">${esc(lb('இல்லை', 'Nothing in this period'))}</li>`}</ul>`;
 }
@@ -345,19 +393,29 @@ function viewImportant() {
       <span>${list.map((x) => `<b class="${x.holiday ? 'alert-text' : ''}">${esc(lbo(x.title))}</b>`).join('<br>')}</span></li>`).join('') || `<li class="small">${esc(lb('இல்லை', 'Nothing in this period'))}</li>`}</ul>`;
 }
 
-// ---- subha muhurtham (next 120 days), as the APK's Muhurtham list
+// ---- subha muhurtham: days in a chosen range (default: next 120 days), with the best window
 function viewMuhurtham() {
-  const start = todayEpoch();
+  const today = todayEpoch();
+  const from = state.mhFrom ?? today;
+  const to = Math.min(state.mhTo ?? today + 120, from + 366);
   const rows = [];
-  for (const d of daysFrom(start, 120)) {
-    for (const e of d.events) {
-      if (e.kind !== 'MUHURTHAM') continue;
-      rows.push(`<li class="event"><time>${esc(dateShort(e.date))}</time><span>${esc(lb(e.titleTa, e.titleEn))}${e.detail ? `<br><small>${esc(e.detail)}</small>` : ''}</span></li>`);
-    }
+  for (const d of daysInRange(from, to)) {
+    const mh = d.events.find((e) => e.kind === 'MUHURTHAM');
+    if (!mh) continue;
+    const best = d.timings.nallaNeram.find((w) => secOf(w.start) < 12 * 3600) || d.timings.nallaNeram[0];
+    rows.push(`<li class="event"><time>${esc(dateShort(isoOf(d.epochDay)))}</time>
+      <span><b>${esc(lb(mh.titleTa, mh.titleEn))}</b><br><small>${esc(lb(...CONTENT.names.nakshatras[d.panchangam.nakshatram.index]))} · ${esc(lb(d.panchangam.tithi.nameTa, d.panchangam.tithi.nameEn))}</small>
+      ${best ? `<br><small>${esc(lb('சிறந்த நேரம்', 'Best window'))}: ${timeOf(best.start)} – ${timeOf(best.end)}</small>` : ''}</span></li>`);
   }
   return `<h1 class="page">${esc(lb('சுப முகூர்த்த நாட்கள்', 'Subha Muhurtham'))}</h1>
-    <p class="small">${esc(lb('ஆடி, புரட்டாசி, மார்கழி மாதங்கள் தவிர்க்கப்படும்; செவ்வாய், சனி இல்லை.', 'Aadi, Purattasi and Margazhi are skipped; no Tuesdays or Saturdays.'))}</p>
-    <ul class="events">${rows.join('') || `<li class="small">${esc(lb('இல்லை', 'No muhurtham days in this period'))}</li>`}</ul>`;
+    <section class="group">
+      <div class="row wrap">
+        <label class="field">${esc(lb('இருந்து', 'From'))} <input type="date" data-mh="from" value="${isoOf(from)}"></label>
+        <label class="field">${esc(lb('வரை', 'To'))} <input type="date" data-mh="to" value="${isoOf(to)}"></label>
+      </div>
+      <p class="small">${esc(lb('ஆடி, புரட்டாசி, மார்கழி மாதங்கள் தவிர்க்கப்படும்; செவ்வாய், சனி இல்லை.', 'Aadi, Purattasi and Margazhi are skipped; no Tuesdays or Saturdays.'))}</p>
+    </section>
+    <ul class="events">${rows.join('') || `<li class="small">${esc(lb('இந்த காலத்தில் முகூர்த்த நாட்கள் இல்லை', 'No muhurtham days in this period'))}</li>`}</ul>`;
 }
 
 // ---- rasi palan, chart and gochara
@@ -437,6 +495,7 @@ function viewLocation() {
     ${state.search.error ? `<p class="small error">${esc(state.search.error)}</p>` : ''}
     <ul class="results">${results}</ul>
     ${recent ? `<h3>${esc(lb('சமீபத்தியவை', 'Recent'))}</h3><div class="row wrap">${recent}</div>` : ''}
+    ${compareHtml()}
     <section class="group"><h3>${esc(lb('பின் செய்யப்பட்ட இடங்கள் & ஆஃப்லைன்', 'Pinned places & offline years'))}</h3>
       <p class="small">${esc(lb('ஒரு ஆண்டை சேமித்தால் இணைய இணைப்பு இல்லாமலும் வேகமாகத் திறக்கும்.', 'Save a year to open it quickly, and see the last forecast, without a connection.'))}</p>
       ${pinHere}
@@ -444,6 +503,37 @@ function viewLocation() {
       <label class="toggle"><input type="checkbox" data-setting="autoLocate" ${s.autoLocate ? 'checked' : ''}> ${esc(lb('தொடங்கும்போது என் இடம்', 'Use my location when the app opens'))}</label>
     </section>`;
 }
+
+/** Compare the same day in the open place and another place: times are each place's local time. */
+function compareHtml() {
+  const here = state.placeKey;
+  const day = state.cmpDay ?? todayEpoch();
+  const other = PLACES.find((p) => p.key === state.cmpKey) || PLACES.find((p) => p.key !== state.settings.place.preset) || PLACES[0];
+  const a = daysBetween(day, day)[0];
+  const b = monthDays(other, day, day, { convention: timingConvention(other), schoolJson: state.school })[0];
+  const rahu = (d) => `${timeOf(d.timings.rahuKalam.start)} – ${timeOf(d.timings.rahuKalam.end)}`;
+  const rows = [
+    [lb('உதயம்', 'Sunrise'), timeOf(a.sunrise), timeOf(b.sunrise)],
+    [lb('அஸ்தமனம்', 'Sunset'), timeOf(a.sunset), timeOf(b.sunset)],
+    [lb('திதி', 'Tithi'), lb(a.panchangam.tithi.nameTa, a.panchangam.tithi.nameEn), lb(b.panchangam.tithi.nameTa, b.panchangam.tithi.nameEn)],
+    [lb('நட்சத்திரம்', 'Nakshatram'), lb(a.panchangam.nakshatram.nameTa, a.panchangam.nakshatram.nameEn), lb(b.panchangam.nakshatram.nameTa, b.panchangam.nakshatram.nameEn)],
+    [lb('ராகு காலம்', 'Rahu Kalam'), rahu(a), rahu(b)],
+  ];
+  const opts = PLACES.filter((p) => p.key !== here).map((p) => `<option value="${p.key}"${p.key === other.key ? ' selected' : ''}>${esc(lb(p.nameTa, p.nameEn))}</option>`).join('');
+  return `<section class="group compare">
+    <h3>${esc(lb('ஒப்பீடு', 'Compare places'))}</h3>
+    <div class="row wrap">
+      <label class="field">${esc(lb('இன்னொரு இடம்', 'Other place'))} <select data-cmp="place">${opts}</select></label>
+      <label class="field">${esc(lb('நாள்', 'Day'))} <input type="date" data-cmp="day" value="${isoOf(day)}"></label>
+    </div>
+    <div class="cmp-grid">
+      <span></span><b>${esc(placeLabelShort(state.place))}</b><b>${esc(placeLabelShort(other))}</b>
+      ${rows.map(([l, x, y]) => `<span class="cmp-l">${esc(l)}</span><span>${esc(x)}</span><span>${esc(y)}</span>`).join('')}
+    </div>
+    <p class="small">${esc(lb('ஒவ்வொரு இடத்தின் உள்ளூர் நேரம்.', "Each column is that place's local time."))}</p>
+  </section>`;
+}
+const placeLabelShort = (p) => p.nameEn;
 
 // ---- theme and skin
 const SKINS = [
@@ -843,6 +933,7 @@ function onClick(e) {
   else if (a === 'month') { const [y, m] = state.monthOf || [yearOf(state.day), monthOf(state.day) - 1]; const n = new Date(Date.UTC(y, m + Number(el.dataset.m), 1)); state.monthOf = [n.getUTCFullYear(), n.getUTCMonth()]; rerender(); }
   else if (a === 'month-today') { const t = todayEpoch(); state.monthOf = [yearOf(t), monthOf(t) - 1]; state.day = t; rerender(); }
   else if (a === 'kind') { state.kindFilter = el.dataset.k; rerender(); }
+  else if (a === 'print-month') { window.print(); }
   else if (a === 'rasi-open') { state.rasi = Number(el.dataset.r); state.rasiTab = 0; rerender(); }
   else if (a === 'rasi-tab') { state.rasiTab = Number(el.dataset.t); rerender(); }
   else if (a === 'rasi-close') { closeRasi(); }
@@ -910,6 +1001,12 @@ function speakText(text) {
 function onChange(e) {
   const el = e.target;
   state.lastInput = Date.now();
+  if (el.dataset.mh) {
+    if (el.value) state[el.dataset.mh === 'from' ? 'mhFrom' : 'mhTo'] = parseIso(el.value);
+    return rerender();
+  }
+  if (el.dataset.cmp === 'place') { state.cmpKey = el.value; return rerender(); }
+  if (el.dataset.cmp === 'day') { if (el.value) state.cmpDay = parseIso(el.value); return rerender(); }
   if (el.dataset.setting) {
     const key = el.dataset.setting;
     const value = el.type === 'checkbox' ? el.checked : (key === 'ambientMinutes' ? Number(el.value) : el.value);
@@ -957,7 +1054,10 @@ async function boot() {
     e.preventDefault();
     searchPlaces($('search').value);
   });
-  $('view').addEventListener('input', (e) => { if (e.target.id === 'search') state.search.query = e.target.value; });
+  $('view').addEventListener('input', (e) => {
+    if (e.target.id === 'search') state.search.query = e.target.value;
+    if (e.target.id === 'find') { state.findQuery = e.target.value; const box = $('find-results'); if (box) box.innerHTML = findResults(state.findQuery); }
+  });
   $('ambient').addEventListener('click', () => showAmbient(false));
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && state.rasi !== null) closeRasi(); });
   $('disclaimer-ok').addEventListener('click', () => { state.settings.disclaimerSeen = true; saveSettings(state.settings); $('disclaimer').hidden = true; });
@@ -975,7 +1075,27 @@ async function boot() {
   }
   scheduleToday();
   setInterval(scheduleToday, 60 * 60 * 1000);
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+  // Update prompt: a new version waits until the user taps Reload, then the page reloads onto it.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then((reg) => {
+    if (reg.waiting && navigator.serviceWorker.controller) showUpdate(reg.waiting);
+    reg.addEventListener('updatefound', () => {
+      const worker = reg.installing;
+      worker.addEventListener('statechange', () => {
+        if (worker.state === 'installed' && navigator.serviceWorker.controller) showUpdate(worker);
+      });
+    });
+  }).catch(() => { /* offline support is optional */ });
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!reloading) { reloading = true; location.reload(); }
+  });
+}
+function showUpdate(worker) {
+  const bar = $('update');
+  bar.hidden = false;
+  $('update-go').onclick = () => worker.postMessage('SKIP_WAITING');
+}
 }
 
 boot();
