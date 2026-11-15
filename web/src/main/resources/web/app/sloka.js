@@ -39,10 +39,14 @@ const RAGAS = {
   HINDOLAM: [0, 3, 5, 8, 10, 12],
   REVATHI: [0, 2, 5, 7, 9, 12],
 };
-const TEMPO = { SLOW: 1.1, MEDIUM: 0.8, FAST: 0.6 };
+// Beat length in seconds, as the APK's MusicTempo (SLOW 1.2, MEDIUM 0.8).
+const TEMPO = { SLOW: 1.2, MEDIUM: 0.8 };
 const PITCH = { C: 0, D: 2, E: 4, F: 5, G: 7 };
-const BELL_EVERY = { OFF: 0, SOFT: 14, NORMAL: 9, PROMINENT: 6 };
-const LEVEL = { OFF: 0, SOFT: 0.12, NORMAL: 0.2, PROMINENT: 0.3 };
+// Bell interval (s) and loudness, as the APK's BellStyle.
+const BELL_EVERY = { OFF: 0, SOFT: 12, NORMAL: 7, PROMINENT: 5 };
+const BELL_LEVEL = { OFF: 0, SOFT: 0.5, NORMAL: 1, PROMINENT: 1.15 };
+// Tanpura and flute balance, as the APK's MusicMix.
+const MIX = { TANPURA: { tanpura: 1.3, flute: 0.5 }, BALANCED: { tanpura: 1, flute: 1 }, FLUTE: { tanpura: 0.75, flute: 1.25 } };
 
 /**
  * Background temple music: tanpura drone, a plucked pattern (Pa, Sa', Sa', Sa), a slow flute-like phrase in
@@ -63,26 +67,27 @@ export class TempleMusic {
     const st = this.style;
     const sa = 130.81 * Math.pow(2, (PITCH[st.pitch] ?? 5) / 12);
     const master = ctx.createGain();
-    master.gain.value = st.mix === 'MUSIC' ? 0.5 : st.mix === 'DRONE' ? 0.3 : 0.4;
+    const mix = MIX[st.mix] || MIX.BALANCED;
+    master.gain.value = 0.4;
     master.connect(ctx.destination);
     // Tanpura drone: Sa, Pa and upper Sa with a slow swell.
     [[sa, 0.5], [sa * 1.5, 0.25], [sa * 2, 0.2]].forEach(([f, g]) => {
       const o = ctx.createOscillator(), amp = ctx.createGain();
       o.frequency.value = f; o.type = 'sine';
-      amp.gain.value = g * 0.5;
+      amp.gain.value = g * 0.5 * mix.tanpura;
       const lfo = ctx.createOscillator(), depth = ctx.createGain();
       lfo.frequency.value = 0.12; depth.gain.value = g * 0.15;
       lfo.connect(depth).connect(amp.gain);
       o.connect(amp).connect(master);
       o.start(); lfo.start();
     });
-    const beat = TEMPO[st.tempo] ?? 1.1;
+    const beat = TEMPO[st.tempo] ?? TEMPO.SLOW;
     const scale = RAGAS[st.raga] || RAGAS.MOHANAM;
     const contour = [0, 2, 4, 3, 2, 1, 0, 5]; // scale degrees of a simple phrase
     let next = ctx.currentTime + 0.3, bellAt = ctx.currentTime + 2, step = 0, pluck = 0;
     const pluckRatios = [1.5, 2, 2, 1];
     const bellEvery = BELL_EVERY[st.bell] ?? 9;
-    const bellLevel = LEVEL[st.bell] ?? 0.2;
+    const bellLevel = 0.2 * (BELL_LEVEL[st.bell] ?? 1);
     const note = (f, when, dur, level, type) => {
       const o = ctx.createOscillator(), g = ctx.createGain();
       o.type = type; o.frequency.value = f;
@@ -95,9 +100,9 @@ export class TempleMusic {
     this.timer = setInterval(() => {
       const horizon = ctx.currentTime + 1.2;
       while (next < horizon) {
-        if (st.mix !== 'DRONE') {
+        {
           const deg = contour[step % contour.length];
-          note(sa * Math.pow(2, scale[deg] / 12) * 2, next, beat * 0.9, 0.08, 'sine');
+          note(sa * Math.pow(2, scale[deg] / 12) * 2, next, beat * 0.9, 0.08 * mix.flute, 'sine');
           step++;
         }
         note(sa * pluckRatios[pluck % 4], next, 0.9, 0.05, 'triangle');

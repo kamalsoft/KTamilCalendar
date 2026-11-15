@@ -8,6 +8,7 @@ import { loadSettings, saveSettings } from './app/store.js';
 import { fetchWeather, sceneOf, labelOf } from './app/weather.js';
 import { slokaFor, speak, stopSpeaking, TempleMusic } from './app/sloka.js';
 import { scheduleReminders, notifyUser, clearReminders } from './app/reminders.js';
+import { APP_VERSION } from './app/version.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -38,6 +39,9 @@ const state = {
   search: { query: '', results: [], error: '' },
   kindFilter: 'ALL',
   weatherKey: '',
+  spokenKey: '',
+  packDays: new Map(),   // epoch day -> day, from the saved year pack of the current place
+  packKey: '',
   lastInput: Date.now(),
   ambientOn: false,
 };
@@ -74,6 +78,12 @@ function gridRange(year, month) {
 /** Days for a range, computed once per place, convention and range. Settings filters are applied on read. */
 function daysBetween(from, to) {
   const key = `${state.placeKey}|${conventionOf()}|${from}|${to}`;
+  if (!state.cache.has(key) && state.packDays.size && [...Array(to - from + 1).keys()].every((i) => state.packDays.has(from + i))) {
+    // The saved year pack already has these days: use it instead of computing.
+    const days = [];
+    for (let e = from; e <= to; e++) days.push(state.packDays.get(e));
+    state.cache.set(key, days);
+  }
   if (!state.cache.has(key)) {
     state.cache.set(key, monthDays(state.place, from, to, { convention: conventionOf(), schoolJson: state.school }));
     if (state.cache.size > 60) state.cache.delete(state.cache.keys().next().value);
@@ -106,18 +116,74 @@ function render() {
   const view = { today: viewToday, month: viewMonth, festivals: viewFestivals, important: viewImportant, muhurtham: viewMuhurtham, rasi: viewRasi, location: viewLocation, theme: viewTheme, settings: viewSettings, about: viewAbout }[state.tab];
   $('view').innerHTML = view();
   $('view').classList.toggle('today-wide', state.tab === 'today');
-  if (state.tab === 'today') loadWeatherIfNeeded();
+  if (state.tab === 'today') {
+    loadWeatherIfNeeded();
+    maybeReadSloka();
+  }
+  if (state.tab === 'about') drawQr();
 }
 
 // ---- today
+/** The window the time is in right now (or the next one), for the "Now" card. */
+function nowStatus(d, nowSec) {
+  const windows = [
+    ...d.timings.nallaNeram.map((w) => ({ ...w, kind: 'good' })),
+    { ...d.timings.rahuKalam, kind: 'bad' },
+    { ...d.timings.yamagandam, kind: 'bad' },
+    { ...d.timings.kuligai, kind: 'mixed' },
+  ].map((w) => ({ ...w, a: secOf(w.start), b: secOf(w.end) }));
+  const current = windows.find((w) => nowSec >= w.a && nowSec < w.b);
+  const next = windows.filter((w) => w.a > nowSec).sort((x, y) => x.a - y.a)[0];
+  return { current, next };
+}
+const nameOfWindow = (w) => (w.type === 'NALLA_NERAM' ? lb('நல்ல நேரம்', 'Nalla Neram') : lb(...CONTENT.enums.TimingType.find((x) => x[0] === w.type).slice(1, 3)));
+
+function timelineHtml(d, nowSec) {
+  const segs = [
+    ...d.timings.nallaNeram.map((w) => ({ a: secOf(w.start), b: secOf(w.end), kind: 'good' })),
+    ...[d.timings.rahuKalam, d.timings.yamagandam].map((w) => ({ a: secOf(w.start), b: secOf(w.end), kind: 'bad' })),
+    { a: secOf(d.timings.kuligai.start), b: secOf(d.timings.kuligai.end), kind: 'mixed' },
+  ].map((x) => `<i class="seg ${x.kind}" style="left:${(x.a / 864).toFixed(3)}%;width:${((x.b - x.a) / 864).toFixed(3)}%"></i>`).join('');
+  const sunrise = secOf(d.sunrise), sunset = secOf(d.sunset);
+  return `<div class="timeline" aria-label="${esc(lb('நாள் நேரம்', 'Day timeline'))}">
+    <div class="track"><i class="daylight" style="left:${(sunrise / 864).toFixed(3)}%;width:${((sunset - sunrise) / 864).toFixed(3)}%"></i>${segs}
+      ${nowSec !== null ? `<b class="now" style="left:${(nowSec / 864).toFixed(3)}%"></b>` : ''}</div>
+    <div class="ticks"><span>12 AM</span><span>6</span><span>12</span><span>6</span><span>12 AM</span></div></div>`;
+}
+
 function viewToday() {
   const d = dayData(state.day);
   if (!d) return '<p class="status">No data for this day.</p>';
+  const isToday = d.epochDay === todayEpoch();
+  const nowSec = isToday ? wallClock(Date.now(), state.place.zoneId).sec : null;
   const p = d.panchangam;
   const nav = `<div class="bar"><button class="nav" data-act="day" data-d="-1" aria-label="Previous day">‹</button>
     <h1>${esc(dateLong(d.epochDay))}</h1><button class="nav" data-act="day" data-d="1" aria-label="Next day">›</button></div>
-    <button class="today" data-act="day-today">${lb('இன்று', 'Today')}</button>`;
+    ${isToday ? '' : `<button class="today" data-act="day-today">${lb('இன்று', 'Today')}</button>`}`;
   const chips = importantDates(d).map((x) => `<li class="chip${x.holiday ? ' holiday' : ''}">${esc(lbo(x.title))}</li>`).join('');
+  const hero = `<section class="hero">
+    <p class="hero-week">${esc(lb(...CONTENT.names.weekdays[d.weekdayIndex]))}</p>
+    <h2>${esc(lb(CONTENT.names.months[d.tamilDate.monthIndex][0] + ' ' + d.tamilDate.day, CONTENT.names.months[d.tamilDate.monthIndex][1] + ' ' + d.tamilDate.day))}</h2>
+    <p class="hero-year">${esc(lb(CONTENT.names.years[d.tamilDate.yearCycleIndex][0] + ' வருடம்', CONTENT.names.years[d.tamilDate.yearCycleIndex][1] + ' year'))}</p>
+    ${d.holiday || chips ? `<ul class="chips">${d.holiday ? `<li class="chip holiday">${esc(lb('விடுமுறை', 'Holiday'))}</li>` : ''}${chips}</ul>` : ''}
+  </section>`;
+  let nowCard = '';
+  if (isToday) {
+    const { current, next } = nowStatus(d, nowSec);
+    const line = current
+      ? `${esc(nameOfWindow(current))} · ${esc(lb('முடிவு', 'ends'))} ${timeOf(current.end)}`
+      : next ? `${esc(lb('அடுத்தது', 'Next'))}: ${esc(nameOfWindow(next))} ${timeOf(next.start)}` : esc(lb('இன்று நேரங்கள் முடிந்தன', 'No more windows today'));
+    nowCard = `<section class="now-card ${current ? current.kind : 'none'}">
+      <p class="now-label">${esc(lb('இப்போது', 'Now'))}</p><p class="now-line">${line}</p></section>`;
+  }
+  const facts = [
+    ['🌅', lb('உதயம்', 'Sunrise'), timeOf(d.sunrise)],
+    ['🌇', lb('அஸ்தமனம்', 'Sunset'), timeOf(d.sunset)],
+    ['🌙', lb('திதி', 'Tithi'), `${esc(lb(p.tithi.nameTa, p.tithi.nameEn))} <small>→ ${endOf(p.tithi.endsAt)}</small>`],
+    ['✦', lb('நட்சத்திரம்', 'Nakshatram'), `${esc(lb(p.nakshatram.nameTa, p.nakshatram.nameEn))} <small>→ ${endOf(p.nakshatram.endsAt)}</small>`],
+    ['☉', lb('யோகம்', 'Yogam'), `${esc(lb(p.yogam.nameTa, p.yogam.nameEn))} <small>→ ${endOf(p.yogam.endsAt)}</small>`],
+    ['☾', lb('சந்திர ராசி', 'Moon sign'), esc(lb(...CONTENT.names.rasis[p.moonRasi]))],
+  ].map(([icon, label, value]) => `<div class="tile"><span class="ico">${icon}</span><dt>${esc(label)}</dt><dd>${value}</dd></div>`).join('');
   const timings = [...d.timings.nallaNeram, d.timings.rahuKalam, d.timings.yamagandam, d.timings.kuligai]
     .concat(d.timings.gowriNallaNeram).map((t) => {
       const cls = t.type === 'NALLA_NERAM' || t.type === 'GOWRI_NALLA_NERAM' ? 'good' : t.type === 'KULIGAI' ? 'mixed' : 'bad';
@@ -126,28 +192,17 @@ function viewToday() {
       return `<li class="${cls}"><span>${esc(label + gowri)}</span><time>${timeOf(t.start)} – ${timeOf(t.end)}</time></li>`;
     }).join('');
   const chandra = d.chandrashtamam;
-  const slo = slokaFor(d);
-  const weatherCard = state.settings.weather ? weatherHtml() : '';
+  const weatherCard = state.settings.weather ? (isToday ? weatherHtml() : forecastHtml(d.epochDay)) : '';
   return `${nav}
-    <div class="detail">
-      <div>
-        <h2>${esc(lb(...CONTENT.names.weekdays[d.weekdayIndex]))}</h2>
-        <p class="ta-date">${esc(lb(CONTENT.names.months[d.tamilDate.monthIndex][0] + ' ' + d.tamilDate.day, CONTENT.names.months[d.tamilDate.monthIndex][1] + ' ' + d.tamilDate.day))}
-          · ${esc(lb(CONTENT.names.years[d.tamilDate.yearCycleIndex][0] + ' வருடம்', CONTENT.names.years[d.tamilDate.yearCycleIndex][1] + ' year'))}</p>
-      </div>
-      ${d.holiday || chips ? `<ul class="chips">${d.holiday ? `<li class="chip holiday">${esc(lb('விடுமுறை', 'Holiday'))}</li>` : ''}${chips}</ul>` : ''}
-      <dl class="facts">
-        <div><dt>${esc(lb('உதயம்', 'Sunrise'))}</dt><dd>${timeOf(d.sunrise)}</dd></div>
-        <div><dt>${esc(lb('அஸ்தமனம்', 'Sunset'))}</dt><dd>${timeOf(d.sunset)}</dd></div>
-        <div><dt>${esc(lb('திதி', 'Tithi'))}</dt><dd>${esc(lb(p.tithi.nameTa, p.tithi.nameEn))} <small>→ ${endOf(p.tithi.endsAt)}</small><br><small>${esc(lb(...pakshaName(p.paksha)))}</small></dd></div>
-        <div><dt>${esc(lb('நட்சத்திரம்', 'Nakshatram'))}</dt><dd>${esc(lb(p.nakshatram.nameTa, p.nakshatram.nameEn))} <small>→ ${endOf(p.nakshatram.endsAt)}</small></dd></div>
-        <div><dt>${esc(lb('யோகம்', 'Yogam'))}</dt><dd>${esc(lb(p.yogam.nameTa, p.yogam.nameEn))} <small>→ ${endOf(p.yogam.endsAt)}</small></dd></div>
-        <div><dt>${esc(lb('சந்திர ராசி', 'Moon sign'))}</dt><dd>${esc(lb(...CONTENT.names.rasis[p.moonRasi]))}</dd></div>
-      </dl>
-      <section><h3>${esc(lb('நேரங்கள்', 'Timings'))}</h3><ul class="timings">${timings}</ul></section>
-      <p class="warn">${esc(lb('சந்திராஷ்டமம்', 'Chandrashtamam'))} — ${esc(lb(...CONTENT.names.rasis[chandra.rasi]))}
+    <div class="today-grid">
+      ${hero}
+      ${nowCard}
+      <section class="detail"><h3>${esc(lb('நாள் நேரம்', 'Day timeline'))}</h3>${timelineHtml(d, nowSec)}</section>
+      <section class="detail"><div class="tiles">${facts}</div></section>
+      <section class="detail"><h3>${esc(lb('நேரங்கள்', 'Timings'))}</h3><ul class="timings">${timings}</ul></section>
+      <p class="warn chandra">${esc(lb('சந்திராஷ்டமம்', 'Chandrashtamam'))} — ${esc(lb(...CONTENT.names.rasis[chandra.rasi]))}
         <br><small>${esc(chandra.nakshatras.map((k) => lb(...CONTENT.names.nakshatras[k])).join(', '))}</small></p>
-      ${slokaCard(slo)}
+      ${slokaCard(slokaFor(d))}
       ${weatherCard}
       ${reminderNote()}
     </div>`;
@@ -166,7 +221,20 @@ function slokaCard(s) {
       <button class="pill${state.music ? ' on' : ''}" data-act="sloka-music">♪ ${esc(lb('இசை', 'Music'))} ${state.music ? 'on' : 'off'}</button>
     </div>
     <p class="small">${esc(s.source)}</p>
+    <p class="small">${esc(lb('மேலும் படிக்க', 'Read more'))}: <a href="${RELATED_URL}" target="_blank" rel="noopener">thiruppugazh-ui.vercel.app ↗</a></p>
   </section>`;
+}
+
+/** The forecast for a day within the next 7 (used when the selected day is not today). */
+function forecastHtml(epoch) {
+  const w = state.weather;
+  if (!state.settings.weather) return '';
+  if (!w) return `<section class="weather"><p class="small">${esc(lb('முன்னறிவிப்பு ஏற்றப்படுகிறது…', 'Loading forecast…'))}</p></section>`;
+  const day = w.daily.find((x) => x.date === isoOf(epoch));
+  if (!day) return `<section class="weather"><p class="small">${esc(lb('இந்த நாளுக்கு முன்னறிவிப்பு இல்லை (7 நாட்கள் மட்டும்)', 'No forecast for this day (7 days only)'))}</p></section>`;
+  return `<section class="weather scene-${sceneOf(day.code, true)}">
+    <h3>Forecast · ${esc(dateShort(day.date))}</h3>
+    <div class="wx-now"><b>${Math.round(day.max)}${w.unit} / ${Math.round(day.min)}${w.unit}</b><span>${esc(labelOf(day.code))}</span></div></section>`;
 }
 
 function weatherHtml() {
@@ -230,22 +298,32 @@ function viewFestivals() {
   const start = todayEpoch();
   const kinds = ['ALL', 'FESTIVAL', 'VIRATHAM', 'GOVT_HOLIDAY', 'RELIGIOUS', 'SCHOOL'];
   const filters = kinds.map((k) => `<button class="pill${state.kindFilter === k ? ' on' : ''}" data-act="kind" data-k="${k}">${esc(k === 'ALL' ? lb('அனைத்தும்', 'All') : kindLabel(k))}</button>`).join('');
-  const rows = [];
-  const seen = new Set(); // the same observance can come from two sources (e.g. Christmas): show it once
+  // One entry per observance and date (the same one can come from two sources), then consecutive days
+  // of the same observance (school breaks, multi-day festivals) merge into one range, as in the APK.
+  const seen = new Set();
+  const entries = [];
   for (const d of daysFrom(start, 120)) {
     for (const e of d.events) {
       if (e.kind === 'MUHURTHAM') continue;
       if (state.kindFilter !== 'ALL' && e.kind !== state.kindFilter) continue;
       if (seen.has(e.date + e.titleEn)) continue;
       seen.add(e.date + e.titleEn);
-      rows.push(`<li class="event${e.isLocalHoliday ? ' holiday' : ''}"><time>${esc(dateShort(e.date))}</time><span>${esc(lb(e.titleTa, e.titleEn))}${e.religion && e.religion !== 'HINDU' ? ` <small>· ${esc(lb(...CONTENT.enums.Religion.find((x) => x[0] === e.religion).slice(1, 3)))}</small>` : ''}</span></li>`);
+      entries.push(e);
     }
   }
+  const runs = [];
+  for (const e of entries) {
+    const last = runs[runs.length - 1];
+    if (last && last.titleEn === e.titleEn && last.kind === e.kind && last.end === dayBefore(e.date)) last.end = e.date;
+    else runs.push({ ...e, end: e.date });
+  }
+  const rows = runs.map((r) => `<li class="event${r.isLocalHoliday ? ' holiday' : ''}"><time>${esc(dateShort(r.date))}${r.end !== r.date ? `<br>– ${esc(dateShort(r.end))}` : ''}</time><span>${esc(lb(r.titleTa, r.titleEn))}${r.religion && r.religion !== 'HINDU' ? ` <small>· ${esc(lb(...CONTENT.enums.Religion.find((x) => x[0] === r.religion).slice(1, 3)))}</small>` : ''}</span></li>`);
   return `<h1 class="page">${esc(lb('விழாக்கள் & விடுமுறைகள்', 'Festivals & holidays'))}</h1>
     <div class="row wrap">${filters}</div>
     <ul class="events">${rows.join('') || `<li class="small">${esc(lb('இல்லை', 'Nothing in this period'))}</li>`}</ul>`;
 }
 const kindLabel = (k) => ({ FESTIVAL: ['விழா', 'Festival'], VIRATHAM: ['விரதம்', 'Viratham'], GOVT_HOLIDAY: ['விடுமுறை', 'Holiday'], RELIGIOUS: ['மதம்', 'Religious'], SCHOOL: ['பள்ளி', 'School'] })[k].join(' · ');
+const dayBefore = (iso) => isoOf(parseIso(iso) - 1);
 const dateShort = (iso) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 
 // ---- important dates (next 60 days)
@@ -336,6 +414,9 @@ function viewLocation() {
   const s = state.settings;
   const presets = PLACES.map((p) => `<button class="pill${!s.place.custom && s.place.preset === p.key ? ' on' : ''}" data-act="place-preset" data-key="${p.key}">${esc(lb(p.nameTa, p.nameEn))}</button>`).join('');
   const recent = s.recentPlaces.map((p, i) => `<button class="pill" data-act="place-recent" data-i="${i}">${esc(p.nameEn)}</button>`).join('');
+  const pinned = s.pinnedPlaces.map((p) => `<li class="event pin-row"><span><b>${esc(p.label)}</b><br><small>${esc(lb('ஆஃப்லைன் ஆண்டுகள்', 'Offline years'))}: ${packYears.map((y) => `<button class="pill small-pill" data-act="pack-save" data-year="${y}" data-id="${esc(p.id)}">${y}</button>`).join(' ')}</small></span>
+      <span class="pin-actions"><button class="pill" data-act="pin-open" data-id="${esc(p.id)}">${esc(lb('திற', 'Open'))}</button><button class="pill" data-act="pin-remove" data-id="${esc(p.id)}">✕</button></span></li>`).join('');
+  const pinHere = s.pinnedPlaces.some((p) => p.id === placeKeyOf(s)) ? '' : `<button class="pill" data-act="pin-current">📌 ${esc(lb('இந்த இடத்தைப் பின் செய்', 'Pin this place'))}</button>`;
   const results = state.search.results.map((r, i) => `<li><button class="result" data-act="place-result" data-i="${i}"><b>${esc(r.name)}</b><small>${esc([r.admin1, r.country].filter(Boolean).join(', '))}</small></button></li>`).join('');
   return `<h1 class="page">${esc(lb('இடம்', 'Location'))}</h1>
     <p class="small">${esc(placeLabel(state.place))} · ${esc(state.place.zoneId)}</p>
@@ -344,7 +425,13 @@ function viewLocation() {
     <form id="search-form" class="search"><input id="search" type="search" placeholder="${esc(lb('நகரம் தேடுக', 'Search a city'))}" value="${esc(state.search.query)}" autocomplete="off"><button class="pill" type="submit">${esc(lb('தேடு', 'Search'))}</button></form>
     ${state.search.error ? `<p class="small error">${esc(state.search.error)}</p>` : ''}
     <ul class="results">${results}</ul>
-    ${recent ? `<h3>${esc(lb('சமீபத்தியவை', 'Recent'))}</h3><div class="row wrap">${recent}</div>` : ''}`;
+    ${recent ? `<h3>${esc(lb('சமீபத்தியவை', 'Recent'))}</h3><div class="row wrap">${recent}</div>` : ''}
+    <section class="group"><h3>${esc(lb('பின் செய்யப்பட்ட இடங்கள் & ஆஃப்லைன்', 'Pinned places & offline years'))}</h3>
+      <p class="small">${esc(lb('ஒரு ஆண்டை சேமித்தால் இணைய இணைப்பு இல்லாமலும் வேகமாகத் திறக்கும்.', 'Save a year to open it quickly, and see the last forecast, without a connection.'))}</p>
+      ${pinHere}
+      <ul class="events">${pinned || `<li class="small">${esc(lb('இன்னும் இல்லை', 'Nothing pinned yet'))}</li>`}</ul>
+      <label class="toggle"><input type="checkbox" data-setting="autoLocate" ${s.autoLocate ? 'checked' : ''}> ${esc(lb('தொடங்கும்போது என் இடம்', 'Use my location when the app opens'))}</label>
+    </section>`;
 }
 
 // ---- theme and skin
@@ -394,9 +481,10 @@ function viewSettings() {
       ${check('ambient', lb('ஓய்வு நேர கடிகாரம்', 'Ambient clock when idle'))}
       ${select('ambientMinutes', lb('எத்தனை நிமிடங்களுக்குப் பின்', 'After how many minutes'), [[1, '1'], [2, '2'], [5, '5'], [10, '10']])}
       ${check('slokaMusic', lb('ஸ்லோகத்துடன் இசை', 'Music with sloka'))}
-      ${check('slokaVoice', lb('ஸ்லோகம் சத்தமாக', 'Read sloka aloud'))}
+      ${check('slokaVoice', lb('ஸ்லோகத்தை வாசிக்கவும்', 'Read the sloka aloud when Today opens'))}
       ${musicSel('raga', lb('ராகம்', 'Raga'), [['MOHANAM', 'Mohanam'], ['HINDOLAM', 'Hindolam'], ['REVATHI', 'Revathi']])}
-      ${musicSel('tempo', lb('வேகம்', 'Tempo'), [['SLOW', lb('மெதுவாக', 'Slow')], ['MEDIUM', lb('நடுத்தரம்', 'Medium')], ['FAST', lb('வேகமாக', 'Fast')]])}
+      ${musicSel('tempo', lb('வேகம்', 'Tempo'), [['SLOW', lb('மெதுவாக', 'Slow')], ['MEDIUM', lb('நடுத்தரம்', 'Medium')]])}
+      ${musicSel('mix', lb('தம்புரா / புல்லாங்குழல்', 'Tanpura / flute'), [['TANPURA', lb('தம்புரா அதிகம்', 'More tanpura')], ['BALANCED', lb('சமநிலை', 'Balanced')], ['FLUTE', lb('புல்லாங்குழல் அதிகம்', 'More flute')]])}
       ${musicSel('bell', lb('மணி', 'Bell'), [['OFF', lb('இல்லை', 'Off')], ['SOFT', lb('மெல்லிய', 'Soft')], ['NORMAL', lb('சாதாரண', 'Normal')], ['PROMINENT', lb('தெளிவான', 'Prominent')]])}
       ${musicSel('pitch', lb('சுருதி', 'Pitch'), [['C', 'C'], ['D', 'D'], ['E', 'E'], ['F', 'F'], ['G', 'G']])}
     </section>
@@ -410,6 +498,7 @@ function viewSettings() {
 
 // ---- about
 const SITE_URL = 'https://kamalsoft.github.io/KTamilCalendar/';
+const RELATED_URL = 'https://thiruppugazh-ui.vercel.app/';
 
 /** True on iPhone/iPad Safari, the only browser that can add this page to the home screen. */
 function onIosSafari() {
@@ -428,7 +517,7 @@ function viewAbout() {
       : lb('⚠ iPhone நிறுவலுக்கு Safari-ல் திறக்கவும். Chrome போன்ற உலாவிகளில் நிறுவ முடியாது.', '⚠ To install on iPhone, open this page in Safari. Chrome and other browsers cannot install it.');
   return `<h1 class="page">${esc(lb('பற்றி', 'About'))}</h1>
     <section class="detail install">
-      <h3>${esc(lb('iPhone-ல் நிறுவுக · Install on iPhone', 'Install on iPhone · iPhone-ல் நிறுவுக'))}</h3>
+      <h3>${esc(lb('iPhone-ல் நிறுவுக', 'Install on iPhone'))}</h3>
       <p class="small">${esc(status)}</p>
       <ol class="steps">
         <li>${esc(lb('Safari-ல் இந்தப் பக்கத்தைத் திறக்கவும்.', 'Open this page in Safari.'))}</li>
@@ -443,13 +532,85 @@ function viewAbout() {
       <p class="small">${esc(SITE_URL)}</p>
     </section>
     <section class="detail">
-      <h3>${esc(lb('பற்றி · About', 'About'))}</h3>
+      <h3>${esc(lb('தொடர்புடைய தளம் · Related', 'Related site'))}</h3>
+      <p>${esc(lb('திருப்புகழ் பாடல்களை இங்கே படிக்கலாம்.', 'Read Thiruppugazh hymns and their meanings here.'))}</p>
+      <p><a class="pill on" href="${RELATED_URL}" target="_blank" rel="noopener">Thiruppugazh · thiruppugazh-ui.vercel.app ↗</a></p>
+    </section>
+    <section class="detail qr-card">
+      <div id="qr" class="qr" aria-label="QR code for the GitHub page"></div>
+      <div><h3>GitHub</h3><p class="small">${esc(lb('இந்த QR குறியீட்டை ஸ்கேன் செய்யவும்', 'Scan to open the project on GitHub'))}</p>
+      <p><a href="https://github.com/kamalsoft/KTamilCalendar" target="_blank" rel="noopener">github.com/kamalsoft/KTamilCalendar</a></p>
+      <p class="small">Version ${esc(APP_VERSION)}</p></div>
+    </section>
+    <section class="detail">
       <p>${esc(lb('இந்த நாட்காட்டியின் கணக்குகள் இந்த சாதனத்திலேயே நடக்கின்றன. சூரியன், சந்திரன் நிலைகள் Meeus நுட்பங்களிலிருந்து; லஹிரி அயனாம்சம்.', 'Every calculation runs on this device from Sun and Moon positions (Meeus algorithms, Lahiri ayanamsa). The engine matches the Android TV app.'))}</p>
       <p class="small">${esc(lb('விடுமுறை நாட்கள் அரசுப் பட்டியல்களைப் பொறுத்தது; இஸ்லாமிய நாட்கள் பிறை பார்த்தலால் ஒரு நாள் மாறலாம்.', 'Holidays follow official lists where known. Islamic dates are calculated and local moon sighting may differ by a day.'))}</p>
       <p class="small">${esc(lb('ஸ்லோகங்கள் பொது உரிமையுள்ள பாரம்பரிய நூல்கள்.', 'All sloka texts are public-domain classics.'))}</p>
-      <p><a href="https://github.com/kamalsoft/KTamilCalendar" target="_blank" rel="noopener">github.com/kamalsoft/KTamilCalendar</a></p>
       <button class="pill" data-act="disclaimer">${esc(lb('மறுப்பு அறிவிப்பு', 'Show disclaimer'))}</button>
     </section>`;
+}
+
+// ---------------------------------------------------------------- offline year packs
+// A pack is one year of days for one place and timing convention, kept in Cache Storage. The app reads it
+// instead of recomputing; without a pack everything is still computed on the device.
+const PACK_CACHE = 'ktc-packs';
+const packUrl = (placeId, convention, year) => `pack/${encodeURIComponent(placeId)}/${convention}/${year}.json`;
+const packYears = [2026, 2027, 2028];
+
+async function loadPackForCurrent() {
+  const id = state.placeKey, conv = conventionOf();
+  const token = `${id}|${conv}`;
+  state.packKey = token;
+  state.packDays = new Map();
+  if (!('caches' in window)) return;
+  try {
+    const cache = await caches.open(PACK_CACHE);
+    for (const year of packYears) {
+      const hit = await cache.match(packUrl(id, conv, year));
+      if (!hit) continue;
+      const days = await hit.json();
+      if (state.packKey !== token) return; // place changed while loading
+      for (const d of days) state.packDays.set(d.epochDay, d);
+    }
+    state.cache.clear();
+    rerender();
+  } catch (e) { /* no pack: the app computes */ }
+}
+
+/** Saves one year for a pinned place (it does not have to be the open one). */
+async function savePack(pin, year, button) {
+  const place = pin.place.custom ? pin.place.custom : PLACES.find((x) => x.key === pin.place.preset);
+  const conv = state.settings.convention === 'AUTO' ? timingConvention(place) : state.settings.convention;
+  const status = (t) => { if (button) button.textContent = t; };
+  status(lb('கணக்கிடுகிறது…', 'Calculating…'));
+  await new Promise((r) => setTimeout(r, 30)); // let the label paint
+  const days = monthDays(place, epochDay(year, 1, 1), epochDay(year, 12, 31), { convention: conv, schoolJson: state.school });
+  const cache = await caches.open(PACK_CACHE);
+  await cache.put(packUrl(pin.id, conv, year), new Response(JSON.stringify(days), { headers: { 'Content-Type': 'application/json' } }));
+  if (pin.id === state.placeKey) await loadPackForCurrent();
+  status(lb(`${year} சேமிக்கப்பட்டது ✓`, `${year} saved ✓`));
+}
+
+async function packStatus(placeId) {
+  if (!('caches' in window)) return {};
+  const cache = await caches.open(PACK_CACHE);
+  const out = {};
+  for (const year of packYears) out[year] = !!(await cache.match(packUrl(placeId, conventionOf(), year)));
+  return out;
+}
+
+function pinCurrent() {
+  const id = placeKeyOf(state.settings);
+  if (state.settings.pinnedPlaces.some((p) => p.id === id)) return;
+  state.settings.pinnedPlaces = [...state.settings.pinnedPlaces, { id, label: state.place.nameEn, place: state.settings.place }].slice(0, 5);
+  saveSettings(state.settings);
+  rerender();
+}
+
+function unpin(id) {
+  state.settings.pinnedPlaces = state.settings.pinnedPlaces.filter((p) => p.id !== id);
+  saveSettings(state.settings);
+  rerender();
 }
 
 // ---------------------------------------------------------------- weather & music & reminders
@@ -463,9 +624,32 @@ function loadWeatherIfNeeded() {
   state.weatherErr = '';
   const p = state.place;
   const done = () => { if (state.weatherKey === key && state.tab === 'today') rerender(); };
+  const lastKey = `ktc.wx.${key}`;
   fetchWeather(p.latitude, p.longitude, unitsImperial())
-    .then((w) => { if (state.weatherKey === key) state.weather = w; done(); })
-    .catch(() => { if (state.weatherKey === key) state.weatherErr = lb('வானிலை கிடைக்கவில்லை', 'Weather unavailable (offline?)'); done(); });
+    .then((w) => {
+      try { localStorage.setItem(lastKey, JSON.stringify({ at: Date.now(), w })); } catch (e) { /* not kept */ }
+      if (state.weatherKey === key) state.weather = w;
+      done();
+    })
+    .catch(() => {
+      // Offline: show the last forecast saved for this place, marked with its age.
+      let saved = null;
+      try { saved = JSON.parse(localStorage.getItem(lastKey) || 'null'); } catch (e) { saved = null; }
+      if (state.weatherKey === key && saved) {
+        state.weather = saved.w;
+        state.weatherErr = lb(`கடைசியாகப் பெற்றது ${new Date(saved.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`, `Last forecast from ${new Date(saved.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`);
+      } else if (state.weatherKey === key) state.weatherErr = lb('வானிலை கிடைக்கவில்லை', 'Weather unavailable (offline?)');
+      done();
+    });
+}
+
+/** With "read aloud" on, the day's verse is read once when Today opens (not again on every re-render). */
+function maybeReadSloka() {
+  if (!state.settings.slokaVoice) return;
+  const key = `${state.day}|${state.placeKey}`;
+  if (state.spokenKey === key) return;
+  state.spokenKey = key;
+  speak(slokaFor(dayData(state.day)));
 }
 
 function toggleMusic() {
@@ -500,6 +684,16 @@ function showAmbient(on) {
   state.ambientOn = on;
   $('ambient').hidden = !on;
   if (on) ambientTick();
+  keepScreenAwake(on);
+}
+
+/** Keeps the screen on while the ambient clock is showing (Wake Lock API; ignored where unsupported). */
+async function keepScreenAwake(on) {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    if (on && !state.wakeLock) state.wakeLock = await navigator.wakeLock.request('screen');
+    else if (!on && state.wakeLock) { await state.wakeLock.release(); state.wakeLock = null; }
+  } catch (e) { /* refused, e.g. low battery or hidden tab */ }
 }
 function ambientTick() {
   if (!state.ambientOn) return;
@@ -507,16 +701,25 @@ function ambientTick() {
   const now = new Date();
   const nowSec = wallClock(now.getTime(), state.place.zoneId).sec;
   const clock = timeOf(`${String(Math.floor(nowSec / 3600)).padStart(2, '0')}:${String(Math.floor((nowSec % 3600) / 60)).padStart(2, '0')}:00`);
-  const next = d.timings.nallaNeram.find((w) => secOf(w.start) > nowSec) || d.timings.nallaNeram[0];
+  // The Nalla Neram that is running now, or the next one today (or say tomorrow when the day's are over).
+  const nallaNow = d.timings.nallaNeram.find((w) => nowSec >= secOf(w.start) && nowSec < secOf(w.end));
+  const nallaNext = d.timings.nallaNeram.find((w) => secOf(w.start) > nowSec);
   const rahu = d.timings.rahuKalam;
-  $('ambient').innerHTML = `<div class="amb-inner">
+  const hour = Math.floor(nowSec / 3600);
+  const phase = hour >= 6 && hour < 17 ? 'day' : hour >= 17 && hour < 19 ? 'dusk' : 'night';
+  const lamps = Array.from({ length: 10 }, (_, i) => `<i class="lamp" style="left:${(i * 37 + 8) % 96}%;top:${(i * 53 + 20) % 80}%;animation-delay:${(i * 1.3) % 7}s"></i>`).join('');
+  const stars = phase === 'night' ? Array.from({ length: 28 }, (_, i) => `<i class="star" style="left:${(i * 29) % 100}%;top:${(i * 43) % 70}%;animation-delay:${(i * 0.7) % 4}s"></i>`).join('') : '';
+  $('ambient').className = `ambient ${phase}`;
+  $('ambient').innerHTML = `<div class="sky">${stars}${lamps}</div><div class="amb-inner">
     <div class="amb-clock">${clock}</div>
     <div class="amb-date">${esc(dateLong(d.epochDay))}</div>
     <div class="amb-line">${esc(lb(CONTENT.names.months[d.tamilDate.monthIndex][0] + ' ' + d.tamilDate.day, CONTENT.names.months[d.tamilDate.monthIndex][1] + ' ' + d.tamilDate.day))}</div>
     <div class="amb-line">${esc(lb('திதி', 'Tithi'))}: ${esc(lb(d.panchangam.tithi.nameTa, d.panchangam.tithi.nameEn))}</div>
-    <div class="amb-line">${esc(lb('அடுத்த நல்ல நேரம்', 'Next Nalla Neram'))}: ${next ? timeOf(next.start) : '—'}</div>
+    <div class="amb-line">${nallaNow
+      ? `${esc(lb('நல்ல நேரம்', 'Nalla Neram'))} · ${esc(lb('முடிவு', 'ends'))} ${timeOf(nallaNow.end)}`
+      : `${esc(lb('அடுத்த நல்ல நேரம்', 'Next Nalla Neram'))}: ${nallaNext ? timeOf(nallaNext.start) : esc(lb('நாளை', 'tomorrow'))}`}</div>
     <div class="amb-line">${esc(lb('ராகு காலம்', 'Rahu Kalam'))}: ${timeOf(rahu.start)} – ${timeOf(rahu.end)}</div>
-    ${state.weather ? `<div class="amb-line">${Math.round(state.weather.current.temp)}${state.weather.unit} · ${esc(labelOf(state.weather.current.code))}</div>` : ''}
+    ${state.weather ? `<div class="amb-line amb-weather">${Math.round(state.weather.current.temp)}${state.weather.unit} · ${esc(labelOf(state.weather.current.code))}</div>` : ''}
     <div class="amb-tap">${esc(lb('தொடர தொடவும்', 'Tap to return'))}</div></div>`;
 }
 
@@ -558,6 +761,8 @@ function setEngineFromSettings() {
   state.day = todayEpoch();
   state.monthOf = null;
   $('place-chip').textContent = state.place.nameEn;
+  state.cache.clear();
+  loadPackForCurrent();
 }
 
 function autoLocate() {
@@ -613,6 +818,10 @@ function onClick(e) {
   else if (a === 'place-recent') setPlace({ custom: state.settings.recentPlaces[Number(el.dataset.i)] });
   else if (a === 'place-result') { const r = state.search.results[Number(el.dataset.i)]; setPlace({ custom: { nameTa: r.name, nameEn: r.name, latitude: r.latitude, longitude: r.longitude, zoneId: r.zoneId, countryCode: r.countryCode, admin1: r.admin1, countryName: r.countryName } }); }
   else if (a === 'place-auto') autoLocate();
+  else if (a === 'pin-current') pinCurrent();
+  else if (a === 'pin-remove') unpin(el.dataset.id);
+  else if (a === 'pin-open') { const pin = state.settings.pinnedPlaces.find((p) => p.id === el.dataset.id); if (pin) setPlace(pin.place.custom ? { custom: pin.place.custom } : PLACES.find((x) => x.key === pin.place.preset), false); }
+  else if (a === 'pack-save') { const pin = state.settings.pinnedPlaces.find((p) => p.id === el.dataset.id); if (pin) savePack(pin, Number(el.dataset.year), el); }
   else if (a === 'theme') { applySettingChange('theme', el.dataset.id); }
   else if (a === 'skin') { applySettingChange('skin', el.dataset.id); }
   else if (a === 'notify-allow') { if ('Notification' in window) Notification.requestPermission().then(() => rerender()); }
@@ -636,6 +845,17 @@ function toggleRasiSpeech() {
   const g = gochara(state.rasi, skyPositions(d.epochDay, state.place.zoneId));
   const text = [[p.messageTa], [g.month.ta], [g.year.ta]][state.rasiTab][0];
   speakText(text);
+}
+
+/** QR code of the GitHub page, drawn by the vendored qrcode-generator (window.qrcode). */
+function drawQr() {
+  const box = $('qr');
+  if (!box || !window.qrcode || box.dataset.drawn) return;
+  const qr = window.qrcode(0, 'M');
+  qr.addData('https://github.com/kamalsoft/KTamilCalendar');
+  qr.make();
+  box.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
+  box.dataset.drawn = '1';
 }
 
 function copySiteLink(btn) {
@@ -715,6 +935,9 @@ async function boot() {
   }, 1000);
   if (!state.settings.disclaimerSeen) showDisclaimer();
   rerender();
+  if (state.settings.autoLocate && navigator.permissions) {
+    navigator.permissions.query({ name: 'geolocation' }).then((r) => { if (r.state === 'granted') autoLocate(); }).catch(() => {});
+  }
   scheduleToday();
   setInterval(scheduleToday, 60 * 60 * 1000);
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');

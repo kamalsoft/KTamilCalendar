@@ -1,6 +1,6 @@
 // Offline copy for the installed app. Network first, so a deploy shows up on the next load;
 // the last good copy of each file is kept for when the phone is offline.
-const CACHE = 'ktamilcalendar-v3';
+const CACHE = 'ktamilcalendar-v4';
 const SHELL = [
   './',
   'index.html',
@@ -10,6 +10,8 @@ const SHELL = [
   'app/weather.js',
   'app/sloka.js',
   'app/reminders.js',
+  'app/version.js',
+  'engine/vendor/qrcode.js',
   'engine/astro.js',
   'engine/civil.js',
   'engine/content.js',

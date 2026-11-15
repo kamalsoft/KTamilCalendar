@@ -219,10 +219,20 @@ small { color: var(--dim); }
 
 /* ---- ambient clock */
 .ambient {
-  position: fixed; inset: 0; z-index: 50; background: radial-gradient(ellipse at 50% 30%, var(--bg-mid), var(--bg-deep));
+  position: fixed; inset: 0; z-index: 50; overflow: hidden; background: radial-gradient(ellipse at 50% 30%, var(--bg-mid), var(--bg-deep));
   display: flex; align-items: center; justify-content: center; text-align: center; cursor: pointer;
 }
 .ambient[hidden] { display: none; }
+.ambient.day { background: linear-gradient(180deg, #5BA8E0 0%, #CDE9FF 60%, #FFE8B0 100%); color: #15202B; }
+.ambient.dusk { background: linear-gradient(180deg, #2E2A5C 0%, #B0457A 55%, #FF9A6B 100%); }
+.ambient.night { background: linear-gradient(180deg, #05060F 0%, #0C1433 60%, #1B2350 100%); }
+.ambient.day .amb-clock, .ambient.day .amb-date, .ambient.day .amb-line, .ambient.day .amb-tap { color: #15202B; }
+.ambient .sky { position: absolute; inset: 0; pointer-events: none; }
+.ambient .star { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #fff; animation: twinkle 4s ease-in-out infinite; }
+.ambient .lamp { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: #FFD60A; box-shadow: 0 0 18px 6px #FFB00060; animation: glow 7s ease-in-out infinite; }
+@keyframes twinkle { 50% { opacity: .25; } }
+@keyframes glow { 50% { opacity: .45; transform: translateY(-14px); } }
+.amb-weather { font-size: 3.2vmin; }
 .amb-inner { display: flex; flex-direction: column; gap: 10px; padding: 24px; }
 .amb-clock { font-size: 15vmin; font-weight: 200; color: var(--accent); line-height: 1; }
 .amb-date { font-size: 4vmin; color: var(--text); }
@@ -278,3 +288,44 @@ small { color: var(--dim); }
 /* ---- install guide (About) */
 .install .steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.5; }
 .install a.pill { text-decoration: none; }
+
+/* ---- Today: hero, now card, timeline, fact tiles */
+.today-grid { display: grid; gap: 14px; }
+@media (min-width: 900px) {
+  .today-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+  .today-grid > .hero, .today-grid > .now-card, .today-grid > .chandra { grid-column: 1 / -1; }
+}
+.hero { border-radius: var(--card-radius); padding: 20px; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 35%, var(--surface)), var(--surface) 70%); border: 1px solid var(--card-border); }
+.hero-week { margin: 0; color: var(--accent); font-size: 14px; letter-spacing: .04em; }
+.hero h2 { margin: 4px 0 2px; font-size: 26px; }
+.hero-year { margin: 0 0 8px; color: var(--muted); }
+.now-card { border-radius: var(--card-radius); padding: 14px 16px; background: var(--surface-hi); border-left: 6px solid var(--dim); }
+.now-card.good { border-left-color: var(--accent); }
+.now-card.bad { border-left-color: var(--alert); }
+.now-card.mixed { border-left-color: var(--amber); }
+.now-label { margin: 0; font-size: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
+.now-line { margin: 2px 0 0; font-size: 17px; font-weight: 600; }
+.timeline { display: flex; flex-direction: column; gap: 4px; }
+.timeline .track { position: relative; height: 22px; border-radius: 11px; background: var(--bg); overflow: hidden; }
+.timeline .track i, .timeline .track b { position: absolute; top: 0; bottom: 0; }
+.timeline .daylight { background: color-mix(in srgb, var(--amber) 22%, transparent); }
+.timeline .seg.good { background: var(--accent); opacity: .85; }
+.timeline .seg.bad { background: var(--alert); opacity: .85; }
+.timeline .seg.mixed { background: var(--amber); opacity: .85; }
+.timeline .now { width: 2px; background: var(--text); }
+.timeline .ticks { display: flex; justify-content: space-between; font-size: 11px; color: var(--dim); }
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.tile { margin: 0; background: var(--bg); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.tile .ico { font-size: 16px; color: var(--accent); }
+.tile dt { font-size: 12px; color: var(--dim); }
+.tile dd { margin: 2px 0 0; font-size: 15px; overflow-wrap: anywhere; }
+.chandra { margin: 0; }
+.qr-card { flex-direction: row; align-items: center; gap: 16px; }
+.qr { width: 132px; height: 132px; background: #fff; border-radius: 10px; padding: 6px; flex: none; }
+.qr svg { width: 100%; height: 100%; display: block; }
+
+/* ---- links inside cards: wrap instead of spilling out of their box */
+a.pill, .detail a, .group a { overflow-wrap: anywhere; max-width: 100%; }
+a.pill { display: inline-block; text-decoration: none; }
+.qr-card > div:last-child { min-width: 0; flex: 1; }
+.qr-card a { overflow-wrap: anywhere; }

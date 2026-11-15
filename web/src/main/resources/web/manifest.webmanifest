@@ -1,13 +1,14 @@
 {
-  "name": "KTamilCalendar · தமிழ் நாட்காட்டி",
-  "short_name": "Tamil Calendar",
-  "description": "Tamil calendar and panchangam: tithi, nakshatram, yogam, Rahu Kalam and festivals.",
+  "name": "Tulasi Tamil Panchangam · துளசி தமிழ் பஞ்சாங்கம்",
+  "short_name": "Tulasi",
+  "description": "Tulasi Tamil Panchangam: tithi, nakshatram, yogam, Rahu Kalam, Rasi Palan and festivals.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#1C1C1E",
   "theme_color": "#1C1C1E",
   "icons": [
+    { "src": "logo.svg", "sizes": "any", "type": "image/svg+xml" },
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
   ]

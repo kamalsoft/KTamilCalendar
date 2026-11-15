@@ -7,6 +7,8 @@ export const DEFAULTS = {
   skin: 'CLASSIC',                      // CLASSIC | GLASS | PAPER: how cards are drawn
   place: { preset: 'chennai' },          // { preset: key } or { custom: GeoLocation }
   recentPlaces: [],                     // up to 5 custom places
+  pinnedPlaces: [],                     // [{ id, label, place }]: places kept for the offline year pack
+  autoLocate: false,                    // use the current location when the app opens (if already allowed)
   hiddenSections: [],                   // tab ids hidden from the tab bar
   hiddenFaiths: [],                     // religion ids
   weather: true,
