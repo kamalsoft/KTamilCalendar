@@ -31,6 +31,8 @@ data class DayEntity(
     val chandrashtamaStars: String,
     /** Comma-separated [com.kamalsoft.tamilcalendar.tv.domain.model.DayTag] names (computed tags only). */
     val tags: String,
+    /** Comma-separated "rasi@epochSeconds" for each Lagna segment from sunrise to the next sunrise. */
+    val lagnam: String = "",
 )
 
 @Entity(tableName = "timing_window", indices = [Index("epochDay")])

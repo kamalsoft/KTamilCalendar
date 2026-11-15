@@ -88,6 +88,9 @@ enum class Paksha(val ta: String, val en: String) {
     KRISHNA("தேய்பிறை", "Krishna Paksha"),
 }
 
+/** A rising sign (0..11, Mesham = 0) and the moment it starts rising. */
+data class LagnaSegment(val rasi: Int, val start: LocalDateTime)
+
 data class Panchangam(
     /** index 0..29: 0–14 Shukla (14 = Pournami), 15–29 Krishna (29 = Amavasai). */
     val tithi: PanchangaElement,
@@ -99,6 +102,8 @@ data class Panchangam(
     /** When the Moon leaves [moonRasi]. */
     val moonRasiEndsAt: LocalDateTime?,
     val sunRasi: Int,
+    /** The rising signs (Lagna) from sunrise to the next sunrise, in order. */
+    val lagnam: List<LagnaSegment> = emptyList(),
 ) {
     val moonRasiTa: String get() = TamilNames.rasis[moonRasi].first
     val moonRasiEn: String get() = TamilNames.rasis[moonRasi].second

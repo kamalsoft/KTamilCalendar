@@ -186,6 +186,9 @@ function viewToday() {
     nowCard = `<section class="now-card ${current ? current.kind : 'none'}">
       <p class="now-label">${esc(lb('இப்போது', 'Now'))}</p><p class="now-line">${line}</p></section>`;
   }
+  // The rising sign at sunrise, and when the next sign rises.
+  const lagna = d.panchangam.lagnam;
+  const lagnaValue = lagna.length ? `${esc(lb(...CONTENT.names.rasis[lagna[0].rasi]))} <small>→ ${endOf(lagna[1]?.start)}</small>` : '—';
   const facts = [
     ['🌅', lb('உதயம்', 'Sunrise'), timeOf(d.sunrise)],
     ['🌇', lb('அஸ்தமனம்', 'Sunset'), timeOf(d.sunset)],
@@ -193,6 +196,7 @@ function viewToday() {
     ['✦', lb('நட்சத்திரம்', 'Nakshatram'), `${esc(lb(p.nakshatram.nameTa, p.nakshatram.nameEn))} <small>→ ${endOf(p.nakshatram.endsAt)}</small>`],
     ['☉', lb('யோகம்', 'Yogam'), `${esc(lb(p.yogam.nameTa, p.yogam.nameEn))} <small>→ ${endOf(p.yogam.endsAt)}</small>`],
     ['☾', lb('சந்திர ராசி', 'Moon sign'), esc(lb(...CONTENT.names.rasis[p.moonRasi]))],
+    ['⬆', lb('லக்னம்', 'Lagnam'), lagnaValue],
   ].map(([icon, label, value]) => `<div class="tile"><span class="ico">${icon}</span><dt>${esc(label)}</dt><dd>${value}</dd></div>`).join('');
   const row = (t) => {
       const cls = t.type === 'NALLA_NERAM' || t.type === 'GOWRI_NALLA_NERAM' ? 'good' : t.type === 'KULIGAI' ? 'mixed' : 'bad';
@@ -224,7 +228,9 @@ function viewToday() {
         <ul class="timings cards">${avoid}</ul>
       </section>
       <div class="today-split">
-        <section class="detail"><h3>${esc(lb('நாள் நேரம்', 'Day timeline'))}</h3>${timelineHtml(d, nowSec)}</section>
+        <section class="detail"><h3>${esc(lb('நாள் நேரம்', 'Day timeline'))}</h3>${timelineHtml(d, nowSec)}
+          <h3>${esc(lb('லக்னம் · நாள் முழுவதும்', 'Lagnam through the day'))}</h3>
+          <ul class="chips">${lagna.map((s) => `<li class="chip">${esc(lb(...CONTENT.names.rasis[s.rasi]))} · ${timeOf(s.start.slice(11, 19))}</li>`).join('')}</ul></section>
         <section class="detail"><div class="tiles">${facts}</div></section>
       </div>
       <p class="warn chandra">${esc(lb('சந்திராஷ்டமம்', 'Chandrashtamam'))} — ${esc(lb(...CONTENT.names.rasis[chandra.rasi]))}
@@ -692,7 +698,8 @@ function viewAbout() {
 // ---------------------------------------------------------------- offline year packs
 // A pack is one year of days for one place and timing convention, kept in Cache Storage. The app reads it
 // instead of recomputing; without a pack everything is still computed on the device.
-const PACK_CACHE = 'ktc-packs';
+// v2: packs saved before the Lagna field existed are dropped; save the offline years again.
+const PACK_CACHE = 'ktc-packs-v2';
 const packUrl = (placeId, convention, year) => `pack/${encodeURIComponent(placeId)}/${convention}/${year}.json`;
 const packYears = [2026, 2027, 2028];
 

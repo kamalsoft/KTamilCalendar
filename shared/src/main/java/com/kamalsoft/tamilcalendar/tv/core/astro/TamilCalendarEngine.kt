@@ -9,6 +9,7 @@ import com.kamalsoft.tamilcalendar.tv.domain.model.EventKind
 import com.kamalsoft.tamilcalendar.tv.domain.model.EventSource
 import com.kamalsoft.tamilcalendar.tv.domain.model.GeoLocation
 import com.kamalsoft.tamilcalendar.tv.domain.model.HolidayRegion
+import com.kamalsoft.tamilcalendar.tv.domain.model.LagnaSegment
 import com.kamalsoft.tamilcalendar.tv.domain.model.Gowri
 import com.kamalsoft.tamilcalendar.tv.domain.model.Paksha
 import com.kamalsoft.tamilcalendar.tv.domain.model.PanchangaElement
@@ -180,6 +181,7 @@ class TamilCalendarEngine(
             moonRasi = moonRasi,
             moonRasiEndsAt = endOf(c.sunriseJd, ((moonRasi + 1) % 12) * 30.0, Astro::moonSidereal, maxDays = 3.0),
             sunRasi = Astro.floorDiv(Astro.sunSidereal(c.sunriseJd), 30.0),
+            lagnam = lagnaSegments(c.sunriseJd, next.sunriseJd),
         )
 
         val timings = timingsFor(c.date, sunrise, sunset)
@@ -261,6 +263,30 @@ class TamilCalendarEngine(
         Astro.findCrossing(fromJd, maxDays, 0.25, target, angle)?.let {
             LocalDateTime.ofInstant(Astro.instantOf(it), zone)
         }
+
+    /**
+     * The rising signs from sunrise to the next sunrise. The ascendant is sampled every 10 minutes (a sign takes
+     * about 2 hours, so no sign is skipped) and each change is refined by bisection to about a second.
+     */
+    private fun lagnaSegments(sunriseJd: Double, nextSunriseJd: Double): List<LagnaSegment> {
+        fun rasiAt(jd: Double) = Astro.floorDiv(Astro.ascendantSidereal(jd, location.latitude, location.longitude), 30.0)
+        var rasi = rasiAt(sunriseJd)
+        val out = mutableListOf(LagnaSegment(rasi, LocalDateTime.ofInstant(Astro.instantOf(sunriseJd), zone)))
+        var t = sunriseJd
+        while (t < nextSunriseJd) {
+            val t1 = minOf(t + LAGNA_STEP_DAYS, nextSunriseJd)
+            val r1 = rasiAt(t1)
+            if (r1 != rasi) {
+                var lo = t
+                var hi = t1
+                repeat(20) { val mid = (lo + hi) / 2; if (rasiAt(mid) == rasi) lo = mid else hi = mid }
+                out += LagnaSegment(r1, LocalDateTime.ofInstant(Astro.instantOf(hi), zone))
+                rasi = r1
+            }
+            t = t1
+        }
+        return out
+    }
 
     private fun localTime(jd: Double): LocalTime =
         Astro.instantOf(jd).atZone(zone).toLocalTime().withNano(0)
@@ -506,9 +532,10 @@ class TamilCalendarEngine(
 
     companion object {
         /** Engine output version; bump to force the offline DB to regenerate. */
-        const val VERSION = 3
+        const val VERSION = 4
 
         private const val NAK_SPAN = 360.0 / 27.0
+        private const val LAGNA_STEP_DAYS = 10.0 / 1440.0
 
         // 1-based 1/8th-of-day segments, indexed Sunday..Saturday.
         private val RAHU_SEGMENT = intArrayOf(8, 2, 7, 5, 6, 4, 3)

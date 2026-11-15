@@ -431,6 +431,22 @@ private fun ColumnScope.PanchangamColumn(
             ),
         ),
     )
+    val lagnam = p.lagnam
+    InfoCard(
+        order = 6,
+        label = "லக்னம் · Lagnam",
+        value = lagnam.firstOrNull()?.let { TamilNames.rasis[it.rasi].first } ?: "—",
+        sub = lagnam.firstOrNull()?.let { "${TamilNames.rasis[it.rasi].second} at sunrise" } ?: "",
+        accent = TvColors.Gold, show = show,
+        detail = DetailContent(
+            "லக்னம் · Lagnam", "Rising signs from sunrise to the next sunrise",
+            lagnam.mapIndexed { i, s ->
+                val end = lagnam.getOrNull(i + 1)?.start
+                "${TamilNames.rasis[s.rasi].first} · ${TamilNames.rasis[s.rasi].second}" to
+                    "${Fmt.time(s.start.toLocalTime())} – ${end?.let { Fmt.time(it.toLocalTime()) } ?: "—"}"
+            },
+        ),
+    )
 }
 
 @Composable

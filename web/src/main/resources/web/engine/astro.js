@@ -63,6 +63,17 @@ export const ayanamsa = (jd) => {
 };
 export const sunSidereal = (jd) => norm360(sunLongitude(jd) - ayanamsa(jd));
 export const moonSidereal = (jd) => norm360(moonLongitude(jd) - ayanamsa(jd));
+
+/** Sidereal ascendant (Lagna) at a UT Julian day: the zodiac degree rising on the eastern horizon. */
+export function ascendantSidereal(jd, latitude, longitude) {
+  const t = (jd - J2000) / 36525;
+  const gmst = norm360(280.46061837 + 360.98564736629 * (jd - J2000) + 0.000387933 * t * t - (t * t * t) / 38710000);
+  const lst = (gmst + longitude) * RAD;
+  const eps = (23.4392911 - 0.0130042 * t) * RAD;
+  const phi = latitude * RAD;
+  const tropical = Math.atan2(Math.cos(lst), -(Math.sin(lst) * Math.cos(eps) + Math.tan(phi) * Math.sin(eps))) / RAD;
+  return norm360(tropical - ayanamsa(jd));
+}
 export const elongation = (jd) => norm360(moonLongitude(jd) - sunLongitude(jd));
 export const yogaSum = (jd) => norm360(sunSidereal(jd) + moonSidereal(jd));
 

@@ -65,3 +65,16 @@ for k, v in diffs.items():
     a = [abs(x) for x in v]
     print(f"{k:9s} n={len(v):3d}  mean|Δ|={statistics.mean(a):5.2f} min  max|Δ|={max(a):5.2f} min  bias={statistics.mean(v):+5.2f} min")
 for k, v in mism.items(): print(f"{k} mismatches: {len(v)} {v[:6]}")
+
+# Lagna: each sign change we report should be where Swiss Ephemeris' sidereal ascendant (houses) enters that sign.
+def lagna_sign(t): return int(swe.houses_ex(jd_of(t), LAT, LON, b"P", swe.FLG_SIDEREAL)[1][0] // 30)
+lagna_err, lagna_miss = [], []
+for r in rows:
+    for rasi_s, when in [s.split("@") for s in r["lagna"].split(";") if s][1:]:
+        rasi, start = int(rasi_s), parse_dt(when)
+        # Earliest quarter-minute within 10 minutes of our change where Swiss Ephemeris shows the same sign.
+        hits = [k / 4 for k in range(-40, 41) if lagna_sign(start + dt.timedelta(minutes=k / 4)) == rasi]
+        if hits: lagna_err.append(min(hits))
+        else: lagna_miss.append((r["date"], rasi))
+a = [abs(x) for x in lagna_err]
+print(f"lagna     n={len(lagna_err):4d}  mean|Δ|={statistics.mean(a):5.2f} min  max|Δ|={max(a):5.2f} min  not found={len(lagna_miss)} {lagna_miss[:4]}")

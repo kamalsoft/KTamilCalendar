@@ -9,6 +9,7 @@ import com.kamalsoft.tamilcalendar.tv.domain.model.EventSource
 import com.kamalsoft.tamilcalendar.tv.domain.model.Gowri
 import com.kamalsoft.tamilcalendar.tv.domain.model.Deity
 import com.kamalsoft.tamilcalendar.tv.domain.model.HolidayRegion
+import com.kamalsoft.tamilcalendar.tv.domain.model.LagnaSegment
 import com.kamalsoft.tamilcalendar.tv.domain.model.Religion
 import com.kamalsoft.tamilcalendar.tv.domain.model.Paksha
 import com.kamalsoft.tamilcalendar.tv.domain.model.PanchangaElement
@@ -59,6 +60,7 @@ class CalendarMapper(
         chandrashtamaRasi = d.chandrashtamam.rasi,
         chandrashtamaStars = d.chandrashtamam.nakshatras.joinToString(","),
         tags = (d.tags - DayTag.GOVT_HOLIDAY - DayTag.SCHOOL_HOLIDAY).joinToString(",") { it.name },
+        lagnam = d.panchangam.lagnam.joinToString(",") { "${it.rasi}@${it.start.toEpoch()}" },
     )
 
     fun toTimingEntities(d: TamilDayData): List<TimingEntity> = d.timings.all().map {
@@ -112,6 +114,10 @@ class CalendarMapper(
                 moonRasi = e.moonRasi,
                 moonRasiEndsAt = e.moonRasiEnd.toLocal(),
                 sunRasi = e.sunRasi,
+                lagnam = e.lagnam.split(',').filter { it.isNotBlank() }.map { s ->
+                    val (rasi, epoch) = s.split('@')
+                    LagnaSegment(rasi.toInt(), LocalDateTime.ofInstant(Instant.ofEpochSecond(epoch.toLong()), zone))
+                },
             ),
             timings = DayTimings(
                 nallaNeram = windows.filter { it.type == TimingType.NALLA_NERAM },

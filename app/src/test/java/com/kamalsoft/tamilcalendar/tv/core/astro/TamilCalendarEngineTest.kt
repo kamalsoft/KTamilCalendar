@@ -118,4 +118,20 @@ class TamilCalendarEngineTest {
             assertEquals((d.panchangam.moonRasi + 5) % 12, d.chandrashtamam.rasi)
         }
     }
+
+    /** Lagna runs from sunrise to the next sunrise, one sign at a time, forward through the zodiac. */
+    @Test fun lagnaCoversTheDayInOrder() {
+        val all = days.values.sortedBy { it.date }
+        all.zipWithNext().forEach { (d, next) ->
+            val lagna = d.panchangam.lagnam
+            assertEquals(d.sunrise, lagna.first().start.toLocalTime().withNano(0))
+            assertTrue(lagna.last().start.isBefore(next.date.atTime(next.sunrise)))
+            lagna.zipWithNext().forEach { (a, b) ->
+                assertTrue(b.start.isAfter(a.start))
+                assertEquals((a.rasi + 1) % 12, b.rasi)
+            }
+            // A sign rises for about 1 to 3 hours, so a day has roughly 8 to 16 changes.
+            assertTrue("${d.date}: ${lagna.size} lagna segments", lagna.size in 8..16)
+        }
+    }
 }

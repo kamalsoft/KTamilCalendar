@@ -40,6 +40,8 @@ for (const r of ref.days) {
     r.timings.filter((t) => t.type.en !== 'Gowri Nalla Neram').map((t) => hm(t.start) + '-' + hm(t.end)).sort());
   check(r.date, 'chandrashtamam.nakshatras', d.chandrashtamam.nakshatras.length, r.chandrashtamam.nakshatras.split(', ').filter(Boolean).length);
   check(r.date, 'holiday', d.holiday, r.holiday);
+  check(r.date, 'lagnam.rasi', d.panchangam.lagnam.map((s) => s.rasi), r.lagnam.map((s) => s.rasi));
+  check(r.date, 'lagnam.start', d.panchangam.lagnam.map((s) => s.start.slice(0, 16)), r.lagnam.map((s) => s.start.slice(0, 16)));
   const js = importantDates(d).map((x) => x.titleEn);
   const kt = r.importantDates.map((x) => x.title.en);
   if (JSON.stringify(js) !== JSON.stringify(kt)) problems.push(`${r.date} importantDates: js=${JSON.stringify(js)} kt=${JSON.stringify(kt)}`);

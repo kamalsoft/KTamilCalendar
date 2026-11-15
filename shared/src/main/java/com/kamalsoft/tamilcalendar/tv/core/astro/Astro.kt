@@ -5,10 +5,12 @@ import java.time.LocalDate
 import kotlin.math.PI
 import kotlin.math.acos
 import kotlin.math.asin
+import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.roundToLong
 import kotlin.math.sin
+import kotlin.math.tan
 
 /**
  * Low-cost positional astronomy, accurate enough for panchangam work on TV hardware.
@@ -108,6 +110,17 @@ object Astro {
     fun sunSidereal(jd: Double): Double = norm360(sunLongitude(jd) - ayanamsa(jd))
 
     fun moonSidereal(jd: Double): Double = norm360(moonLongitude(jd) - ayanamsa(jd))
+
+    /** Sidereal ascendant (Lagna) at a UT Julian day: the zodiac degree rising on the eastern horizon. */
+    fun ascendantSidereal(jd: Double, latitude: Double, longitude: Double): Double {
+        val t = (jd - J2000) / 36525.0
+        val gmst = norm360(280.46061837 + 360.98564736629 * (jd - J2000) + 0.000387933 * t * t - t * t * t / 38710000.0)
+        val lst = (gmst + longitude) * RAD
+        val eps = (23.4392911 - 0.0130042 * t) * RAD
+        val phi = latitude * RAD
+        val tropical = atan2(cos(lst), -(sin(lst) * cos(eps) + tan(phi) * sin(eps))) / RAD
+        return norm360(tropical - ayanamsa(jd))
+    }
 
     /** Moon − Sun, 0..360. Tithi = floor(elongation / 12). */
     fun elongation(jd: Double): Double = norm360(moonLongitude(jd) - sunLongitude(jd))

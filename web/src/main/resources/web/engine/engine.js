@@ -7,6 +7,7 @@ import { timingConvention } from './locations.js';
 import { easter } from './holidays.js';
 
 const NAK_SPAN = 360 / 27;
+const LAGNA_STEP_DAYS = 10 / 1440;
 const RAHU_SEGMENT = [8, 2, 7, 5, 6, 4, 3];
 const YAMA_SEGMENT = [5, 4, 3, 2, 1, 7, 6];
 const KULIGAI_SEGMENT = [7, 6, 5, 4, 3, 2, 1];
@@ -66,6 +67,7 @@ export class TamilCalendarEngine {
       moonRasi,
       moonRasiEndsAt: this.endOf(c.sunriseJd, ((moonRasi + 1) % 12) * 30, A.moonSidereal, 3),
       sunRasi: A.floorDiv(A.sunSidereal(c.sunriseJd), 30),
+      lagnam: this.lagnaSegments(c.sunriseJd, next.sunriseJd),
     };
 
     const timings = this.timingsFor(c.day, sunrise, sunset);
@@ -142,6 +144,29 @@ export class TamilCalendarEngine {
   endOf(fromJd, target, angle, maxDays = 2) {
     const t = A.findCrossing(fromJd, maxDays, 0.25, target, angle);
     return t === null ? null : this.localDateTime(t);
+  }
+
+  /** The rising signs from sunrise to the next sunrise (same scan as Kotlin's lagnaSegments). */
+  lagnaSegments(sunriseJd, nextSunriseJd) {
+    const rasiAt = (jd) => A.floorDiv(A.ascendantSidereal(jd, this.location.latitude, this.location.longitude), 30);
+    let rasi = rasiAt(sunriseJd);
+    const out = [{ rasi, start: this.localDateTime(sunriseJd) }];
+    let t = sunriseJd;
+    while (t < nextSunriseJd) {
+      const t1 = Math.min(t + LAGNA_STEP_DAYS, nextSunriseJd);
+      const r1 = rasiAt(t1);
+      if (r1 !== rasi) {
+        let lo = t, hi = t1;
+        for (let i = 0; i < 20; i++) {
+          const mid = (lo + hi) / 2;
+          if (rasiAt(mid) === rasi) lo = mid; else hi = mid;
+        }
+        out.push({ rasi: r1, start: this.localDateTime(hi) });
+        rasi = r1;
+      }
+      t = t1;
+    }
+    return out;
   }
 
   localTime(jd) {
