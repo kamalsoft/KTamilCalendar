@@ -4,6 +4,7 @@ const KEY = 'ktc.settings.v2';
 
 export const DEFAULTS = {
   theme: 'GRAPHITE',
+  skin: 'CLASSIC',                      // CLASSIC | GLASS | PAPER: how cards are drawn
   place: { preset: 'chennai' },          // { preset: key } or { custom: GeoLocation }
   recentPlaces: [],                     // up to 5 custom places
   hiddenSections: [],                   // tab ids hidden from the tab bar

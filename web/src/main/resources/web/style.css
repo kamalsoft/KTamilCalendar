@@ -1,5 +1,6 @@
 /* Colours are set at runtime from the chosen theme (engine/content.js → app.js applyTheme). Defaults = Graphite. */
 :root {
+  --card-bg: var(--surface); --card-border: transparent; --card-shadow: 0 6px 18px #0003; --card-blur: none; --card-radius: 16px;
   --bg: #1C1C1E; --bg-deep: #000000; --bg-mid: #0E0E10;
   --surface: #2A2A2D; --surface-hi: #48484A; --surface-sel: #333336;
   --accent: #FFD60A; --accent-soft: #FFE066;
@@ -9,6 +10,7 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--text); }
+body { background: var(--bg-grad, var(--bg)) fixed; }
 body {
   font-family: "Noto Sans Tamil", system-ui, -apple-system, sans-serif;
   min-height: 100vh;
@@ -246,3 +248,33 @@ small { color: var(--dim); }
   .facts { grid-template-columns: 1fr; }
   .event { grid-template-columns: 80px minmax(0, 1fr); }
 }
+
+/* ---- skins: how the cards are drawn. Colours come from the theme; these only change the card style. */
+.detail, .group, .event, .weather, .rasi-card, .rasi-centre, .disclaimer-card {
+  background: var(--card-bg); border: 1px solid var(--card-border); box-shadow: var(--card-shadow);
+  -webkit-backdrop-filter: var(--card-blur); backdrop-filter: var(--card-blur); border-radius: var(--card-radius);
+}
+[data-skin="GLASS"] { --card-bg: color-mix(in srgb, var(--surface) 58%, transparent); --card-border: #FFFFFF2E; --card-blur: blur(16px) saturate(140%); --card-shadow: 0 10px 30px #0004; }
+[data-skin="PAPER"] { --card-bg: var(--surface); --card-border: var(--surface-hi); --card-shadow: 3px 3px 0 var(--surface-hi); --card-radius: 6px; }
+[data-skin="PAPER"] .cell, [data-skin="PAPER"] .rasi-tile { border-radius: 4px; }
+
+/* ---- theme and skin pickers */
+.theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.theme-card { border-radius: 14px; padding: 14px; border: 2px solid transparent; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 10px; min-height: 84px; justify-content: space-between; }
+.theme-card.on { border-color: var(--accent); }
+.theme-card b { font-size: 15px; }
+.swatches { display: flex; gap: 6px; }
+.swatches span { width: 18px; height: 18px; border-radius: 50%; display: inline-block; }
+.skin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.skin-card { background: var(--surface-hi); border: 2px solid transparent; border-radius: 14px; padding: 12px; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 8px; }
+.skin-card.on { border-color: var(--accent); }
+.skin-sample { display: block; height: 56px; border-radius: 10px; padding: 8px; background: var(--bg); position: relative; }
+.skin-sample i { display: block; height: 14px; margin-bottom: 6px; background: var(--card-bg-preview, var(--surface)); }
+.skin-sample.skin-glass i { background: color-mix(in srgb, var(--surface) 55%, transparent); border: 1px solid #FFFFFF40; backdrop-filter: blur(4px); border-radius: 6px; }
+.skin-sample.skin-paper i { border: 1px solid var(--muted); border-radius: 2px; box-shadow: 2px 2px 0 var(--muted); }
+.skin-sample.skin-classic i { border-radius: 6px; box-shadow: 0 3px 6px #0005; }
+.skin-card b { font-size: 15px; }
+
+/* ---- install guide (About) */
+.install .steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.5; }
+.install a.pill { text-decoration: none; }

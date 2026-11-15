@@ -13,7 +13,7 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const TABS = [
   ['today', 'இன்று', 'Today'], ['month', 'மாதம்', 'Month'], ['festivals', 'விழாக்கள்', 'Festivals'],
-  ['important', 'முக்கிய நாட்கள்', 'Important'], ['rasi', 'ராசி', 'Rasi'], ['location', 'இடம்', 'Location'],
+  ['important', 'முக்கிய நாட்கள்', 'Important'], ['muhurtham', 'சுப முகூர்த்தம்', 'Muhurtham'], ['rasi', 'ராசி', 'Rasi'], ['location', 'இடம்', 'Location'],
   ['theme', 'தீம்', 'Theme'], ['settings', 'அமைப்புகள்', 'Settings'], ['about', 'பற்றி', 'About'],
 ];
 const ALWAYS_SHOWN = new Set(['today', 'location', 'theme', 'settings', 'about']);
@@ -103,7 +103,7 @@ function renderTabs() {
 function render() {
   renderTabs();
   applyTheme();
-  const view = { today: viewToday, month: viewMonth, festivals: viewFestivals, important: viewImportant, rasi: viewRasi, location: viewLocation, theme: viewTheme, settings: viewSettings, about: viewAbout }[state.tab];
+  const view = { today: viewToday, month: viewMonth, festivals: viewFestivals, important: viewImportant, muhurtham: viewMuhurtham, rasi: viewRasi, location: viewLocation, theme: viewTheme, settings: viewSettings, about: viewAbout }[state.tab];
   $('view').innerHTML = view();
   $('view').classList.toggle('today-wide', state.tab === 'today');
   if (state.tab === 'today') loadWeatherIfNeeded();
@@ -181,9 +181,9 @@ function weatherHtml() {
   const days = w.daily.map((d) => `<li><span>${dayOfWeekLabel(parseIso(d.date))}</span><b>${Math.round(d.max)}° / ${Math.round(d.min)}°</b><small>${esc(labelOf(d.code))}</small></li>`).join('');
   return `<section class="weather scene-${scene}${anim ? ' animated' : ''}">${particles}
     <div class="wx-now"><b>${Math.round(w.current.temp)}${w.unit}</b><span>${esc(labelOf(w.current.code))}</span>
-    <small>${esc(lb('ஈரப்பதம்', 'Humidity'))} ${w.current.humidity}% · ${esc(lb('காற்று', 'Wind'))} ${Math.round(w.current.wind)} ${w.windUnit}</small></div>
-    <h3>${esc(lb('அடுத்த 12 மணி நேரம்', 'Next 12 hours'))}</h3><ul class="wx-list">${hours}</ul>
-    <h3>${esc(lb('7 நாட்கள்', '7 days'))}</h3><ul class="wx-list days">${days}</ul></section>`;
+    <small>Humidity ${w.current.humidity}% · Wind ${Math.round(w.current.wind)} ${w.windUnit}</small></div>
+    <h3>Next 12 hours</h3><ul class="wx-list">${hours}</ul>
+    <h3>7 days</h3><ul class="wx-list days">${days}</ul></section>`;
 }
 const dayOfWeekLabel = (day) => CONTENT.names.weekdays[dayOfWeek(day)][1].slice(0, 3);
 
@@ -255,6 +255,21 @@ function viewImportant() {
   return `<h1 class="page">${esc(lb('முக்கிய நாட்கள்', 'Important dates'))}</h1>
     <ul class="events">${items.map(({ d, list }) => `<li class="event"><time>${esc(dateShort(isoOf(d.epochDay)))}</time>
       <span>${list.map((x) => `<b class="${x.holiday ? 'alert-text' : ''}">${esc(lbo(x.title))}</b>`).join('<br>')}</span></li>`).join('') || `<li class="small">${esc(lb('இல்லை', 'Nothing in this period'))}</li>`}</ul>`;
+}
+
+// ---- subha muhurtham (next 120 days), as the APK's Muhurtham list
+function viewMuhurtham() {
+  const start = todayEpoch();
+  const rows = [];
+  for (const d of daysFrom(start, 120)) {
+    for (const e of d.events) {
+      if (e.kind !== 'MUHURTHAM') continue;
+      rows.push(`<li class="event"><time>${esc(dateShort(e.date))}</time><span>${esc(lb(e.titleTa, e.titleEn))}${e.detail ? `<br><small>${esc(e.detail)}</small>` : ''}</span></li>`);
+    }
+  }
+  return `<h1 class="page">${esc(lb('சுப முகூர்த்த நாட்கள்', 'Subha Muhurtham'))}</h1>
+    <p class="small">${esc(lb('ஆடி, புரட்டாசி, மார்கழி மாதங்கள் தவிர்க்கப்படும்; செவ்வாய், சனி இல்லை.', 'Aadi, Purattasi and Margazhi are skipped; no Tuesdays or Saturdays.'))}</p>
+    <ul class="events">${rows.join('') || `<li class="small">${esc(lb('இல்லை', 'No muhurtham days in this period'))}</li>`}</ul>`;
 }
 
 // ---- rasi palan, chart and gochara
@@ -332,12 +347,24 @@ function viewLocation() {
     ${recent ? `<h3>${esc(lb('சமீபத்தியவை', 'Recent'))}</h3><div class="row wrap">${recent}</div>` : ''}`;
 }
 
-// ---- theme
+// ---- theme and skin
+const SKINS = [
+  ['CLASSIC', 'பாரம்பரியம்', 'Classic', 'Solid cards with soft shadows.'],
+  ['GLASS', 'கண்ணாடி', 'Glass', 'Frosted, translucent cards over the background.'],
+  ['PAPER', 'காகிதம்', 'Paper', 'Flat cards with a crisp outline, like a printed almanac.'],
+];
 function viewTheme() {
-  const cards = CONTENT.themes.map((t) => `<button class="theme-card${state.settings.theme === t.id ? ' on' : ''}" data-act="theme" data-id="${t.id}" style="background:${t.colors.background};color:${t.colors.text}">
-    <span class="swatch" style="background:${t.colors.accent}"></span><span class="swatch" style="background:${t.colors.alert}"></span>
-    <b style="color:${t.colors.text}">${esc(lb(t.ta, t.en))}</b></button>`).join('');
-  return `<h1 class="page">${esc(lb('தீம்', 'Theme'))}</h1><div class="theme-grid">${cards}</div>`;
+  const cur = state.settings.theme;
+  const cards = CONTENT.themes.map((t) => `<button class="theme-card${cur === t.id ? ' on' : ''}" data-act="theme" data-id="${t.id}"
+      style="background:linear-gradient(165deg, ${t.colors.background}, ${t.colors.backgroundMid} 55%, ${t.colors.backgroundDeep});color:${t.colors.text}">
+    <span class="swatches"><span style="background:${t.colors.accent}"></span><span style="background:${t.colors.alert}"></span><span style="background:${t.colors.amber}"></span></span>
+    <b>${esc(lb(t.ta, t.en))}</b></button>`).join('');
+  const skins = SKINS.map(([id, ta, en, desc]) => `<button class="skin-card${state.settings.skin === id ? ' on' : ''}" data-act="skin" data-id="${id}">
+    <span class="skin-sample skin-${id.toLowerCase()}"><i></i><i></i></span>
+    <b>${esc(lb(ta, en))}</b><small>${esc(desc)}</small></button>`).join('');
+  return `<h1 class="page">${esc(lb('தீம் & தோற்றம்', 'Theme & skin'))}</h1>
+    <section class="group"><h3>${esc(lb('வண்ணத் தீம்', 'Colour theme'))}</h3><div class="theme-grid">${cards}</div></section>
+    <section class="group"><h3>${esc(lb('தோற்றம் (skin)', 'Skin · card style'))}</h3><div class="skin-grid">${skins}</div></section>`;
 }
 
 // ---- settings
@@ -382,14 +409,47 @@ function viewSettings() {
 }
 
 // ---- about
+const SITE_URL = 'https://kamalsoft.github.io/KTamilCalendar/';
+
+/** True on iPhone/iPad Safari, the only browser that can add this page to the home screen. */
+function onIosSafari() {
+  const ua = navigator.userAgent;
+  return /iPhone|iPad|iPod/.test(ua) && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+}
+function installedAsApp() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
 function viewAbout() {
+  const status = installedAsApp()
+    ? lb('✓ இந்த சாதனத்தில் ஏற்கனவே நிறுவப்பட்டுள்ளது', '✓ Already installed on this device')
+    : onIosSafari()
+      ? lb('✓ இப்போது Safari-ல் திறந்துள்ளீர்கள் — கீழே உள்ள படிகளைப் பின்பற்றவும்', "✓ You're in Safari — follow the steps below")
+      : lb('⚠ iPhone நிறுவலுக்கு Safari-ல் திறக்கவும். Chrome போன்ற உலாவிகளில் நிறுவ முடியாது.', '⚠ To install on iPhone, open this page in Safari. Chrome and other browsers cannot install it.');
   return `<h1 class="page">${esc(lb('பற்றி', 'About'))}</h1>
-    <p>${esc(lb('இந்த நாட்காட்டியின் கணக்குகள் இந்த சாதனத்திலேயே நடக்கின்றன. சூரியன், சந்திரன் நிலைகள் Meeus நுட்பங்களிலிருந்து; லஹிரி அயனாம்சம்.', 'Every calculation runs on this device from Sun and Moon positions (Meeus algorithms, Lahiri ayanamsa). The engine matches the Android TV app.'))}</p>
-    <p class="small">${esc(lb('விடுமுறை நாட்கள் அரசுப் பட்டியல்களைப் பொறுத்தது; இஸ்லாமிய நாட்கள் பிறை பார்த்தலால் ஒரு நாள் மாறலாம்.', 'Holidays follow official lists where known. Islamic dates are calculated and local moon sighting may differ by a day.'))}</p>
-    <p class="small">${esc(lb('ஸ்லோகங்கள் பொது உரிமையுள்ள பாரம்பரிய நூல்கள்.', 'All sloka texts are public-domain classics.'))}</p>
-    <p><a href="https://github.com/kamalsoft/KTamilCalendar" target="_blank" rel="noopener">github.com/kamalsoft/KTamilCalendar</a></p>
-    <p class="small">${esc(lb('தொடர்ச்சியாக பஞ்சாங்கம் சரிபார்க்க சுவிஸ் எபிமெரிஸ் ஒப்பீடு.', 'Panchangam accuracy is checked against the Swiss Ephemeris.'))}</p>
-    <button class="pill" data-act="disclaimer">${esc(lb('மறுப்பு அறிவிப்பு', 'Show disclaimer'))}</button>`;
+    <section class="detail install">
+      <h3>${esc(lb('iPhone-ல் நிறுவுக · Install on iPhone', 'Install on iPhone · iPhone-ல் நிறுவுக'))}</h3>
+      <p class="small">${esc(status)}</p>
+      <ol class="steps">
+        <li>${esc(lb('Safari-ல் இந்தப் பக்கத்தைத் திறக்கவும்.', 'Open this page in Safari.'))}</li>
+        <li>${esc(lb('கீழே உள்ள Share (□↑) பொத்தானைத் தட்டவும்.', 'Tap the Share button (□ with an arrow) at the bottom.'))}</li>
+        <li>${esc(lb('கீழே உருட்டி "Add to Home Screen" தட்டவும்.', 'Scroll down and tap "Add to Home Screen".'))}</li>
+        <li>${esc(lb('"Add" தட்டவும். முகப்புத் திரையில் முழுத் திரை செயலியாகத் திறக்கும்.', 'Tap "Add". It opens full screen from your home screen.'))}</li>
+      </ol>
+      <div class="row wrap">
+        <a class="pill on" href="${SITE_URL}" rel="noopener">${esc(lb('Safari-ல் திற · Open in Safari', 'Open in Safari'))} ↗</a>
+        <button class="pill" data-act="copy-link">${esc(lb('இணைப்பை நகலெடு', 'Copy link'))}</button>
+      </div>
+      <p class="small">${esc(SITE_URL)}</p>
+    </section>
+    <section class="detail">
+      <h3>${esc(lb('பற்றி · About', 'About'))}</h3>
+      <p>${esc(lb('இந்த நாட்காட்டியின் கணக்குகள் இந்த சாதனத்திலேயே நடக்கின்றன. சூரியன், சந்திரன் நிலைகள் Meeus நுட்பங்களிலிருந்து; லஹிரி அயனாம்சம்.', 'Every calculation runs on this device from Sun and Moon positions (Meeus algorithms, Lahiri ayanamsa). The engine matches the Android TV app.'))}</p>
+      <p class="small">${esc(lb('விடுமுறை நாட்கள் அரசுப் பட்டியல்களைப் பொறுத்தது; இஸ்லாமிய நாட்கள் பிறை பார்த்தலால் ஒரு நாள் மாறலாம்.', 'Holidays follow official lists where known. Islamic dates are calculated and local moon sighting may differ by a day.'))}</p>
+      <p class="small">${esc(lb('ஸ்லோகங்கள் பொது உரிமையுள்ள பாரம்பரிய நூல்கள்.', 'All sloka texts are public-domain classics.'))}</p>
+      <p><a href="https://github.com/kamalsoft/KTamilCalendar" target="_blank" rel="noopener">github.com/kamalsoft/KTamilCalendar</a></p>
+      <button class="pill" data-act="disclaimer">${esc(lb('மறுப்பு அறிவிப்பு', 'Show disclaimer'))}</button>
+    </section>`;
 }
 
 // ---------------------------------------------------------------- weather & music & reminders
@@ -456,6 +516,7 @@ function ambientTick() {
     <div class="amb-line">${esc(lb('திதி', 'Tithi'))}: ${esc(lb(d.panchangam.tithi.nameTa, d.panchangam.tithi.nameEn))}</div>
     <div class="amb-line">${esc(lb('அடுத்த நல்ல நேரம்', 'Next Nalla Neram'))}: ${next ? timeOf(next.start) : '—'}</div>
     <div class="amb-line">${esc(lb('ராகு காலம்', 'Rahu Kalam'))}: ${timeOf(rahu.start)} – ${timeOf(rahu.end)}</div>
+    ${state.weather ? `<div class="amb-line">${Math.round(state.weather.current.temp)}${state.weather.unit} · ${esc(labelOf(state.weather.current.code))}</div>` : ''}
     <div class="amb-tap">${esc(lb('தொடர தொடவும்', 'Tap to return'))}</div></div>`;
 }
 
@@ -553,8 +614,10 @@ function onClick(e) {
   else if (a === 'place-result') { const r = state.search.results[Number(el.dataset.i)]; setPlace({ custom: { nameTa: r.name, nameEn: r.name, latitude: r.latitude, longitude: r.longitude, zoneId: r.zoneId, countryCode: r.countryCode, admin1: r.admin1, countryName: r.countryName } }); }
   else if (a === 'place-auto') autoLocate();
   else if (a === 'theme') { applySettingChange('theme', el.dataset.id); }
+  else if (a === 'skin') { applySettingChange('skin', el.dataset.id); }
   else if (a === 'notify-allow') { if ('Notification' in window) Notification.requestPermission().then(() => rerender()); }
   else if (a === 'disclaimer') { state.settings.disclaimerSeen = false; saveSettings(state.settings); showDisclaimer(); }
+  else if (a === 'copy-link') { copySiteLink(el); }
   else if (a === 'reset-settings') { if (confirm(lb('அமைப்புகளை மீட்டமைக்கவா?', 'Reset all settings?'))) { localStorage.removeItem('ktc.settings.v2'); location.reload(); } }
 }
 
@@ -573,6 +636,12 @@ function toggleRasiSpeech() {
   const g = gochara(state.rasi, skyPositions(d.epochDay, state.place.zoneId));
   const text = [[p.messageTa], [g.month.ta], [g.year.ta]][state.rasiTab][0];
   speakText(text);
+}
+
+function copySiteLink(btn) {
+  const done = () => { btn.textContent = lb('நகலெடுக்கப்பட்டது', 'Copied'); };
+  if (navigator.clipboard) navigator.clipboard.writeText(SITE_URL).then(done, () => banner(SITE_URL));
+  else banner(SITE_URL);
 }
 
 function speakText(text) {
@@ -611,8 +680,10 @@ function showDisclaimer() {
 function applyTheme() {
   const t = CONTENT.themes.find((x) => x.id === state.settings.theme) || CONTENT.themes[0];
   const root = document.documentElement.style;
+  document.documentElement.dataset.skin = state.settings.skin || 'CLASSIC';
   const map = { background: '--bg', backgroundDeep: '--bg-deep', backgroundMid: '--bg-mid', surface: '--surface', surfaceFocused: '--surface-hi', surfaceSelected: '--surface-sel', accent: '--accent', accentSoft: '--accent-soft', alert: '--alert', alertSoft: '--alert-soft', amber: '--amber', text: '--text', textMuted: '--muted', textDim: '--dim' };
   for (const [k, v] of Object.entries(map)) root.setProperty(v, t.colors[k]);
+  root.setProperty('--bg-grad', `linear-gradient(165deg, ${t.colors.background} 0%, ${t.colors.backgroundMid} 55%, ${t.colors.backgroundDeep} 100%)`);
   document.documentElement.dataset.theme = t.isLight ? 'light' : 'dark';
   document.querySelector('meta[name="theme-color"]').setAttribute('content', t.colors.background);
 }
