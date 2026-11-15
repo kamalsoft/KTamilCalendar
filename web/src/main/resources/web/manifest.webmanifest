@@ -1,7 +1,7 @@
 {
-  "name": "Tulasi Tamil Panchangam · துளசி தமிழ் பஞ்சாங்கம்",
-  "short_name": "Tulasi",
-  "description": "Tulasi Tamil Panchangam: tithi, nakshatram, yogam, Rahu Kalam, Rasi Palan and festivals.",
+  "name": "Tamizh Panchangam · தமிழ்ப் பஞ்சாங்கம்",
+  "short_name": "Tamizh",
+  "description": "Tamizh Panchangam: tithi, nakshatram, yogam, Rahu Kalam, Rasi Palan and festivals.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

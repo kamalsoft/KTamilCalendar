@@ -323,7 +323,7 @@ function printTable(y, m, from, to) {
       <td>${esc(lb(d.panchangam.tithi.nameTa, d.panchangam.tithi.nameEn))}</td><td>${esc(lb(d.panchangam.nakshatram.nameTa, d.panchangam.nakshatram.nameEn))}</td><td>${esc(notes)}</td></tr>`;
   }).join('');
   return `<section class="print-only"><h2>${esc(MONTHS_EN[m])} ${y} · ${esc(MONTHS_TA[m])}</h2>
-    <p>${esc(state.place.nameEn)} · Tulasi Tamil Panchangam</p>
+    <p>${esc(state.place.nameEn)} · Tamizh Panchangam</p>
     <table><thead><tr><th>Date</th><th>Day</th><th>Tamil date</th><th>Tithi</th><th>Nakshatram</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table></section>`;
 }
 
