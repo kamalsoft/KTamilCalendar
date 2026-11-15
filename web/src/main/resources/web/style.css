@@ -76,6 +76,16 @@ small { color: var(--dim); }
 .weekdays small { font-size: 10px; color: var(--dim); }
 .weekdays .sun { color: var(--alert-soft); }
 .month-sub { margin: 2px 0 10px; font-size: 13px; color: var(--muted); text-align: center; }
+
+/* ---- Month: wall-calendar page view, and the page turn when the month changes */
+.month-wrap.page { max-width: 900px; margin: 0 auto; position: relative; background: var(--surface); border-radius: var(--card-radius); padding: 22px 16px 16px; box-shadow: var(--card-shadow); }
+.month-wrap.page::before { content: ''; position: absolute; top: -7px; left: 14%; right: 14%; height: 14px; background: radial-gradient(circle, var(--dim) 3px, transparent 3.5px) 0 0 / 22px 14px repeat-x; }
+.month-wrap.page .bar h1 { font-size: clamp(18px, 4vw, 26px); }
+.month-wrap.flip-next { animation: flip-next .45s ease-out; transform-origin: left center; }
+.month-wrap.flip-prev { animation: flip-prev .45s ease-out; transform-origin: right center; }
+@keyframes flip-next { from { transform: perspective(1200px) rotateY(-16deg); opacity: .3; } to { transform: none; opacity: 1; } }
+@keyframes flip-prev { from { transform: perspective(1200px) rotateY(16deg); opacity: .3; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .month-wrap.flip-next, .month-wrap.flip-prev { animation: none; } }
 .cell {
   min-height: 84px; padding: 6px 4px; border-radius: 10px; border: 1px solid transparent;
   background: var(--surface); display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; touch-action: manipulation;

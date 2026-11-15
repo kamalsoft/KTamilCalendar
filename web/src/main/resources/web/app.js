@@ -29,6 +29,7 @@ const state = {
   settings: loadSettings(),
   tab: 'today',
   day: 0,            // selected epoch day
+  flipDir: 0,        // +1 / -1 while the Month page turns, read once by viewMonth
   monthOf: null,     // [year, month] shown on the month tab
   place: null,       // engine place object
   placeKey: '',
@@ -351,20 +352,24 @@ function viewMonth() {
     }).join('');
     const tamil = d && d.tamilDate.day === 1 ? `<span class="tm">${esc(CONTENT.names.months[d.tamilDate.monthIndex][0])}</span>` : d ? `<span class="t">${d.tamilDate.day}</span>` : '';
     const icons = d ? dayIcons(d) : '';
-    cells.push(`<button class="${cls.join(' ')}" data-act="pick-day" data-d="${e}"><span class="top"><span class="g">${dayOfMonth(e)}</span><span class="ico-row">${icons}</span>${tamil}</span><span class="evs">${titles}</span></button>`);
+    cells.push(`<button class="${cls.join(' ')}" data-act="select-day" data-d="${e}"><span class="top"><span class="g">${dayOfMonth(e)}</span><span class="ico-row">${icons}</span>${tamil}</span><span class="evs">${titles}</span></button>`);
   }
   const sel = dayData(state.day) || dayData(today);
-  return `<div class="bar"><button class="nav" data-act="month" data-m="-1" aria-label="Previous month">‹</button>
+  // The flip view is the same month on a wall-calendar page; the arrows turn it.
+  const page = state.settings.monthView === 'page';
+  const flip = state.flipDir ? ` flip-${state.flipDir > 0 ? 'next' : 'prev'}` : '';
+  state.flipDir = 0;
+  return `<div class="month-wrap${page ? ' page' : ''}${flip}"><div class="bar"><button class="nav" data-act="month" data-m="-1" aria-label="Previous month">‹</button>
     <h1>${esc(MONTHS_TA[m])} ${y} · ${MONTHS_EN[m]}</h1><button class="nav" data-act="month" data-m="1" aria-label="Next month">›</button></div>
     <p class="month-sub">${esc(tamilMonths)}</p>
     <button class="today" data-act="month-today">${lb('இன்று', 'Today')}</button>
-    <div class="row no-print"><button class="pill" data-act="print-month">🖨 ${esc(lb('அச்சிடு', 'Print month'))}</button></div>
+    <div class="row no-print"><button class="pill" data-act="month-view" aria-pressed="${page}">${page ? esc(lb('கட்டம்', 'Grid')) : esc(lb('தாள்', 'Page'))}</button><button class="pill" data-act="print-month">🖨 ${esc(lb('அச்சிடு', 'Print month'))}</button></div>
     <div class="weekdays">${weekdays}</div><div class="grid">${cells.join('')}</div>
     ${printTable(y, m, from, to)}
     <div class="detail small-detail">${sel ? `<h2>${esc(dateLong(sel.epochDay))}</h2><p class="ta-date">${esc(lb(CONTENT.names.months[sel.tamilDate.monthIndex][0] + ' ' + sel.tamilDate.day, CONTENT.names.months[sel.tamilDate.monthIndex][1] + ' ' + sel.tamilDate.day))}</p>
       <p class="small">${esc(lb('சூலம்', 'Soolam'))}: ${esc(lb(...soolam(sel.weekdayIndex).direction))} · ${esc(lb('சிராத்தம்', 'Sraardham'))}: ${sel.panchangam.sraardhaTithi == null ? '—' : esc(lb(...tithiNamesOf(sel.panchangam.sraardhaTithi)))}</p>
       <ul class="chips">${importantDates(sel).map((x) => `<li class="chip${x.holiday ? ' holiday' : ''}">${esc(lbo(x.title))}</li>`).join('') || `<li class="small">${esc(lb('சிறப்பு நாள் இல்லை', 'No observance'))}</li>`}</ul>
-      <button class="pill" data-act="open-today">${lb('விவரம்', 'Details')} ›</button>` : ''}</div>`;
+      <p class="small">${esc(lb('கரணம்', 'Karanam'))}: ${esc(lb(...karanaName(sel.panchangam.karanam)))}${isKariNaal(sel.tamilDate.monthIndex, sel.tamilDate.day) ? ` · ${esc(lb('கரி நாள்', 'Kari Naal'))}` : ''}</p>` : ''}</div></div>`;
 }
 
 /** The month as a printable table (shown only in print). */
@@ -990,7 +995,10 @@ function onClick(e) {
   else if (a === 'day-today') { state.day = todayEpoch(); rerender(); }
   else if (a === 'open-today') { state.day = Number(el.closest('[data-d]')?.dataset.d ?? state.day); state.tab = 'today'; rerender(); }
   else if (a === 'pick-day') { state.day = Number(el.dataset.d); state.tab = 'today'; state.rasi = null; rerender(); }
-  else if (a === 'month') { const [y, m] = state.monthOf || [yearOf(state.day), monthOf(state.day) - 1]; const n = new Date(Date.UTC(y, m + Number(el.dataset.m), 1)); state.monthOf = [n.getUTCFullYear(), n.getUTCMonth()]; rerender(); }
+  // A month cell selects its day and stays on the Month tab; the details show in the section below the grid.
+  else if (a === 'select-day') { state.day = Number(el.dataset.d); rerender(); }
+  else if (a === 'month-view') { state.settings.monthView = state.settings.monthView === 'page' ? 'grid' : 'page'; saveSettings(state.settings); rerender(); }
+  else if (a === 'month') { const [y, m] = state.monthOf || [yearOf(state.day), monthOf(state.day) - 1]; const n = new Date(Date.UTC(y, m + Number(el.dataset.m), 1)); state.monthOf = [n.getUTCFullYear(), n.getUTCMonth()]; state.flipDir = Number(el.dataset.m); rerender(); }
   else if (a === 'month-today') { const t = todayEpoch(); state.monthOf = [yearOf(t), monthOf(t) - 1]; state.day = t; rerender(); }
   else if (a === 'kind') { state.kindFilter = el.dataset.k; rerender(); }
   else if (a === 'print-month') { window.print(); }
