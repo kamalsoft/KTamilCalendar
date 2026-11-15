@@ -14,4 +14,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "KTamilCalendar"
-include(":app")
+include(":app", ":shared", ":web")

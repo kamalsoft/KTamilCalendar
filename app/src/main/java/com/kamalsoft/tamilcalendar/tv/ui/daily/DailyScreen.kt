@@ -453,7 +453,7 @@ private fun ColumnScope.TimingColumn(day: TamilDayData, show: (DetailContent, Fo
         label = "கௌரி நல்ல நேரம் · Gowri", value = first(t.gowriNallaNeram), sub = rest(t.gowriNallaNeram), accent = TvColors.Gold, show = show,
         detail = DetailContent(
             "கௌரி நல்ல நேரம் · Gowri Nalla Neram", "பகல் கௌரி பஞ்சாங்கம் · Daytime Gowri Panchangam",
-            t.gowriNallaNeram.map { "${it.gowri!!.ta} · ${it.gowri.en}" to "${Fmt.range(it)} · ${Fmt.timeEn(it.start)} – ${Fmt.timeEn(it.end)}" },
+            t.gowriNallaNeram.map { w -> val g = w.gowri!!; "${g.ta} · ${g.en}" to "${Fmt.range(w)} · ${Fmt.timeEn(w.start)} – ${Fmt.timeEn(w.end)}" },
         ),
     )
     listOf(t.rahuKalam to TvColors.Crimson, t.yamagandam to TvColors.Crimson, t.kuligai to TvColors.Amber).forEachIndexed { i, (w, color) ->

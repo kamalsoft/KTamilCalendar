@@ -106,7 +106,7 @@ private fun CalendarEvent.toItem(@DrawableRes icon: Int?) = Item(
     // Holiday status rides on the English line so the Tamil title keeps the full width.
     subtitle = when {
         isLocalHoliday -> "விடுமுறை · Holiday"
-        region != null && isHoliday -> "${region.en} holiday"
+        isHoliday -> region?.let { "${it.en} holiday" }
         else -> null
     },
     isHoliday = isLocalHoliday,

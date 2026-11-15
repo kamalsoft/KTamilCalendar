@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Tamil Calendar · தமிழ் நாட்காட்டி</title>
+  <meta name="description" content="Tamil calendar and panchangam: tithi, nakshatram, yogam, Rahu Kalam and festivals.">
+  <meta name="theme-color" content="#1C1C1E">
+  <meta name="color-scheme" content="dark light">
+  <!-- iPhone: "Add to Home Screen" in Safari opens a full-screen app without browser chrome -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Tamil Calendar">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="ta">தமிழ் நாட்காட்டி</span>
+      <span class="en">Tamil Calendar</span>
+    </div>
+    <select id="place" aria-label="Location · இடம்">
+      <option value="chennai">சென்னை · Chennai</option>
+      <option value="singapore">சிங்கப்பூர் · Singapore</option>
+      <option value="colombo">கொழும்பு · Colombo</option>
+      <option value="naperville">நேப்பர்வில் · Naperville</option>
+      <option value="london">லண்டன் · London</option>
+    </select>
+  </header>
+
+  <main class="layout">
+    <section class="month" aria-label="Month · மாதம்">
+      <div class="bar">
+        <button id="prev" class="nav" aria-label="Previous month">‹</button>
+        <h1 id="monthTitle"></h1>
+        <button id="next" class="nav" aria-label="Next month">›</button>
+      </div>
+      <button id="today" class="today">இன்று · Today</button>
+      <div id="weekdays" class="weekdays"></div>
+      <div id="grid" class="grid"></div>
+      <p id="status" class="status" hidden></p>
+    </section>
+    <section id="detail" class="detail" aria-live="polite"></section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -86,9 +86,15 @@ government body. The app shows this on first launch and under **About (ⓘ)**.
 ## Project layout
 
 ```
-app/src/main/java/com/kamalsoft/tamilcalendar/tv/
+shared/src/main/java/com/kamalsoft/tamilcalendar/tv/     (pure JVM, shared by the APK and the web server)
 ├── core/astro/          Astro.kt (Sun/Moon/ayanamsa/sunrise), TamilCalendarEngine.kt (rules)
-├── domain/model/        TamilDayData, Panchangam, TimingWindow, … + Tamil name tables
+├── core/holidays/       US/IL holidays, world religions
+└── domain/model/        TamilDayData, Panchangam, TimingWindow, … + Tamil name tables
+
+web/src/main/java/com/kamalsoft/tamilcalendar/tv/web/   Main.kt: /api/days JSON + static files
+web/src/main/resources/web/                             the installable web app (index, app.js, style.css, sw.js)
+
+app/src/main/java/com/kamalsoft/tamilcalendar/tv/
 ├── domain/usecase/      GetDay / GetMonthGrid / GetUpcomingEvents / GetRasiPalan, RasiPalanCalculator
 ├── domain/repository/   CalendarRepository (interface)
 ├── data/local/          Room entities, DAO, database, entity↔domain mapper
@@ -274,6 +280,27 @@ The same APK installs on phones and tablets (`adb install -r app-debug.apk`, or 
 Tablets in landscape use the TV layout with touch. Phones in portrait get a single scrolling column and a
 **bottom bar**: இன்று · மாதம் · சிறப்பு · ராசி · ☰ மேலும் (More: Festivals, Muhurtham, Location, Theme, Settings,
 About). Swipe to scroll, tap to open, and use the system back gesture.
+
+## Web app (any browser, installable on iPhone)
+
+The same calendar runs as a static web app, published with GitHub Pages at
+**https://kamalsoft.github.io/KTamilCalendar/**. The Kotlin engine (`web/`) writes one JSON file per place and
+month into `web/build/site/data/`, and the page reads those files.
+
+```bash
+./gradlew :web:site        # builds web/build/site (app files + month data for 2026–2028)
+./gradlew :web:test        # JSON writer test
+cd web/build/site && python3 -m http.server 8080    # preview at http://localhost:8080
+```
+
+Deploys happen from `.github/workflows/pages.yml` on every push to `main` that touches the calendar code. One-time
+setup: repo Settings → Pages → Source: **GitHub Actions**.
+
+**On iPhone:** open the site in Safari → Share → **Add to Home Screen**. It opens full screen, like an app, and keeps
+the months you have loaded available offline.
+
+Places are the five on the Android Location screen's quick list (`GeoLocation.QUICK`). Dates outside 2026–2028 show
+"no data". Custom locations, Rasi Palan, reminders and settings are not in the web version yet.
 
 ## Look & feel, navigation, location and themes
 The UI follows **Apple TV (tvOS)** conventions:

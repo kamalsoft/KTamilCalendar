@@ -13,9 +13,8 @@ Kotlin, Jetpack Compose + `androidx.tv:tv-material`, MVVM, Room, Retrofit. minSd
 - Every focusable element is a `TvFocusCard` (D-pad + touch). Keep D-pad focus paths working.
 
 ## Map
-- `core/astro/` panchangam engine (Astro.kt math, TamilCalendarEngine.kt rules + festivals)
-- `core/holidays/` US/IL holidays, world religions (Christian/Jewish/Islamic)
-- `domain/model/` TamilDayData, AppSettings (+ filtering), LocationPolicy
+- `shared/` pure-JVM module used by the APK and the web server: `core/astro/` panchangam engine (Astro.kt math, TamilCalendarEngine.kt rules + festivals), `core/holidays/` US/IL holidays, world religions (Christian/Jewish/Islamic), `domain/model/` TamilDayData, AppSettings (+ filtering), LocationPolicy. Keep it free of Android imports.
+- `web/` static web app for GitHub Pages: `Site.kt` writes month JSON (`./gradlew :web:site`), the installable PWA lives in `src/main/resources/web/` (vanilla JS, no Compose). Deployed by `.github/workflows/pages.yml`.
 - `data/` Room cache (DB version bump = wipe), repositories, location detector, weather
 - `di/` AppContainer + per-location CalendarSession
 - `ui/` app shell (TopTabBar for TV, CompactNav for phones, TamilCalendarTvApp), screens per folder, components (TvFocusCard, Motion, Text)

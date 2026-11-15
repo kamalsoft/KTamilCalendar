@@ -10,3 +10,5 @@
 /keystore.properties
 *.jks
 *.keystore
+/shared/build/
+/web/build/

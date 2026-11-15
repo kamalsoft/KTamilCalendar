@@ -112,6 +112,9 @@ dependencies {
     // QR code for the GitHub link on the About screen (TVs can't open links).
     implementation(libs.zxing.core)
 
+    // Pure-JVM panchangam engine and domain model, shared with the web server.
+    implementation(project(":shared"))
+
     testImplementation(libs.junit)
 }
 
