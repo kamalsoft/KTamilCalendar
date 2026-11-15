@@ -23,7 +23,8 @@ dependencies {
 // school_calendars.json is the same file the Android app ships.
 val siteDir = layout.buildDirectory.dir("site")
 
-val copyAppFiles by tasks.registering(Copy::class) {
+// Sync (not Copy) so a file removed from the sources is also removed from the built site.
+val copyAppFiles by tasks.registering(Sync::class) {
     from("src/main/resources/web")
     from("../app/src/main/assets/school_calendars.json") { into("engine") }
     into(siteDir)

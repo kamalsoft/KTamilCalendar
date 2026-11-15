@@ -22,7 +22,6 @@ android {
 
         // Leave empty to run fully offline. Set to your backend (https only) to enable sync.
         buildConfigField("String", "API_BASE_URL", "\"\"")
-        buildConfigField("String", "REPO_URL", "\"https://github.com/kamalsoft/KTamilCalendar\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

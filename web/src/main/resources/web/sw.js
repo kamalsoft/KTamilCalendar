@@ -11,7 +11,6 @@ const SHELL = [
   'app/sloka.js',
   'app/reminders.js',
   'app/version.js',
-  'engine/vendor/qrcode.js',
   'engine/astro.js',
   'engine/civil.js',
   'engine/content.js',

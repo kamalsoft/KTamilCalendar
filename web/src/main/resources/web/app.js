@@ -133,7 +133,6 @@ function render() {
     loadWeatherIfNeeded();
     maybeReadSloka();
   }
-  if (state.tab === 'about') drawQr();
 }
 
 // ---- today
@@ -701,11 +700,8 @@ function viewAbout() {
       <p>${esc(lb('திருப்புகழ் பாடல்களை இங்கே படிக்கலாம்.', 'Read Thiruppugazh hymns and their meanings here.'))}</p>
       <p><a class="pill on" href="${RELATED_URL}" target="_blank" rel="noopener">Thiruppugazh · thiruppugazh-ui.vercel.app ↗</a></p>
     </section>
-    <section class="detail qr-card">
-      <div id="qr" class="qr" aria-label="QR code for the GitHub page"></div>
-      <div><h3>GitHub</h3><p class="small">${esc(lb('இந்த QR குறியீட்டை ஸ்கேன் செய்யவும்', 'Scan to open the project on GitHub'))}</p>
-      <p><a href="https://github.com/kamalsoft/KTamilCalendar" target="_blank" rel="noopener">github.com/kamalsoft/KTamilCalendar</a></p>
-      <p class="small">Version ${esc(APP_VERSION)}</p></div>
+    <section class="detail">
+      <p class="small">Version ${esc(APP_VERSION)}</p>
     </section>
     <section class="detail">
       <p>${esc(lb('இந்த நாட்காட்டியின் கணக்குகள் இந்த சாதனத்திலேயே நடக்கின்றன. சூரியன், சந்திரன் நிலைகள் Meeus நுட்பங்களிலிருந்து; லஹிரி அயனாம்சம்.', 'Every calculation runs on this device from Sun and Moon positions (Meeus algorithms, Lahiri ayanamsa). The engine matches the Android TV app.'))}</p>
@@ -1039,17 +1035,6 @@ function toggleRasiSpeech() {
   const g = gochara(state.rasi, skyPositions(d.epochDay, state.place.zoneId));
   const text = [[p.messageTa], [g.month.ta], [g.year.ta]][state.rasiTab][0];
   speakText(text);
-}
-
-/** QR code of the GitHub page, drawn by the vendored qrcode-generator (window.qrcode). */
-function drawQr() {
-  const box = $('qr');
-  if (!box || !window.qrcode || box.dataset.drawn) return;
-  const qr = window.qrcode(0, 'M');
-  qr.addData('https://github.com/kamalsoft/KTamilCalendar');
-  qr.make();
-  box.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
-  box.dataset.drawn = '1';
 }
 
 function copySiteLink(btn) {
