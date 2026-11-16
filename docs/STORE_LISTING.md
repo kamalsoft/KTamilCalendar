@@ -48,7 +48,7 @@ Chandrashtamam and Sraardham) are calculated, not issued by a religious authorit
 Sraardham, confirm the date and time with a qualified temple priest. The About page explains each formula with a worked
 example.
 
-Privacy: there is no account, no ads and no analytics. Your settings and places stay on the device. The app contacts
+Privacy: there is no account, no ads and no tracking. An optional, anonymous count of app opens (country and state only) is off unless the user turns it on. Your settings and places stay on the device. The app contacts
 Open-Meteo for the weather and place search. On Android TV it uses ipapi.co for an approximate location when location is
 not allowed. The web app uses api-bdc.net for the town name when you choose to use your location. Full policy:
 https://kamalsoft.github.io/KTamilCalendar/privacy.html (address to be confirmed after the Pages deploy).
@@ -76,6 +76,7 @@ nakshatram
   when location is not allowed. On the web it is sent to api-bdc.net when you choose your location. Weather requests
   send the place's coordinates to Open-Meteo.
 - Data shared with third parties: only the location and search requests above, to those services.
+- Optional app-open counts (off by default): platform, country code and state, sent to the developer's Google Sheet. No device identifier, no city, no IP address stored.
 - Data stored on the device only: settings, places and birth details.
 - Data encrypted in transit: yes. `network_security_config.xml` blocks cleartext traffic, so every call is HTTPS.
 - Users can request deletion: uninstalling the app deletes its data.

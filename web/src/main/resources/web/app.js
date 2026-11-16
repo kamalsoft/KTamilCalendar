@@ -10,6 +10,7 @@ import { CONTENT } from './engine/content.js';
 import { epochDay, isoOf, parseIso, dayOfWeek, dayOfMonth, monthOf, yearOf, fromEpochDay, wallClock, zonedMs, hms, MS_DAY } from './engine/civil.js';
 import { loadSettings, saveSettings, loadWatermark, saveWatermark, clearWatermark } from './app/store.js';
 import { LANGUAGES, loadTranslations, translated } from './app/i18n.js';
+import { USAGE_URL, sendOpen, fetchUsage } from './app/usage.js';
 import { fetchWeather, sceneOf, labelOf } from './app/weather.js';
 import { slokaFor, speak, stopSpeaking, TempleMusic } from './app/sloka.js';
 import { scheduleReminders, notifyUser, clearReminders } from './app/reminders.js';
@@ -33,6 +34,7 @@ const state = {
   tab: 'today',
   settingsPanel: 'location',
   watermarkCustom: null, // the uploaded image as a data URL, if any
+  usage: { data: null, error: '', period: 'month' }, // developer's view of app-open counts
   watermarkError: '',
   datesPanel: 'important',  // important | festivals | muhurtham
   day: 0,            // selected epoch day
@@ -839,7 +841,10 @@ function viewSettings() {
     </section>
 `],
     ['data', 'தரவு', 'Data', `
-    <section class="group"><h3>${esc(lb('தரவு', 'Data'))}</h3><button class="pill" data-act="reset-settings">${esc(lb('இயல்புநிலைக்கு மீட்டமை', 'Reset to defaults'))}</button></section>
+    <section class="group"><h3>${esc(lb('தரவு', 'Data'))}</h3>
+      ${check('shareOpens', lb('பயன்பாட்டு எண்ணிக்கையைப் பகிர்', 'Share anonymous open counts'))}
+      <p class="small">${esc(lb('நாடு மற்றும் மாநிலம் மட்டும். நகரம், இருப்பிடம் அல்லது சாதன விவரம் அனுப்பப்படாது.', 'Only the country and state of your place. No city, coordinates or device details are sent.'))}</p>
+      <button class="pill" data-act="reset-settings">${esc(lb('இயல்புநிலைக்கு மீட்டமை', 'Reset to defaults'))}</button></section>
 `],
   ];
   const current = panels.find(([id]) => id === state.settingsPanel) || panels[0];
@@ -861,6 +866,42 @@ function onIosSafari() {
 }
 function installedAsApp() {
   return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+/** The developer's panel: opens per day, week and month, and by region. Needs the key set in Apps Script. */
+function usageHtml() {
+  if (!USAGE_URL) return `<p class="small">${esc(lb('இன்னும் அமைக்கப்படவில்லை.', 'Not set up yet.'))}</p>`;
+  let saved = '';
+  try { saved = localStorage.getItem('ktc.usageKey') || ''; } catch (e) { /* not kept */ }
+  const u = state.usage;
+  const form = `<div class="row"><input id="usage-key" type="password" placeholder="${esc(lb('விசை', 'Key'))}" value="${esc(saved)}"><button class="pill on" data-act="usage-show">${esc(lb('காட்டு', 'Show panel'))}</button></div>`;
+  if (u.error) return `${form}<p class="small error">${esc(u.error)}</p>`;
+  if (!u.data) return form;
+  const periods = [['days', 'Day'], ['weeks', 'Week'], ['months', 'Month']];
+  const pills = periods.map(([id, en]) => `<button class="pill${u.period === id ? ' on' : ''}" data-act="usage-period" data-p="${id}">${esc(en)}</button>`).join('');
+  const rowsOf = (obj) => Object.entries(obj || {}).sort((a, b) => (a[0] < b[0] ? 1 : a[0] > b[0] ? -1 : 0)).slice(0, 60)
+    .map(([k, v]) => `<tr><td>${esc(k)}</td><td>${v}</td></tr>`).join('');
+  const regions = Object.entries(u.data.regions || {}).sort((a, b) => b[1] - a[1]).slice(0, 60)
+    .map(([k, v]) => `<tr><td>${esc(k)}</td><td>${v}</td></tr>`).join('');
+  return `${form}<div class="panel-tabs">${pills}</div>
+    <p class="small">${esc(lb('மொத்தம்', 'Total opens'))}: ${u.data.total}</p>
+    <table class="simple-table"><thead><tr><th>${esc(lb('காலம்', 'Period'))}</th><th>${esc(lb('திறப்புகள்', 'Opens'))}</th></tr></thead><tbody>${rowsOf(u.data[u.period])}</tbody></table>
+    <h3>${esc(lb('பகுதி', 'Region'))}</h3>
+    <table class="simple-table"><thead><tr><th>${esc(lb('நாடு · மாநிலம்', 'Country · state'))}</th><th>${esc(lb('திறப்புகள்', 'Opens'))}</th></tr></thead><tbody>${regions}</tbody></table>`;
+}
+
+async function showUsage() {
+  const key = document.getElementById('usage-key')?.value.trim() || '';
+  try { localStorage.setItem('ktc.usageKey', key); } catch (e) { /* not kept */ }
+  state.usage.error = '';
+  try {
+    const data = await fetchUsage(key);
+    if (data.error) { state.usage.data = null; state.usage.error = lb('இந்த விசை ஏற்கப்படவில்லை.', 'That key is not accepted.'); }
+    else state.usage.data = data;
+  } catch (e) {
+    state.usage.error = e.message;
+  }
+  rerender();
 }
 
 function viewAbout() {
@@ -912,6 +953,10 @@ function viewAbout() {
         <li>Hora: 12 h ÷ 12 = 60 min each. The first Sunday hora is the Sun, 06:00 to 07:00, then Venus.</li>
         <li>Thara: day star and birth star 10 apart → count 11 → 11 mod 9 = 2 → Sampath (a good Thara).</li>
       </ul>
+    </section>
+    <section class="detail">
+      <h3>${esc(lb('பயன்பாட்டு எண்ணிக்கை (உருவாக்குநர்)', 'App-open counts (developer)'))}</h3>
+      ${usageHtml()}
     </section>
     <section class="detail">
       <h3>${esc(lb('தனியுரிமை & விதிமுறைகள்', 'Privacy and terms'))}</h3>
@@ -1237,6 +1282,8 @@ function onClick(e) {
   else if (a === 'pack-save') { const pin = state.settings.pinnedPlaces.find((p) => p.id === el.dataset.id); if (pin) savePack(pin, Number(el.dataset.year), el); }
   else if (a === 'dates-panel') { state.datesPanel = el.dataset.p; rerender(); }
   else if (a === 'settings-panel') { state.settingsPanel = el.dataset.p; rerender(); }
+  else if (a === 'usage-show') showUsage();
+  else if (a === 'usage-period') { state.usage.period = el.dataset.p; rerender(); }
   else if (a === 'wm-clear') { clearWatermark(); state.watermarkCustom = null; applySettingChange('watermark', 'TEMPLE'); }
   else if (a === 'theme') { applySettingChange('theme', el.dataset.id); }
   else if (a === 'skin') { applySettingChange('skin', el.dataset.id); }
@@ -1364,6 +1411,7 @@ function applyTheme() {
 async function boot() {
   setEngineFromSettings();
   await loadTranslations(state.settings.language);
+  sendOpen(state.settings, state.place, installedAsApp() ? 'web-app' : 'web');
   state.watermarkCustom = loadWatermark();
   const requested = new URLSearchParams(location.search).get('tab');
   if (DATES_PANELS.some(([id]) => id === requested)) { state.tab = 'dates'; state.datesPanel = requested; }

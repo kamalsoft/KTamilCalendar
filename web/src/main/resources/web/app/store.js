@@ -23,6 +23,7 @@ export const DEFAULTS = {
   clock24h: false,
   watermark: 'TEMPLE',                  // TEMPLE | CUSTOM | NONE
   watermarkOpacity: 10,                 // percent
+  shareOpens: false,                    // anonymous open counts (country and state only); off unless the user turns it on
   panelTransparency: 25,                // percent of the card colour that is see-through
   tamilOnly: false,
   language: 'en',                       // en | ta-en | te-en | ml-en | kn-en | hi-en
