@@ -231,7 +231,9 @@ Lagna window.
 - **Important dates**: the festival, tag and religion events of a day, with holidays first.
 
 ## 16. Settings that change the output
-- **Place**: latitude, longitude and time zone, which change sunrise, sunset and every time-based value.
+- **Place**: latitude, longitude and time zone, which change sunrise, sunset and every time-based value. Every calculation
+  uses the selected place. Before a place is chosen the defaults are Naperville on the APK (`AppContainer`) and Chennai
+  on the web (`store.js`). The two defaults differ and are an open decision (see `docs/BACKLOG.md`).
 - **Timing convention**: `AUTO` picks `TRADITIONAL_6AM` for India and `SUNRISE_BASED` elsewhere.
 - **Faiths and school districts**: filter which events are listed (`applying` in `calendar.js`).
 

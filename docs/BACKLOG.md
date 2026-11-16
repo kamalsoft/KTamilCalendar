@@ -35,3 +35,17 @@
 - Krishna Paksha Muhurtham tithis: not in the validator's sources.
 - Thara Balam, the personal Chandrashtamam check, Marana Yogam and Lagna Shuddhi: not implemented.
 - Gowri windows: the day-part cycle is not covered by the validator's sources.
+
+## Revalidation against the validator skill (open)
+
+1. **Krishna Paksha Muhurtham (decision needed).** The app tags Krishna tithi days as Subha Muhurtham (10 Chennai and 9 Naperville days in 2026). The skill says Valarpirai for major starts. Decide: restrict to Valarpirai, or keep and label as minor.
+2. **Hora** (skill gate 6): daytime and nighttime Hora are not computed.
+3. **Lagna Shuddhi** (skill gate 6): the 8th house from the Muhurtham Lagna is not checked.
+4. **Marana Yogam** (skill gate 3): the Vaara and Nakshatra pair is not checked.
+5. **Thara Balam and personal Chandrashtamam** (skill gate 4): need the user's birth star as a setting.
+6. **Sraardha tie rule** (edge case): when a tithi covers exactly half of Aparahna Kala on two consecutive days, the skill picks the second day. The app gives no tithi on either day.
+7. **Darsha and Mahalaya rules** (skill section C, points 4–5): not implemented.
+8. **Tuesday and Saturday** (skill gate 3): the app excludes them outright; the skill says flag them.
+9. **Nakshatram and yogam** are checked against Swiss Ephemeris for Naperville only. The revalidation sample was Chennai, and the audit should run for each place a user can select.
+10. **Default location differs by platform.** The APK falls back to Naperville (`AppContainer`), and the web app defaults to Chennai (`store.js`). Every calculation uses the selected location, so the defaults only matter before a place is chosen. Decide whether both should use the same default.
+11. **Revalidation sample:** the November 2026 Chennai audit used Chennai as a sample place only. Rerun it for the place the user has selected.
