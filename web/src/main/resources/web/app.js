@@ -9,7 +9,7 @@ import { rasiPalan, skyPositions, grahasIn, gochara } from './engine/rasi.js';
 import { CONTENT } from './engine/content.js';
 import { epochDay, isoOf, parseIso, dayOfWeek, dayOfMonth, monthOf, yearOf, fromEpochDay, wallClock, zonedMs, hms, MS_DAY } from './engine/civil.js';
 import { loadSettings, saveSettings } from './app/store.js';
-import { LANGUAGES, translated } from './app/i18n.js';
+import { LANGUAGES, loadTranslations, translated } from './app/i18n.js';
 import { fetchWeather, sceneOf, labelOf } from './app/weather.js';
 import { slokaFor, speak, stopSpeaking, TempleMusic } from './app/sloka.js';
 import { scheduleReminders, notifyUser, clearReminders } from './app/reminders.js';
@@ -751,6 +751,7 @@ function viewSettings() {
     <section class="group"><h3>${esc(lb('காட்சி', 'Display'))}</h3>
       ${check('weather', lb('வானிலை', 'Weather'))}${check('animations', lb('அனிமேஷன்', 'Animations'))}${check('weatherAnimations', lb('வானிலை அனிமேஷன்', 'Weather animations'))}
       ${select('language', lb('மொழி', 'Language'), LANGUAGES)}
+      <p class="small"><a href="translate.html">${esc(lb('மொழிபெயர்க்க உதவுங்கள்', 'Help translate'))}</a></p>
       ${check('clock24h', lb('24 மணி நேரம்', '24-hour clock'))}${check('tamilOnly', lb('தமிழ் மட்டும்', 'Tamil only'))}
       ${select('units', lb('அளவுகள்', 'Units'), [['AUTO', lb('தானியங்கி', 'Auto')], ['METRIC', '°C · km/h'], ['IMPERIAL', '°F · mph']])}
     </section>
@@ -1053,6 +1054,7 @@ function rerender() {
 function applySettingChange(key, value) {
   state.settings[key] = value;
   saveSettings(state.settings);
+  if (key === 'language') { loadTranslations(value).then(rerender); return; }
   if (key === 'rahuReminder' || key === 'nallaReminder') scheduleToday();
   rerender();
 }
@@ -1246,6 +1248,7 @@ function applyTheme() {
 // ---------------------------------------------------------------- boot
 async function boot() {
   setEngineFromSettings();
+  await loadTranslations(state.settings.language);
   const requested = new URLSearchParams(location.search).get('tab');
   if (TABS.some(([id]) => id === requested)) state.tab = requested;
   state.school = await fetch('engine/school_calendars.json').then((r) => (r.ok ? r.json() : null)).catch(() => null);

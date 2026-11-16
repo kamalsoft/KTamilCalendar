@@ -1,46 +1,24 @@
-// Interface languages. Each label in the app is written as lb(tamil, english); the key here is that Tamil text, and
-// the value is its translation for the chosen language. A label with no translation shows English, so nothing is blank.
-// The translations are a first set (tabs, months, the language setting). Have a native speaker review them before release.
+// Interface languages. Each label in the app is written as lb(tamil, english). The translations live in
+// i18n/<code>.json, keyed by the Tamil text. A label with no translation shows English, so nothing is blank.
+// Translations are reviewed by native speakers; see web/tools/check_translations.py for what is still missing.
 
 export const LANGUAGES = [
-  ['ta-en', 'தமிழ் · English'],
   ['en', 'English'],
+  ['ta-en', 'தமிழ் · English'],
   ['te-en', 'తెలుగు · English'],
   ['ml-en', 'മലയാളം · English'],
   ['kn-en', 'ಕನ್ನಡ · English'],
   ['hi-en', 'हिन्दी · English'],
 ];
 
-const NATIVE = {
-  'te-en': {
-    'இன்று': 'ఈరోజు', 'மாதம்': 'మాసం', 'விழாக்கள்': 'పండుగలు', 'முக்கிய நாட்கள்': 'ముఖ్య తేదీలు',
-    'சுப முகூர்த்தம்': 'శుభ ముహూర్తం', 'ராசி': 'రాశి', 'இடம்': 'స్థలం', 'தீம்': 'థీమ్', 'அமைப்புகள்': 'సెట్టింగ్‌లు',
-    'பற்றி': 'గురించి', 'நிலவு · சூரியன்': 'చంద్రుడు · సూర్యుడు', 'மொழி': 'భాష',
-    'ஜனவரி': 'జనవరి', 'பிப்ரவரி': 'ఫిబ్రవరి', 'மார்ச்': 'మార్చి', 'ஏப்ரல்': 'ఏప్రిల్', 'மே': 'మే', 'ஜூன்': 'జూన్',
-    'ஜூலை': 'జులై', 'ஆகஸ்ட்': 'ఆగస్టు', 'செப்டம்பர்': 'సెప్టెంబర్', 'அக்டோபர்': 'అక్టోబర్', 'நவம்பர்': 'నవంబర్', 'டிசம்பர்': 'డిసెంబర్',
-  },
-  'ml-en': {
-    'இன்று': 'ഇന്ന്', 'மாதம்': 'മാസം', 'விழாக்கள்': 'ഉത്സവങ്ങൾ', 'முக்கிய நாட்கள்': 'പ്രധാന ദിവസങ്ങൾ',
-    'சுப முகூர்த்தம்': 'ശുഭ മുഹൂർത്തം', 'ராசி': 'രാശി', 'இடம்': 'സ്ഥലം', 'தீம்': 'തീം', 'அமைப்புகள்': 'ക്രമീകരണങ്ങൾ',
-    'பற்றி': 'വിവരം', 'நிலவு · சூரியன்': 'ചന്ദ്രൻ · സൂര്യൻ', 'மொழி': 'ഭാഷ',
-    'ஜனவரி': 'ജനുവരി', 'பிப்ரவரி': 'ഫെബ്രുവരി', 'மார்ச்': 'മാർച്ച്', 'ஏப்ரல்': 'ഏപ്രിൽ', 'மே': 'മേയ്', 'ஜூன்': 'ജൂൺ',
-    'ஜூலை': 'ജൂലൈ', 'ஆகஸ்ட்': 'ഓഗസ്റ്റ്', 'செப்டம்பர்': 'സെപ്റ്റംബർ', 'அக்டோபர்': 'ഒക്ടോബർ', 'நவம்பர்': 'നവംബർ', 'டிசம்பர்': 'ഡിസംബർ',
-  },
-  'kn-en': {
-    'இன்று': 'ಇಂದು', 'மாதம்': 'ತಿಂಗಳು', 'விழாக்கள்': 'ಹಬ್ಬಗಳು', 'முக்கிய நாட்கள்': 'ಮುಖ್ಯ ದಿನಗಳು',
-    'சுப முகூர்த்தம்': 'ಶುಭ ಮುಹೂರ್ತ', 'ராசி': 'ರಾಶಿ', 'இடம்': 'ಸ್ಥಳ', 'தீம்': 'ಥೀಮ್', 'அமைப்புகள்': 'ಸೆಟ್ಟಿಂಗ್‌ಗಳು',
-    'பற்றி': 'ಬಗ್ಗೆ', 'நிலவு · சூரியன்': 'ಚಂದ್ರ · ಸೂರ್ಯ', 'மொழி': 'ಭಾಷೆ',
-    'ஜனவரி': 'ಜನವರಿ', 'பிப்ரவரி': 'ಫೆಬ್ರವರಿ', 'மார்ச்': 'ಮಾರ್ಚ್', 'ஏப்ரல்': 'ಏಪ್ರಿಲ್', 'மே': 'ಮೇ', 'ஜூன்': 'ಜೂನ್',
-    'ஜூலை': 'ಜುಲೈ', 'ஆகஸ்ட்': 'ಆಗಸ್ಟ್', 'செப்டம்பர்': 'ಸೆಪ್ಟೆಂಬರ್', 'அக்டோபர்': 'ಅಕ್ಟೋಬರ್', 'நவம்பர்': 'ನವೆಂಬರ್', 'டிசம்பர்': 'ಡಿಸೆಂಬರ್',
-  },
-  'hi-en': {
-    'இன்று': 'आज', 'மாதம்': 'महीना', 'விழாக்கள்': 'त्योहार', 'முக்கிய நாட்கள்': 'मुख्य तिथियाँ',
-    'சுப முகூர்த்தம்': 'शुभ मुहूर्त', 'ராசி': 'राशि', 'இடம்': 'स्थान', 'தீம்': 'थीम', 'அமைப்புகள்': 'सेटिंग्स',
-    'பற்றி': 'जानकारी', 'நிலவு · சூரியன்': 'चंद्र · सूर्य', 'மொழி': 'भाषा',
-    'ஜனவரி': 'जनवरी', 'பிப்ரவரி': 'फरवरी', 'மார்ச்': 'मार्च', 'ஏப்ரல்': 'अप्रैल', 'மே': 'मई', 'ஜூன்': 'जून',
-    'ஜூலை': 'जुलाई', 'ஆகஸ்ட்': 'अगस्त', 'செப்டம்பர்': 'सितंबर', 'அக்டோபர்': 'अक्टूबर', 'நவம்பர்': 'नवंबर', 'டிசம்பர்': 'दिसंबर',
-  },
-};
+const FILES = { 'te-en': 'te', 'ml-en': 'ml', 'kn-en': 'kn', 'hi-en': 'hi' };
+const loaded = {};
+
+// Loads the translation file for a language once. Until it arrives, labels show English.
+export async function loadTranslations(lang) {
+  if (!FILES[lang] || loaded[lang]) return;
+  loaded[lang] = await fetch(`i18n/${FILES[lang]}.json`).then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
+}
 
 // The label in the chosen language, or undefined when the language has no translation for it.
-export const translated = (lang, ta) => NATIVE[lang]?.[ta];
+export const translated = (lang, ta) => loaded[lang]?.[ta];
