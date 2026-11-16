@@ -18,12 +18,12 @@ import { APP_VERSION } from './app/version.js';
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const TABS = [
-  ['today', 'இன்று', 'Today'], ['month', 'மாதம்', 'Month'], ['festivals', 'விழாக்கள்', 'Festivals'],
-  ['important', 'முக்கிய நாட்கள்', 'Important'], ['muhurtham', 'சுப முகூர்த்தம்', 'Muhurtham'], ['rasi', 'ராசி', 'Rasi'], ['location', 'இடம்', 'Location'],
-  ['learn', 'நிலவு · சூரியன்', 'Moon & Sun'],
-  ['theme', 'தீம்', 'Theme'], ['settings', 'அமைப்புகள்', 'Settings'], ['about', 'பற்றி', 'About'],
+  ['today', 'இன்று', 'Today'], ['month', 'மாதம்', 'Month'], ['dates', 'தேதிகள்', 'Dates'], ['rasi', 'ராசி', 'Rasi'],
+  ['learn', 'நிலவு · சூரியன்', 'Moon & Sun'], ['settings', 'அமைப்புகள்', 'Settings'], ['about', 'பற்றி', 'About'],
 ];
-const ALWAYS_SHOWN = new Set(['today', 'location', 'theme', 'settings', 'about']);
+// Dates holds three panels; old deep links (?tab=festivals etc.) still open them.
+const DATES_PANELS = [['important', 'முக்கிய நாட்கள்', 'Important'], ['festivals', 'விழாக்கள்', 'Festivals'], ['muhurtham', 'சுப முகூர்த்தம்', 'Muhurtham']];
+const ALWAYS_SHOWN = new Set(['today', 'settings', 'about']);
 const MONTHS_TA = ['ஜனவரி', 'பிப்ரவரி', 'மார்ச்', 'ஏப்ரல்', 'மே', 'ஜூன்', 'ஜூலை', 'ஆகஸ்ட்', 'செப்டம்பர்', 'அக்டோபர்', 'நவம்பர்', 'டிசம்பர்'];
 const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const WEEKDAYS_TA_SHORT = ['ஞா', 'தி', 'செ', 'பு', 'வி', 'வெ', 'ச'];
@@ -31,6 +31,7 @@ const WEEKDAYS_TA_SHORT = ['ஞா', 'தி', 'செ', 'பு', 'வி', '�
 const state = {
   settings: loadSettings(),
   tab: 'today',
+  datesPanel: 'important',  // important | festivals | muhurtham
   day: 0,            // selected epoch day
   flipDir: 0,        // +1 / -1 while the Month page turns, read once by viewMonth
   monthOf: null,     // [year, month] shown on the month tab
@@ -146,7 +147,7 @@ function render() {
   localizeChrome();
   renderTabs();
   applyTheme();
-  const view = { today: viewToday, month: viewMonth, festivals: viewFestivals, important: viewImportant, muhurtham: viewMuhurtham, rasi: viewRasi, learn: viewLearn, location: viewLocation, theme: viewTheme, settings: viewSettings, about: viewAbout }[state.tab];
+  const view = { today: viewToday, month: viewMonth, dates: viewDates, rasi: viewRasi, learn: viewLearn, settings: viewSettings, about: viewAbout }[state.tab];
   $('view').innerHTML = view();
   if (state.tab === 'today') {
     loadWeatherIfNeeded();
@@ -580,6 +581,13 @@ function viewImportant() {
     ${groups.map((g) => monthSection(g, card)).join('') || `<p class="small">${esc(lb('இல்லை', 'Nothing in this period'))}</p>`}`;
 }
 
+/** Dates: Important, Festivals and Muhurtham on one page, one panel at a time. */
+function viewDates() {
+  const views = { important: viewImportant, festivals: viewFestivals, muhurtham: viewMuhurtham };
+  const pills = DATES_PANELS.map(([id, ta, en]) => `<button class="pill${state.datesPanel === id ? ' on' : ''}" role="tab" aria-selected="${state.datesPanel === id}" data-act="dates-panel" data-p="${id}">${pairTag(ta, en)}</button>`).join('');
+  return `<div class="panel-tabs" role="tablist">${pills}</div>${views[state.datesPanel]()}`;
+}
+
 // ---- subha muhurtham: days in a chosen range (default: next 120 days), with the best window
 function viewMuhurtham() {
   const today = todayEpoch();
@@ -679,7 +687,7 @@ function rasiModal(d, p, sky) {
 const outlookWords = (o) => ({ GOOD: ['நன்மை', 'Good'], NEUTRAL: ['சமம்', 'Neutral'], CAUTION: ['கவனம்', 'Caution'], CHANDRASHTAMAM: ['சந்திராஷ்டமம்', 'Chandrashtamam'] })[o];
 
 // ---- location
-function viewLocation() {
+function locationSection() {
   const s = state.settings;
   const presets = PLACES.map((p) => `<button class="place-card${!s.place.custom && s.place.preset === p.key ? ' on' : ''}" data-act="place-preset" data-key="${p.key}"><b>${esc(lb(p.nameTa, p.nameEn))}</b><small>${esc(p.zoneId)}</small></button>`).join('');
   const recent = s.recentPlaces.map((p, i) => `<button class="pill" data-act="place-recent" data-i="${i}">${esc(p.nameEn)}</button>`).join('');
@@ -687,8 +695,8 @@ function viewLocation() {
       <span class="pin-actions"><button class="pill" data-act="pin-open" data-id="${esc(p.id)}">${esc(lb('திற', 'Open'))}</button><button class="pill" data-act="pin-remove" data-id="${esc(p.id)}">✕</button></span></li>`).join('');
   const pinHere = s.pinnedPlaces.some((p) => p.id === placeKeyOf(s)) ? '' : `<button class="pill" data-act="pin-current">📌 ${esc(lb('இந்த இடத்தைப் பின் செய்', 'Pin this place'))}</button>`;
   const results = state.search.results.map((r, i) => `<li><button class="result" data-act="place-result" data-i="${i}"><b>${esc(r.name)}</b><small>${esc([r.admin1, r.country].filter(Boolean).join(', '))}</small></button></li>`).join('');
-  return `<h1 class="page">${esc(lb('இடம்', 'Location'))}</h1>
-    <p class="page-sub">${esc(lb('எல்லாக் கணக்குகளும் இங்கே தேர்ந்தெடுக்கும் இடத்திற்கு.', 'Every calculation uses the place you choose here.'))}</p>
+  return `<section class="group" id="location"><h3>${esc(lb('இடம்', 'Location'))}</h3>
+    <p class="small">${esc(lb('எல்லாக் கணக்குகளும் இங்கே தேர்ந்தெடுக்கும் இடத்திற்கு.', 'Every calculation uses the place you choose here.'))}</p>
     <div class="current-place"><span>${esc(lb('தற்போதைய இடம்', 'Current place'))}</span><b>${esc(placeLabel(state.settings.language === 'en' ? { ...state.place, nameTa: state.place.nameEn } : state.place))}</b><small>${esc(state.place.zoneId)}</small></div>
     <h3 class="sub-h">${esc(lb('இடங்கள்', 'Places'))}</h3>
     <div class="place-grid">${presets}</div>
@@ -704,6 +712,7 @@ function viewLocation() {
       ${pinHere}
       <ul class="events">${pinned || `<li class="small">${esc(lb('இன்னும் இல்லை', 'Nothing pinned yet'))}</li>`}</ul>
       <label class="toggle"><input type="checkbox" data-setting="autoLocate" ${s.autoLocate ? 'checked' : ''}> ${esc(lb('தொடங்கும்போது என் இடம்', 'Use my location when the app opens'))}</label>
+    </section>
     </section>`;
 }
 
@@ -746,7 +755,7 @@ const SKINS = [
   ['SOFT', 'மென்மை', 'Soft', 'Rounder cards with a gentle lift and a hint of the accent colour.'],
   ['EDGE', 'ஓரம்', 'Edge', 'Flat cards with a coloured edge on the left.'],
 ];
-function viewTheme() {
+function themeSection() {
   const cur = state.settings.theme;
   const cards = CONTENT.themes.map((t) => `<button class="theme-card${cur === t.id ? ' on' : ''}" data-act="theme" data-id="${t.id}"
       style="background:linear-gradient(165deg, ${t.colors.background}, ${t.colors.backgroundMid} 55%, ${t.colors.backgroundDeep});color:${t.colors.text}">
@@ -755,10 +764,11 @@ function viewTheme() {
   const skins = SKINS.map(([id, ta, en, desc]) => `<button class="skin-card${state.settings.skin === id ? ' on' : ''}" data-act="skin" data-id="${id}">
     <span class="skin-sample skin-${id.toLowerCase()}"><i></i><i></i></span>
     <b>${esc(lb(ta, en))}</b><small>${esc(desc)}</small></button>`).join('');
-  return `<h1 class="page">${esc(lb('தீம் & தோற்றம்', 'Theme & skin'))}</h1>
-    <p class="page-sub">${esc(lb('வண்ணங்களும் அட்டைகளின் தோற்றமும். தேர்வு நினைவில் வைக்கப்படும்.', 'Colours and card style. Your choice is remembered.'))}</p>
-    <section class="group"><h3>${esc(lb('வண்ணத் தீம்', 'Colour theme'))}</h3><div class="theme-grid">${cards}</div></section>
-    <section class="group"><h3>${esc(lb('தோற்றம் (skin)', 'Skin · card style'))}</h3><div class="skin-grid">${skins}</div></section>`;
+  return `<section class="group" id="theme"><h3>${esc(lb('தீம் & தோற்றம்', 'Theme & skin'))}</h3>
+    <p class="small">${esc(lb('வண்ணங்களும் அட்டைகளின் தோற்றமும். தேர்வு நினைவில் வைக்கப்படும்.', 'Colours and card style. Your choice is remembered.'))}</p>
+    <h3>${esc(lb('வண்ணத் தீம்', 'Colour theme'))}</h3><div class="theme-grid">${cards}</div>
+    <h3>${esc(lb('தோற்றம் (skin)', 'Skin · card style'))}</h3><div class="skin-grid">${skins}</div>
+    </section>`;
 }
 
 // ---- settings
@@ -772,6 +782,8 @@ function viewSettings() {
   const musicSel = (k, label, opts) => `<label class="field">${esc(label)} <select data-music="${k}">${opts.map(([v, t]) => `<option value="${v}"${m[k] === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
   return `<h1 class="page">${esc(lb('அமைப்புகள்', 'Settings'))}</h1>
     <p class="page-sub">${esc(lb('மாற்றங்கள் உடனே நடைமுறைக்கு வந்து சேமிக்கப்படும்.', 'Changes apply straight away and are saved on this device.'))}</p>
+    ${locationSection()}
+    ${themeSection()}
     <div class="settings-grid">
     <section class="group"><h3>${esc(lb('காட்சி', 'Display'))}</h3>
       ${check('weather', lb('வானிலை', 'Weather'))}${check('animations', lb('அனிமேஷன்', 'Animations'))}${check('weatherAnimations', lb('வானிலை அனிமேஷன்', 'Weather animations'))}
@@ -1196,6 +1208,7 @@ function onClick(e) {
   else if (a === 'pin-remove') unpin(el.dataset.id);
   else if (a === 'pin-open') { const pin = state.settings.pinnedPlaces.find((p) => p.id === el.dataset.id); if (pin) setPlace(pin.place.custom ? { custom: pin.place.custom } : PLACES.find((x) => x.key === pin.place.preset), false); }
   else if (a === 'pack-save') { const pin = state.settings.pinnedPlaces.find((p) => p.id === el.dataset.id); if (pin) savePack(pin, Number(el.dataset.year), el); }
+  else if (a === 'dates-panel') { state.datesPanel = el.dataset.p; rerender(); }
   else if (a === 'theme') { applySettingChange('theme', el.dataset.id); }
   else if (a === 'skin') { applySettingChange('skin', el.dataset.id); }
   else if (a === 'notify-allow') { if ('Notification' in window) Notification.requestPermission().then(() => rerender()); }
@@ -1287,7 +1300,9 @@ async function boot() {
   setEngineFromSettings();
   await loadTranslations(state.settings.language);
   const requested = new URLSearchParams(location.search).get('tab');
-  if (TABS.some(([id]) => id === requested)) state.tab = requested;
+  if (DATES_PANELS.some(([id]) => id === requested)) { state.tab = 'dates'; state.datesPanel = requested; }
+  else if (requested === 'location' || requested === 'theme') state.tab = 'settings';
+  else if (TABS.some(([id]) => id === requested)) state.tab = requested;
   state.school = await fetch('engine/school_calendars.json').then((r) => (r.ok ? r.json() : null)).catch(() => null);
   $('view').addEventListener('click', onClick);
   $('tabs').addEventListener('click', onClick);
@@ -1304,7 +1319,7 @@ async function boot() {
   $('ambient').addEventListener('click', () => showAmbient(false));
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && state.rasi !== null) closeRasi(); });
   $('disclaimer-ok').addEventListener('click', () => { state.settings.disclaimerSeen = true; saveSettings(state.settings); $('disclaimer').hidden = true; });
-  $('place-chip').addEventListener('click', () => { state.tab = 'location'; rerender(); });
+  $('place-chip').addEventListener('click', () => { state.tab = 'settings'; rerender(); document.getElementById('location')?.scrollIntoView(); });
   for (const ev of ['pointerdown', 'keydown', 'touchstart']) document.addEventListener(ev, () => { state.lastInput = Date.now(); }, { passive: true });
   setInterval(() => {
     const s = state.settings;
