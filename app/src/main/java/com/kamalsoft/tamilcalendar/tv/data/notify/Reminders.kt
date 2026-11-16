@@ -1,5 +1,6 @@
 package com.kamalsoft.tamilcalendar.tv.data.notify
 
+import android.Manifest
 import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -7,10 +8,12 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.kamalsoft.tamilcalendar.tv.MainActivity
 import com.kamalsoft.tamilcalendar.tv.R
 import com.kamalsoft.tamilcalendar.tv.TamilCalendarApp
@@ -130,8 +133,13 @@ class ReminderReceiver : BroadcastReceiver() {
                 .setContentIntent(open)
                 .setAutoCancel(true)
                 .build()
-            runCatching { NotificationManagerCompat.from(context).notify(intent.getStringExtra(ReminderScheduler.EXTRA_TITLE).hashCode(), n) }
-                .onFailure { Log.w("Reminders", "Notification blocked", it) }
+            // Android 13+ needs the user's permission to post; without it the reminder is skipped and logged.
+            if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                Log.w("Reminders", "Notification permission not granted; reminder skipped")
+            } else {
+                runCatching { NotificationManagerCompat.from(context).notify(intent.getStringExtra(ReminderScheduler.EXTRA_TITLE).hashCode(), n) }
+                    .onFailure { Log.w("Reminders", "Notification blocked", it) }
+            }
         }
         container.reminders.reschedule()
     }

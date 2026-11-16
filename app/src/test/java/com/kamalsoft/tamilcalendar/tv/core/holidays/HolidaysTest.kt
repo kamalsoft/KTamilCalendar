@@ -68,4 +68,11 @@ class HolidaysTest {
         val merged = (UsHolidays.between(d(2026, 12, 25), d(2026, 12, 25), us) + tnChristmas).forDisplay()
         assertEquals(HolidayRegion.US_FEDERAL, merged.single().region)
     }
+
+    /** Both districts name the winter break differently but share its Tamil title: one row, not one per district. */
+    @Test fun schoolBreakShowsOnceAcrossDistricts() {
+        val both = SchoolCalendars.parse(schoolJson, setOf(HolidayRegion.SCHOOL_D203, HolidayRegion.SCHOOL_D204))
+        val winterRows = both.forDisplay().filter { it.kind == EventKind.SCHOOL && it.date == d(2026, 12, 21) }
+        assertEquals(1, winterRows.size)
+    }
 }

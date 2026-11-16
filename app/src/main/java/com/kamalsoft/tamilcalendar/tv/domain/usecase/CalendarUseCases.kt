@@ -45,14 +45,17 @@ class GetUpcomingEventsUseCase(private val repo: CalendarRepository) {
  * - Consecutive days of one multi-day entry (e.g. Winter Break) collapse into a single row with [CalendarEvent.endDate].
  */
 fun List<CalendarEvent>.forDisplay(): List<CalendarEvent> {
-    // School entries stay per district; other same-day, same-title entries merge across regions.
-    val deduped = groupBy { Triple(it.date, it.titleEn, if (it.kind == EventKind.SCHOOL) it.region else null) }
+    // A school closure is one line per day, whatever each district calls it (Winter Break and Winter Vacation share
+    // the Tamil title); a school day off that a government holiday already shows is left out.
+    val govtDays = filter { it.kind == EventKind.GOVT_HOLIDAY }.map { it.date }.toSet()
+    val kept = filterNot { it.kind == EventKind.SCHOOL && it.date in govtDays }
+    val deduped = kept.groupBy { if (it.kind == EventKind.SCHOOL) Triple(it.date, it.titleTa, "") else Triple(it.date, it.titleEn, null) }
         .values.map { same -> same.maxBy { (if (it.isHoliday) 2 else 0) + (if (it.region != HolidayRegion.TAMIL_NADU) 1 else 0) } }
         .sortedBy { it.date }
     val out = mutableListOf<CalendarEvent>()
     val open = HashMap<String, Int>() // run key -> index in out
     for (e in deduped) {
-        val key = "${e.kind}|${e.region}|${e.titleEn}"
+        val key = if (e.kind == EventKind.SCHOOL) "SCHOOL|${e.titleTa}" else "${e.kind}|${e.region}|${e.titleEn}"
         val idx = open[key]
         val prev = idx?.let { out[it] }
         if (prev != null && (prev.endDate ?: prev.date).plusDays(1) == e.date) {

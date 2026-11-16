@@ -504,9 +504,11 @@ private fun ColumnScope.TimingColumn(day: TamilDayData, show: (DetailContent, Fo
             t.nallaNeram.map { "" to "${Fmt.range(it)} · ${Fmt.timeEn(it.start)} – ${Fmt.timeEn(it.end)}" },
         ),
     )
+    // Gowri windows that Nalla Neram already shows are left off this card, so no time appears twice.
+    val gowriOnly = t.gowriNallaNeram.filter { g -> t.nallaNeram.none { n -> g.start < n.end && n.start < g.end } }
     InfoCard(
         order = 3,
-        label = "கௌரி நல்ல நேரம் · Gowri", value = first(t.gowriNallaNeram), sub = rest(t.gowriNallaNeram), accent = TvColors.Gold, show = show,
+        label = "கௌரி நல்ல நேரம் · Gowri", value = first(gowriOnly), sub = rest(gowriOnly), accent = TvColors.Gold, show = show,
         detail = DetailContent(
             "கௌரி நல்ல நேரம் · Gowri Nalla Neram", "பகல் கௌரி பஞ்சாங்கம் · Daytime Gowri Panchangam",
             t.gowriNallaNeram.map { w -> val g = w.gowri!!; "${g.ta} · ${g.en}" to "${Fmt.range(w)} · ${Fmt.timeEn(w.start)} – ${Fmt.timeEn(w.end)}" },

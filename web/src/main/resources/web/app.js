@@ -218,9 +218,20 @@ function viewToday() {
   };
   // Good windows first (Nalla Neram and Gowri), then the windows to avoid. Every card is visible; nothing is collapsed.
   const byStart = (a, b) => secOf(a.start) - secOf(b.start);
-  const goodList = [...d.timings.nallaNeram, ...d.timings.gowriNallaNeram].sort(byStart);
+  // Nalla Neram is a good Gowri window with Rahu Kalam and Yamagandam cut out, so each Nalla window sits inside
+  // one or more Gowri windows. One card per time: the Nalla window, with the Gowri names beside it. A Gowri
+  // window with no Nalla window inside it keeps its own card.
+  const overlaps = (a, b) => secOf(a.start) < secOf(b.end) && secOf(b.start) < secOf(a.end);
+  const gowriName = (g) => lb(CONTENT.enums.Gowri[g][1], CONTENT.enums.Gowri[g][2]);
+  const gowriGood = d.timings.gowriNallaNeram;
+  const goodList = [
+    ...d.timings.nallaNeram.map((n) => ({ start: n.start, end: n.end, title: lb('நல்ல நேரம்', 'Nalla Neram'),
+      sub: gowriGood.filter((g) => overlaps(g, n)).map((g) => gowriName(g.gowri)).join(' · ') })),
+    ...gowriGood.filter((g) => !d.timings.nallaNeram.some((n) => overlaps(g, n))).map((g) => ({ start: g.start, end: g.end,
+      title: lb('கௌரி நல்ல நேரம்', 'Gowri Nalla Neram'), sub: gowriName(g.gowri) })),
+  ].sort(byStart);
   const avoidList = [d.timings.rahuKalam, d.timings.yamagandam, d.timings.kuligai].sort(byStart);
-  const good = goodList.map(row).join('');
+  const good = goodList.map((c) => `<li class="good"><span>${esc(c.title)}${c.sub ? ` · ${esc(c.sub)}` : ''}</span><time>${timeOf(c.start)} – ${timeOf(c.end)}</time></li>`).join('');
   const avoid = avoidList.map(row).join('');
   const chandra = d.chandrashtamam;
   const weatherCard = state.settings.weather ? (isToday ? weatherHtml() : forecastHtml(d.epochDay)) : '';
