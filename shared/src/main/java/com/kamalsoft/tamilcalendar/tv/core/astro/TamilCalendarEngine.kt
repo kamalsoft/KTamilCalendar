@@ -183,7 +183,7 @@ class TamilCalendarEngine(
             sunRasi = Astro.floorDiv(Astro.sunSidereal(c.sunriseJd), 30.0),
             lagnam = lagnaSegments(c.sunriseJd, next.sunriseJd),
             karanam = Astro.floorDiv(Astro.elongation(c.sunriseJd), 6.0),
-            sraardhaTithi = sraardhaTithiOf(c.date),
+            sraardhaTithi = sraardhaTithiOf(c.sunriseJd, c.sunsetJd),
         )
 
         val timings = timingsFor(c.date, sunrise, sunset)
@@ -267,14 +267,19 @@ class TamilCalendarEngine(
         }
 
     /**
-     * Sraardha tithi (docs/BACKLOG.md item 1): the tithi that covers the whole window 13:30–16:00 local, so it
-     * is the same at both ends of it. Amavasai is not used, and no tithi covering the window gives null.
+     * Sraardha tithi (astronomer validator, Step 3C): sample Aparahna Kala, the 4th fifth of the local daytime
+     * [sunrise + 3U, sunrise + 4U] with U = daytime / 5. The tithi covering more than half of it is the Sraardha
+     * tithi. Amavasai is not used, and no tithi with a majority gives null.
      */
-    private fun sraardhaTithiOf(date: LocalDate): Int? {
-        fun tithiAt(time: LocalTime): Int =
-            Astro.floorDiv(Astro.elongation(Astro.julianDay(date.atTime(time).atZone(zone).toInstant())), 12.0)
-        val start = tithiAt(LocalTime.of(13, 30))
-        return if (start == tithiAt(LocalTime.of(16, 0)) && start != 29) start else null
+    private fun sraardhaTithiOf(sunriseJd: Double, sunsetJd: Double): Int? {
+        val unit = (sunsetJd - sunriseJd) / 5
+        val samples = 16
+        val counts = IntArray(30)
+        for (i in 0 until samples) {
+            counts[Astro.floorDiv(Astro.elongation(sunriseJd + (3 + (i + 0.5) / samples) * unit), 12.0)]++
+        }
+        val best = counts.indices.maxBy { counts[it] }
+        return if (counts[best] * 2 > samples && best != 29) best else null
     }
 
     /**
@@ -307,10 +312,9 @@ class TamilCalendarEngine(
     // ---------------------------------------------------------------- timing windows
 
     private fun timingsFor(date: LocalDate, sunrise: LocalTime, sunset: LocalTime): DayTimings {
-        val (dayStart, part) = when (convention) {
-            TimingConvention.TRADITIONAL_6AM -> 6 * 3600 to 90 * 60
-            TimingConvention.SUNRISE_BASED -> sunrise.toSecondOfDay() to (sunset.toSecondOfDay() - sunrise.toSecondOfDay()) / 8
-        }
+        // Astronomer validator: the daytime is divided into eight equal parts from sunrise, at every place.
+        val dayStart = sunrise.toSecondOfDay()
+        val part = (sunset.toSecondOfDay() - sunrise.toSecondOfDay()) / 8
         val w = date.dayOfWeek.value % 7 // Sunday = 0
         fun segment(type: TimingType, n: Int, gowri: Gowri? = null): TimingWindow {
             val s = dayStart + (n - 1) * part
@@ -327,8 +331,10 @@ class TamilCalendarEngine(
         val gowriGood = gowriAll.filter { it.gowri!!.isGood }
 
         // Nalla Neram = good Gowri periods, with Rahu Kalam and Yamagandam cut out, merged.
-        val blocked = listOf(rahu, yama).map { it.start.toSecondOfDay() to it.end.toSecondOfDay() }
+        // A good window never overlaps an avoid window: Rahu Kalam, Yamagandam and Kuligai are cut out of the good times.
+        val blocked = listOf(rahu, yama, kuligai).map { it.start.toSecondOfDay() to it.end.toSecondOfDay() }
         val free = mutableListOf<Pair<Int, Int>>()
+        val gowriFree = mutableListOf<TimingWindow>()
         for (g in gowriGood) {
             var pieces = listOf(g.start.toSecondOfDay() to g.end.toSecondOfDay())
             for ((bs, be) in blocked) {
@@ -338,6 +344,9 @@ class TamilCalendarEngine(
                 }
             }
             for (p in pieces) {
+                if (p.second - p.first >= 30 * 60) gowriFree += TimingWindow(
+                    TimingType.GOWRI_NALLA_NERAM, LocalTime.ofSecondOfDay(p.first.toLong()), LocalTime.ofSecondOfDay(p.second.toLong()), g.gowri,
+                )
                 val last = free.lastOrNull()
                 if (last != null && last.second == p.first) free[free.lastIndex] = last.first to p.second else free += p
             }
@@ -345,7 +354,7 @@ class TamilCalendarEngine(
         val nalla = free.filter { it.second - it.first >= 30 * 60 }.map { (s, e) ->
             TimingWindow(TimingType.NALLA_NERAM, LocalTime.ofSecondOfDay(s.toLong()), LocalTime.ofSecondOfDay(e.toLong()))
         }
-        return DayTimings(nalla, gowriGood, rahu, yama, kuligai)
+        return DayTimings(nalla, gowriFree, rahu, yama, kuligai)
     }
 
     private fun nakshatrasIn(rasi: Int): List<Int> {
@@ -545,7 +554,7 @@ class TamilCalendarEngine(
 
     companion object {
         /** Engine output version; bump to force the offline DB to regenerate. */
-        const val VERSION = 5
+        const val VERSION = 7
 
         private const val NAK_SPAN = 360.0 / 27.0
         private const val LAGNA_STEP_DAYS = 10.0 / 1440.0
@@ -564,9 +573,12 @@ class TamilCalendarEngine(
         /** Aadi, Purattasi, Margazhi — traditionally avoided for weddings in Tamil Nadu. */
         private val AVOIDED_MUHURTHAM_MONTHS = setOf(3, 5, 8)
         // 0-based within paksha: Dwitiyai, Tritiyai, Panchami, Sapthami, Dasami, Ekadasi, Dwadasi, Thrayodasi.
-        private val SHUKLA_MUHURTHAM_TITHIS = setOf(1, 2, 4, 6, 9, 10, 11, 12)
+        // Validator: Dwitiyai, Tritiyai, Panchami, Sapthami, Dasami, Ekadasi, Thrayodasi (0-based indices).
+        private val SHUKLA_MUHURTHAM_TITHIS = setOf(1, 2, 4, 6, 9, 10, 12)
         private val KRISHNA_MUHURTHAM_TITHIS = setOf(1, 2, 4)
         // Rohini, Mirugasirisham, Magam, Uthiram, Hastham, Swathi, Anusham, Moolam, Uthiradam, Uthirattathi, Revathi.
-        private val MUHURTHAM_STARS = setOf(3, 4, 9, 11, 12, 14, 16, 18, 20, 25, 26)
+        // Validator's auspicious stars: Rohini, Mrigashirsha, Magha, Uttara Phalguni, Hasta, Swati, Anuradha, Moola,
+        // Uttara Ashadha, Shravana, Dhanishta, Uttara Bhadrapada, Revati.
+        private val MUHURTHAM_STARS = setOf(3, 4, 9, 11, 12, 14, 16, 18, 20, 21, 22, 25, 26)
     }
 }

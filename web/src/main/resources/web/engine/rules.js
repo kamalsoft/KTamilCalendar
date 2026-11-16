@@ -36,10 +36,12 @@ export const soolam = (weekday) => {
 
 export const weekdayRemedy = (weekday) => WEEKDAY_REMEDY[weekday];
 
-/** Abhijit Muhurtham: 48 minutes centred on solar noon. Sunrise and sunset are seconds since midnight. */
+/** Abhijit Muhurtham: solar noon ± daytime/30. Sunrise and sunset are seconds since midnight. */
 export const abhijit = (sunriseSec, sunsetSec) => {
-  const noon = sunriseSec + Math.floor((sunsetSec - sunriseSec) / 2);
-  return [noon - 24 * 60, noon + 24 * 60];
+  const daytime = sunsetSec - sunriseSec;
+  const noon = sunriseSec + Math.floor(daytime / 2);
+  const half = Math.floor(daytime / 30);
+  return [noon - half, noon + half];
 };
 
 const MOVABLE = [['பவம்', 'Bava'], ['பாலவம்', 'Balava'], ['கௌலவம்', 'Kaulava'], ['தைதுலை', 'Taitila'], ['கரசை', 'Gara'], ['வணிசை', 'Vanija'], ['பத்திரை (விஷ்டி)', 'Vishti']];

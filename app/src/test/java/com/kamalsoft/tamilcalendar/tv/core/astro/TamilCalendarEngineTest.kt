@@ -97,12 +97,15 @@ class TamilCalendarEngineTest {
         }
     }
 
-    @Test fun mondayRahuKalamIsTraditional() {
+    /** Eight equal parts of the daytime from sunrise (validator Step 3B.5): Monday Rahu = 2nd, Yamagandam = 4th, Kuligai = 6th. */
+    @Test fun mondayAvoidWindowsAreEighthsOfDaytime() {
         val monday = day(2026, 10, 26)
-        assertEquals(LocalTime.of(7, 30), monday.timings.rahuKalam.start)
-        assertEquals(LocalTime.of(9, 0), monday.timings.rahuKalam.end)
-        assertEquals(LocalTime.of(10, 30), monday.timings.yamagandam.start)
-        assertEquals(LocalTime.of(13, 30), monday.timings.kuligai.start)
+        val part = (monday.sunset.toSecondOfDay() - monday.sunrise.toSecondOfDay()) / 8
+        fun at(n: Int) = LocalTime.ofSecondOfDay((monday.sunrise.toSecondOfDay() + (n - 1) * part).toLong())
+        assertEquals(at(2), monday.timings.rahuKalam.start)
+        assertEquals(at(3), monday.timings.rahuKalam.end)
+        assertEquals(at(4), monday.timings.yamagandam.start)
+        assertEquals(at(6), monday.timings.kuligai.start)
     }
 
     @Test fun chennaiSunrise() {
@@ -116,6 +119,19 @@ class TamilCalendarEngineTest {
             assertTrue(d.panchangam.nakshatram.index in 0..26)
             assertTrue(d.tamilDate.day in 1..32)
             assertEquals((d.panchangam.moonRasi + 5) % 12, d.chandrashtamam.rasi)
+        }
+    }
+
+    /** A good window (Nalla Neram or a Gowri window) never overlaps Rahu Kalam, Yamagandam or Kuligai. */
+    @Test fun goodWindowsNeverOverlapAvoidWindows() {
+        days.values.forEach { d ->
+            val t = d.timings
+            val avoid = listOf(t.rahuKalam, t.yamagandam, t.kuligai)
+            (t.nallaNeram + t.gowriNallaNeram).forEach { good ->
+                avoid.forEach { bad ->
+                    assertTrue("${d.date}: ${good.start}-${good.end} overlaps ${bad.type}", !(good.start < bad.end && bad.start < good.end))
+                }
+            }
         }
     }
 

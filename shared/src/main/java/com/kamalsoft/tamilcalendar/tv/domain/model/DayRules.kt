@@ -40,10 +40,12 @@ object DayRules {
         DayOfWeek.SATURDAY -> "Light a sesame oil lamp; donate black sesame or urad dal"
     }
 
-    /** Abhijit Muhurtham: 48 minutes centred on solar noon. */
+    /** Abhijit Muhurtham (validator): solar noon ± daytime/30 on each side, so about 48 minutes in Chennai. */
     fun abhijit(sunrise: LocalTime, sunset: LocalTime): Pair<LocalTime, LocalTime> {
-        val noon = sunrise.toSecondOfDay() + (sunset.toSecondOfDay() - sunrise.toSecondOfDay()) / 2
-        return LocalTime.ofSecondOfDay((noon - 24 * 60).toLong()) to LocalTime.ofSecondOfDay((noon + 24 * 60).toLong())
+        val daytime = sunset.toSecondOfDay() - sunrise.toSecondOfDay()
+        val noon = sunrise.toSecondOfDay() + daytime / 2
+        val half = daytime / 30
+        return LocalTime.ofSecondOfDay((noon - half).toLong()) to LocalTime.ofSecondOfDay((noon + half).toLong())
     }
 
     private val MOVABLE_KARANAS = listOf(

@@ -20,3 +20,18 @@
 - **Subakariyam steps 5–6.** Thara Balam and Chandrashtamam need the user's birth star, and Lagna Shuddhi needs a window search. Both need a settings input before they can be built.
 - **Karanam Tamil spellings** and the **Kari Naal table** come from the pasted sources and should be checked against a printed Panchangam.
 - **APK Festivals** school dedupe, to match the web.
+
+## Applied from the astronomer-validator skill
+
+- Good windows never overlap an avoid window. Rahu Kalam, Yamagandam and Kuligai are cut out of Nalla Neram and Gowri.
+- Avoid windows are the eight equal parts of the local daytime at every place. The India 6 AM block is removed, so the
+  timing-convention setting no longer changes windows. The setting should be removed from the settings screen.
+- Sraardha tithi uses Aparahna Kala (the 4th fifth of the daytime) with a majority rule, replacing the fixed 13:30–16:00 window.
+- Abhijit is solar noon ± daytime/30.
+- Muhurtham stars and best tithis follow the validator's lists.
+
+## Still open for the astronomer
+
+- Krishna Paksha Muhurtham tithis: not in the validator's sources.
+- Thara Balam, the personal Chandrashtamam check, Marana Yogam and Lagna Shuddhi: not implemented.
+- Gowri windows: the day-part cycle is not covered by the validator's sources.

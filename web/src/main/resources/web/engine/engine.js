@@ -13,9 +13,9 @@ const YAMA_SEGMENT = [5, 4, 3, 2, 1, 7, 6];
 const KULIGAI_SEGMENT = [7, 6, 5, 4, 3, 2, 1];
 const GOWRI_CYCLE = [0, 1, 2, 3, 4, 5, 6, 7]; // indices into CONTENT.enums.Gowri
 const AVOIDED_MUHURTHAM_MONTHS = new Set([3, 5, 8]);
-const SHUKLA_MUHURTHAM_TITHIS = new Set([1, 2, 4, 6, 9, 10, 11, 12]);
+const SHUKLA_MUHURTHAM_TITHIS = new Set([1, 2, 4, 6, 9, 10, 12]);
 const KRISHNA_MUHURTHAM_TITHIS = new Set([1, 2, 4]);
-const MUHURTHAM_STARS = new Set([3, 4, 9, 11, 12, 14, 16, 18, 20, 25, 26]);
+const MUHURTHAM_STARS = new Set([3, 4, 9, 11, 12, 14, 16, 18, 20, 21, 22, 25, 26]);
 const AT = { SUNRISE: 'SUNRISE', SUNSET: 'SUNSET', NOON: 'NOON', APARAHNA: 'APARAHNA', MOONRISE_K4: 'MOONRISE_K4', MIDNIGHT: 'MIDNIGHT' };
 
 const names = CONTENT.names;
@@ -69,7 +69,7 @@ export class TamilCalendarEngine {
       sunRasi: A.floorDiv(A.sunSidereal(c.sunriseJd), 30),
       lagnam: this.lagnaSegments(c.sunriseJd, next.sunriseJd),
       karanam: A.floorDiv(A.elongation(c.sunriseJd), 6),
-      sraardhaTithi: this.sraardhaTithiOf(c.day),
+      sraardhaTithi: this.sraardhaTithiOf(c.sunriseJd, c.sunsetJd),
     };
 
     const timings = this.timingsFor(c.day, sunrise, sunset);
@@ -149,10 +149,14 @@ export class TamilCalendarEngine {
   }
 
   /** Sraardha tithi: the tithi that covers the whole window 13:30–16:00 local, Amavasai excluded (see Kotlin). */
-  sraardhaTithiOf(day) {
-    const tithiAt = (sec) => A.floorDiv(A.elongation(A.julianDay(zonedMs(day, sec, this.zone))), 12);
-    const start = tithiAt(13 * 3600 + 30 * 60);
-    return start === tithiAt(16 * 3600) && start !== 29 ? start : null;
+  sraardhaTithiOf(sunriseJd, sunsetJd) {
+    // Aparahna Kala: the 4th fifth of the daytime. The tithi covering more than half of it is the Sraardha tithi.
+    const unit = (sunsetJd - sunriseJd) / 5;
+    const samples = 16;
+    const counts = new Array(30).fill(0);
+    for (let i = 0; i < samples; i++) counts[A.floorDiv(A.elongation(sunriseJd + (3 + (i + 0.5) / samples) * unit), 12)]++;
+    const best = counts.indexOf(Math.max(...counts));
+    return counts[best] * 2 > samples && best !== 29 ? best : null;
   }
 
   /** The rising signs from sunrise to the next sunrise (same scan as Kotlin's lagnaSegments). */
@@ -191,9 +195,9 @@ export class TamilCalendarEngine {
   // ------------------------------------------------------------ timing windows
   timingsFor(day, sunrise, sunset) {
     const sunriseSec = toSec(sunrise), sunsetSec = toSec(sunset);
-    const [dayStart, part] = this.convention === 'TRADITIONAL_6AM'
-      ? [6 * 3600, 90 * 60]
-      : [sunriseSec, Math.trunc((sunsetSec - sunriseSec) / 8)];
+    // Validator: the daytime is divided into eight equal parts from sunrise, at every place.
+    const dayStart = sunriseSec;
+    const part = Math.trunc((sunsetSec - sunriseSec) / 8);
     const w = dayOfWeek(day);
     const segment = (type, n, gowri = null) => {
       const s = dayStart + (n - 1) * part;
@@ -205,8 +209,10 @@ export class TamilCalendarEngine {
     const gowriAll = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => segment('GOWRI_NALLA_NERAM', n, GOWRI_CYCLE[(w + n - 1) % 8]));
     const gowriGood = gowriAll.filter((g) => CONTENT.enums.Gowri[g.gowri][3]);
 
-    const blocked = [rahu, yama].map((x) => [x.startSec, x.endSec]);
+    // A good window never overlaps an avoid window: Rahu Kalam, Yamagandam and Kuligai are cut out of the good times.
+    const blocked = [rahu, yama, kuligai].map((x) => [x.startSec, x.endSec]);
     const free = [];
+    const gowriFree = [];
     for (const g of gowriGood) {
       let pieces = [[g.startSec, g.endSec]];
       for (const [bs, be] of blocked) {
@@ -219,6 +225,7 @@ export class TamilCalendarEngine {
         });
       }
       for (const p of pieces) {
+        if (p[1] - p[0] >= 30 * 60) gowriFree.push({ type: 'GOWRI_NALLA_NERAM', start: hms(p[0]), end: hms(p[1]), startSec: p[0], endSec: p[1], gowri: g.gowri });
         const last = free[free.length - 1];
         if (last && last[1] === p[0]) last[1] = p[1];
         else free.push([p[0], p[1]]);
@@ -228,7 +235,7 @@ export class TamilCalendarEngine {
     const strip = (x) => ({ type: x.type, start: x.start, end: x.end, gowri: x.gowri });
     return {
       nallaNeram,
-      gowriNallaNeram: gowriGood.map(strip),
+      gowriNallaNeram: gowriFree.map(strip),
       rahuKalam: strip(rahu),
       yamagandam: strip(yama),
       kuligai: strip(kuligai),

@@ -38,6 +38,8 @@ for (const r of ref.days) {
   check(r.date, 'moonRasi', d.panchangam.moonRasi, ['Mesham','Rishabam','Mithunam','Kadagam','Simmam','Kanni','Thulam','Viruchigam','Dhanusu','Magaram','Kumbam','Meenam'].indexOf(r.moonRasi.en));
   check(r.date, 'timings', d.timings.nallaNeram.concat([d.timings.rahuKalam, d.timings.yamagandam, d.timings.kuligai]).map((t) => t.start.slice(0, 5) + '-' + t.end.slice(0, 5)).sort(),
     r.timings.filter((t) => t.type.en !== 'Gowri Nalla Neram').map((t) => hm(t.start) + '-' + hm(t.end)).sort());
+  check(r.date, 'gowriNallaNeram', d.timings.gowriNallaNeram.map((t) => t.start.slice(0, 5) + '-' + t.end.slice(0, 5)),
+    r.timings.filter((t) => t.type.en === 'Gowri Nalla Neram').map((t) => hm(t.start) + '-' + hm(t.end)));
   check(r.date, 'chandrashtamam.nakshatras', d.chandrashtamam.nakshatras.length, r.chandrashtamam.nakshatras.split(', ').filter(Boolean).length);
   check(r.date, 'holiday', d.holiday, r.holiday);
   check(r.date, 'karanam', d.panchangam.karanam, r.karanam);

@@ -109,26 +109,25 @@ Unless stated otherwise:
 - Result: a list of `(rasi, start time)`. Usually 11–14 signs per day, each lasting about 1–3 hours.
 - Accuracy: 4 392 sign changes in a year, mean error 0.21 min, worst 0.25 min against Swiss Ephemeris houses.
 
-## 10. Sraardha tithi — `sraardhaTithiOf`
+## 10. Sraardha tithi (`sraardhaTithiOf`)
 
-- The tithi `t = floor(elongation / 12)` at 13:30 and at 16:00 local on the civil date.
-- If the two agree and the tithi is not Amavasai (29), that tithi is the Sraardha tithi. Otherwise there is none.
-- The reason it works: a tithi lasts about 19–26 hours, so one that is the same at both ends of a 2.5-hour window
-  covers the whole window.
-- Verified against Swiss Ephemeris for 365 days, 0 mismatches.
-- **Window choice.** The 13:30–16:00 window is the one approved from the Vande Guru Paramparaam post. Another source
-  defines Aparaana Kaalam as the 4th fifth of the day. See `docs/BACKLOG.md`.
+- Aparahna Kala is the 4th fifth of the local daytime: `U = (sunset − sunrise) / 5`, window `[sunrise + 3U, sunrise + 4U]`.
+- The window is sampled at 16 evenly spaced instants. The tithi `floor(elongation / 12)` at each sample is counted.
+- The tithi that covers **more than half** of the samples is the Sraardha tithi. Amavasai (29) is never used. If no tithi
+  has a majority, there is none.
+- Source: the astronomer-validator skill, Step 3C. It replaces the earlier fixed 13:30–16:00 window, which the skill
+  rejects because it hard-codes clock times.
+- Verified against Swiss Ephemeris for 365 days, 0 mismatches, using the same sampling.
+- Not yet implemented: Darsha (Amavasai) day selection with Madhyahna, Mahalaya-specific days, and the rule that a day
+  on which Sraardha falls is never postponed for other inauspicious factors.
 
 ---
 
 ## 11. Timing windows — `timingsFor`
 
-Two conventions (`TimingConvention`):
-
-| Convention | Day starts | Part length | Used for |
-|---|---|---|---|
-| `TRADITIONAL_6AM` | 06:00 | 90 min (8 parts = 12 h) | India |
-| `SUNRISE_BASED` | sunrise | daylight ÷ 8 | everywhere else |
+Every place uses the same rule (validator Step 3B.5): the daytime from sunrise to sunset is divided into eight equal
+parts of `(sunset − sunrise) / 8`. The `TimingConvention` setting no longer changes the windows. The former India
+convention (fixed 90-minute blocks from 06:00) is removed because the validator rules it out.
 
 Each window is one part, numbered 1–8 from the start of the day:
 
@@ -161,10 +160,12 @@ A day is a candidate when all of these hold:
 1. The Tamil month is not Aadi (3), Purattasi (5) or Margazhi (8).
 2. The Moon's month is not an adhika (extra) month.
 3. The weekday is not Tuesday or Saturday.
-4. Shukla: tithi index in {1, 2, 4, 6, 9, 10, 11, 12}, i.e. Dwitiyai, Tritiyai, Panchami, Sapthami, Dasami, Ekadasi,
-   Dwadasi, Thrayodasi. Krishna: tithi − 15 in {1, 2, 4}, i.e. Dwitiyai, Tritiyai, Panchami.
-5. The star index is one of {3, 4, 9, 11, 12, 14, 16, 18, 20, 25, 26}: Rohini, Mirugasirisham, Magam, Uthiram,
-   Hastham, Swathi, Anusham, Moolam, Uthiradam, Uthirattathi, Revathi.
+4. Shukla: tithi index in {1, 2, 4, 6, 9, 10, 12}, i.e. Dwitiyai, Tritiyai, Panchami, Sapthami, Dasami, Ekadasi,
+   Thrayodasi (the validator's best tithis). Krishna: tithi − 15 in {1, 2, 4}, i.e. Dwitiyai, Tritiyai, Panchami.
+   The Krishna rule is not in the validator's sources and still needs an astronomer's confirmation.
+5. The star index is one of {3, 4, 9, 11, 12, 14, 16, 18, 20, 21, 22, 25, 26}: Rohini, Mirugasirisham, Magam,
+   Uthiram, Hastham, Swathi, Anusham, Moolam, Uthiradam, Thiruvonam (Shravana), Avittam (Dhanishta), Uthirattathi
+   (Uttara Bhadrapada), Revati. This is the validator's auspicious list.
 
 The window shown is the first Nalla Neram before noon.
 
@@ -194,7 +195,8 @@ Lagna window.
 - One remedy per weekday, shown on the Soolam card (English, from the Tamil source).
 
 ### 14.3 Abhijit Muhurtham
-- 48 minutes centred on solar noon: `noon = sunrise + (sunset − sunrise)/2`, window `noon ± 24 min`.
+- Centred on solar noon: `noon = sunrise + daytime/2`, window `noon ± daytime/30` (validator Step 3B.6). About
+  46–48 minutes in Chennai, and it varies with the day length elsewhere.
 
 ### 14.4 Kari Naal
 - Solar days in each Tamil month when no Subakariyam is held. Flagged on the Karanam card.
