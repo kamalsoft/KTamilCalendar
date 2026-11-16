@@ -415,3 +415,23 @@ a.pill { display: inline-block; text-decoration: none; }
   .print-only h2 { color: #000; font-size: 18px; margin: 0; }
   .print-only p { margin: 2px 0 8px; }
 }
+
+/* ---- Today: priority tiers. Tier 1 timings, tier 2 panchangam, tier 3 day schedule, tier 4 rules. */
+.tier { display: flex; flex-direction: column; gap: 10px; }
+.tier-title { margin: 6px 0 0; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.tier-1 .tier-title { font-size: 15px; color: var(--accent); letter-spacing: .02em; text-transform: none; }
+.tier-2 .tier-title { font-size: 14px; color: var(--text); }
+.primary-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 700px) { .primary-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.primary-tiles .tile dd { font-size: 17px; font-weight: 600; }
+.primary-tiles .tile dt { font-size: 13px; }
+.sched { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; }
+@media (min-width: 700px) { .sched { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.sched-row { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; padding: 4px 0; border-bottom: 1px solid var(--surface-hi); }
+.sched-row span { color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
+.sched-row time { color: var(--text); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sched-row.good span { color: var(--accent); }
+.sched-row.good time { color: var(--accent); }
+
+.today-split { align-items: start; }
+.sched.sched-1 { grid-template-columns: minmax(0, 1fr); }

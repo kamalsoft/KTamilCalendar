@@ -65,6 +65,7 @@ private fun sections(location: GeoLocation) = listOf(
         "அறிவிப்பு · Disclaimer",
         listOf(
             "For information only. The panchangam is calculated, not issued by a religious authority: confirm muhurtham and temple festival days with your priest or temple.",
+            "Accuracy: astronomy is checked against the Swiss Ephemeris. Traditional rules (Muhurtham, Lagna, Thara, Chandrashtamam, Sraardham) are calculated and not verified by a religious authority. Before a marriage, ceremony or Sraardham, confirm the date and time with a qualified temple priest.",
             "Islamic dates are calculated and may differ by a day from local moon sighting. Weather is provided as-is, without warranty.",
             "Not affiliated with Apple, Google, the school districts, or any temple or government body.",
         ),

@@ -222,7 +222,11 @@ function viewToday() {
     ['☯', lb('கரணம்', 'Karanam'), `${esc(lb(karanaTa, karanaEn))}${isVishti(p.karanam) ? ' <small>· Vishti</small>' : ''}${isKariNaal(d.tamilDate.monthIndex, d.tamilDate.day) ? ' <small>· கரி நாள் · Kari Naal</small>' : ''}`],
     ['✺', lb('சிராத்தம்', 'Sraardham'), sraardha == null ? '—' : esc(lb(...tithiNamesOf(sraardha)))],
     ['✧', lb('அபிஜித்', 'Abhijit'), `${timeOf(hms(abhijitFrom))} – ${timeOf(hms(abhijitTo))}`],
-  ].map(([icon, label, value]) => `<div class="tile"><span class="ico">${icon}</span><dt>${esc(label)}</dt><dd>${value}</dd></div>`).join('');
+  ];
+  const tile = ([icon, label, value], cls = '') => `<div class="tile ${cls}"><span class="ico">${icon}</span><dt>${esc(label)}</dt><dd>${value}</dd></div>`;
+  // Tier 2: the main panchangam values. Tier 4: the rule checks (Lagnam, Soolam, Karanam, Sraardham, Abhijit).
+  const panchangamTiles = [facts[2], facts[3], facts[4], facts[5], facts[0], facts[1]].map((f) => tile(f, 'primary')).join('');
+  const ruleTiles = [facts[6], facts[7], facts[8], facts[9], facts[10]].map((f) => tile(f)).join('');
   const row = (t) => {
       const cls = t.type === 'NALLA_NERAM' || t.type === 'GOWRI_NALLA_NERAM' ? 'good' : t.type === 'KULIGAI' ? 'mixed' : 'bad';
       const label = lb(CONTENT.enums.TimingType.find((x) => x[0] === t.type)[1], CONTENT.enums.TimingType.find((x) => x[0] === t.type)[2]);
@@ -256,23 +260,41 @@ function viewToday() {
   if (state.todayPanel === 'sloka') body = slokaCard(slokaFor(d));
   else if (state.todayPanel === 'weather') body = state.settings.weather ? weatherCard : `<p class="small">${esc(lb('வானிலை அமைப்புகளில் முடக்கப்பட்டுள்ளது', 'Weather is turned off in Settings'))}</p>`;
   else body = `${nowCard}
-      <section class="detail timings-board">
-        <h3>${esc(lb('நேரங்கள்', 'Timings'))}</h3>
-        <p class="grp">${esc(lb('நல்ல நேரம்', 'Good windows'))} · ${goodList.length}</p>
-        <ul class="timings cards">${good}</ul>
-        <p class="grp">${esc(lb('தவிர்க்க', 'Avoid'))} · ${avoidList.length}</p>
-        <ul class="timings cards">${avoid}</ul>
+      <section class="tier tier-1">
+        <h2 class="tier-title">${esc(lb('முக்கிய நேரங்கள்', 'Key timings'))}</h2>
+        <section class="detail timings-board">
+          <h3>${esc(lb('நேரங்கள்', 'Timings'))}</h3>
+          <p class="grp">${esc(lb('நல்ல நேரம்', 'Good windows'))} · ${goodList.length}</p>
+          <ul class="timings cards">${good}</ul>
+          <p class="grp">${esc(lb('தவிர்க்க', 'Avoid'))} · ${avoidList.length}</p>
+          <ul class="timings cards">${avoid}</ul>
+        </section>
       </section>
-      <div class="today-split">
-        <section class="detail"><h3>${esc(lb('நாள் நேரம்', 'Day timeline'))}</h3>${timelineHtml(d, nowSec)}
-          <h3>${esc(lb('லக்னம் · நாள் முழுவதும்', 'Lagnam through the day'))}</h3>
-          <ul class="chips">${lagna.map((s) => `<li class="chip">${esc(lb(...CONTENT.names.rasis[s.rasi]))} · ${timeOf(s.start.slice(11, 19))}</li>`).join('')}</ul>
+      <section class="tier tier-2">
+        <h2 class="tier-title">${esc(lb('பஞ்சாங்கம்', 'Panchangam'))}</h2>
+        <div class="tiles primary-tiles">${panchangamTiles}</div>
+      </section>
+      <section class="tier tier-3">
+        <h2 class="tier-title">${esc(lb('நாள் அட்டவணை', 'Day schedule'))}</h2>
+        <div class="today-split">
+          <section class="detail"><h3>${esc(lb('நாள் நேரம்', 'Day timeline'))}</h3>${timelineHtml(d, nowSec)}</section>
+          <section class="detail">
+            <h3>${esc(lb('லக்னம்', 'Lagnam'))}</h3>
+            <ul class="sched sched-1">${lagna.map((s) => `<li class="sched-row"><span>${esc(lb(...CONTENT.names.rasis[s.rasi]))}</span><time>${timeOf(s.start.slice(11, 19))}</time></li>`).join('')}</ul>
+          </section>
+        </div>
+        <section class="detail">
           <h3>${esc(lb('ஹோரை', 'Hora'))}</h3>
-          <ul class="chips">${hora(d.weekdayIndex, secOf(d.sunrise), secOf(d.sunset), secOf(d.nextSunrise)).map((h) => `<li class="chip${h.benefic ? ' good' : ''}">${esc(lb(...h.lord))} · ${timeOf(hms(h.start))}</li>`).join('')}</ul></section>
-        <section class="detail"><div class="tiles">${facts}${personalTiles}</div></section>
-      </div>
+          <ul class="sched">${hora(d.weekdayIndex, secOf(d.sunrise), secOf(d.sunset), secOf(d.nextSunrise)).map((h) => `<li class="sched-row${h.benefic ? ' good' : ''}"><span>${esc(lb(...h.lord))}</span><time>${timeOf(hms(h.start))}</time></li>`).join('')}</ul>
+        </section>
+      </section>
+      <section class="tier tier-4">
+        <h2 class="tier-title">${esc(lb('விதிகள்', 'Rules'))}</h2>
+        <div class="tiles">${ruleTiles}${personalTiles}</div>
+      </section>
       <p class="warn chandra">${esc(lb('சந்திராஷ்டமம்', 'Chandrashtamam'))} — ${esc(lb(...CONTENT.names.rasis[chandra.rasi]))}
         <br><small>${esc(chandra.nakshatras.map((k) => lb(...CONTENT.names.nakshatras[k])).join(', '))}</small></p>
+      <p class="small accuracy">${esc(lb('இந்தத் தகவல் கணக்கீடு மட்டுமே. திருமணம், சுப காரியம், சிராத்தம் போன்றவற்றுக்கு கோவில் அர்ச்சகரிடம் நேரத்தை உறுதிப்படுத்தவும்.', 'Calculated for information only. Before a marriage, ceremony, Sraardham or any muhurtham, confirm the date and time with a temple priest.'))}</p>
       ${reminderNote()}`;
   return `${nav}
     <div class="today-grid">
@@ -394,7 +416,8 @@ function viewMonth() {
     <div class="detail small-detail">${sel ? `<h2>${esc(dateLong(sel.epochDay))}</h2><p class="ta-date">${esc(lb(CONTENT.names.months[sel.tamilDate.monthIndex][0] + ' ' + sel.tamilDate.day, CONTENT.names.months[sel.tamilDate.monthIndex][1] + ' ' + sel.tamilDate.day))}</p>
       <p class="small">${esc(lb('சூலம்', 'Soolam'))}: ${esc(lb(...soolam(sel.weekdayIndex).direction))} · ${esc(lb('சிராத்தம்', 'Sraardham'))}: ${sel.panchangam.sraardhaTithi == null ? '—' : esc(lb(...tithiNamesOf(sel.panchangam.sraardhaTithi)))}</p>
       <ul class="chips">${importantDates(sel).map((x) => `<li class="chip${x.holiday ? ' holiday' : ''}">${esc(lbo(x.title))}</li>`).join('') || `<li class="small">${esc(lb('சிறப்பு நாள் இல்லை', 'No observance'))}</li>`}</ul>
-      <p class="small">${esc(lb('கரணம்', 'Karanam'))}: ${esc(lb(...karanaName(sel.panchangam.karanam)))}${isKariNaal(sel.tamilDate.monthIndex, sel.tamilDate.day) ? ` · ${esc(lb('கரி நாள்', 'Kari Naal'))}` : ''}</p>` : ''}</div></div>`;
+      <p class="small">${esc(lb('கரணம்', 'Karanam'))}: ${esc(lb(...karanaName(sel.panchangam.karanam)))}${isKariNaal(sel.tamilDate.monthIndex, sel.tamilDate.day) ? ` · ${esc(lb('கரி நாள்', 'Kari Naal'))}` : ''}</p>
+      <button class="pill" data-act="open-today">${esc(lb('நாள் விவரம்', 'Day view'))} ›</button>` : ''}</div></div>`;
 }
 
 /** The month as a printable table (shown only in print). */
