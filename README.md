@@ -283,8 +283,7 @@ About). Swipe to scroll, tap to open, and use the system back gesture.
 
 ## Web app (any browser, installable on iPhone)
 
-The calendar also runs as a web app at **https://kamalsoft.github.io/KTamilCalendar/**. Everything is computed in
-the browser (`web/src/main/resources/web/engine/`), so any place and any date work. It is a static site, so it runs
+The calendar also runs as a web app. Everything is computed in the browser (`web/src/main/resources/web/engine/`), so any place and any date work. It is a static site, so it runs
 on GitHub Pages with no server.
 
 What it covers: Today (panchangam, timings, Chandrashtamam, daily sloka with read-aloud and generated temple music,
