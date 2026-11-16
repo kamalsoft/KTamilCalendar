@@ -12,3 +12,5 @@
 *.keystore
 /shared/build/
 /web/build/
+
+__pycache__/
