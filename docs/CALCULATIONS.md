@@ -175,6 +175,22 @@ Lagna window.
 
 ---
 
+## 13a. Validator rules added (documented; not all implemented)
+
+| Rule | Status in the app |
+|---|---|
+| Krishna Paksha Muhurtham: first half of the waning fortnight (Krishna Prathama to Panchami, tithi 1–5); Saptami and Dashami only if confirmed | Not yet. The app uses Krishna tithis 2, 3 and 5 (Krishna index {1, 2, 4}); the skill's rule differs. Open decision (`docs/BACKLOG.md`). |
+| Hora: 12 equal parts of day and night, Chaldean order from the weekday lord | Not computed |
+| Lagna Shuddhi: 8th house free of malefics; benefics in Kendra and Trikona | Not computed (needs planetary houses) |
+| Marana Yogam: weekday and Nakshatra pair lookup | Not computed (table needed) |
+| Thara Balam and personal Chandrashtamam | Not computed (needs birth star and Rasi) |
+| Tuesday and Saturday: flagged, not blacked out | The app excludes them outright. Differs from the skill. |
+| Nakshatram quality: Dhruva, Mridu, Adhomukha | Not used |
+| Malefic Yogas (1-based): Vishkambha 1, Ganda 6, Atiganda 7, Shula 9, Vyaghata 13, Vajra 15, Vyatipata 17, Parigha 19, Vaidhriti 27 | Not used |
+| Kari Naal gate on Muhurtham | Implemented (engine version 8) |
+
+**Worked checks.** Sun $120^\circ$ with Moon $300^\circ$ gives $\Delta\lambda = 180^\circ$ (Pournami). Sun $100^\circ$ with Moon $310^\circ$ gives $\Delta\lambda = 210^\circ$ and block 18, Krishna Tritiya, so the verdict is `PASS (conditional)` on Chandra Balam and Lagna Shuddhi. The earlier Navami example ($\Delta\lambda = 105^\circ$) is Shukla Navami, not Krishna Ashtami.
+
 ## 14. Day-level rules (`DayRules.kt`, `rules.js`)
 
 ### 14.1 Soolam (Vaara Soolam)

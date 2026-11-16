@@ -38,14 +38,16 @@
 
 ## Revalidation against the validator skill (open)
 
-1. **Krishna Paksha Muhurtham (decision needed).** The app tags Krishna tithi days as Subha Muhurtham (10 Chennai and 9 Naperville days in 2026). The skill says Valarpirai for major starts. Decide: restrict to Valarpirai, or keep and label as minor.
-2. **Hora** (skill gate 6): daytime and nighttime Hora are not computed.
-3. **Lagna Shuddhi** (skill gate 6): the 8th house from the Muhurtham Lagna is not checked.
-4. **Marana Yogam** (skill gate 3): the Vaara and Nakshatra pair is not checked.
+1. **Krishna Paksha Muhurtham.** The skill now defines the rule: major ceremonies only on Krishna tithi 1–5 (Prathama to Panchami). Open: what "select Saptami/Dashami" means, and whether the app should change from its current Krishna tithis.
+2. **Hora** (skill gate 6): the rule is defined (12 parts, Chaldean order, weekday lord first). Not computed.
+3. **Lagna Shuddhi** (skill gate 6): the rule is defined. Needs planetary house positions, which the app does not compute.
+4. **Marana Yogam** (skill gate 3): needs the classical weekday and Nakshatra lookup table, which is not yet supplied.
 5. **Thara Balam and personal Chandrashtamam** (skill gate 4): need the user's birth star as a setting.
 6. **Sraardha tie rule** (edge case): when a tithi covers exactly half of Aparahna Kala on two consecutive days, the skill picks the second day. The app gives no tithi on either day.
 7. **Darsha and Mahalaya rules** (skill section C, points 4–5): not implemented.
-8. **Tuesday and Saturday** (skill gate 3): the app excludes them outright; the skill says flag them.
+8. **Tuesday and Saturday** (skill section E): the app excludes them outright. The skill now says flag them, with permitted uses. Change the app.
 9. **Nakshatram and yogam** are checked against Swiss Ephemeris for Naperville only. The revalidation sample was Chennai, and the audit should run for each place a user can select.
 10. **Default location differs by platform.** The APK falls back to Naperville (`AppContainer`), and the web app defaults to Chennai (`store.js`). Every calculation uses the selected location, so the defaults only matter before a place is chosen. Decide whether both should use the same default.
 11. **Revalidation sample:** the November 2026 Chennai audit used Chennai as a sample place only. Rerun it for the place the user has selected.
+12. **Nakshatram quality and malefic yogas** (skill section D): defined, not used by the app.
+13. **Yogam and Nakshatram quality in the day view:** decide whether to display them.

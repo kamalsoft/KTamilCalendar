@@ -67,7 +67,10 @@ When validating a date/time for an auspicious event, verify all six gates in ord
 
 1. **Kari Naal Blackout Check:** Verify the Tamil solar date is not a *Kari Naal* (*Chithirai* 6, 15; *Vaikasi* 7, 16, 17; *Aani* 1, 6; *Aadi* 2, 10, 20; *Aavani* 2, 9, 28; *Purattasi* 16, 29; *Aippasi* 6, 20; *Karthigai* 1, 10, 17; *Margazhi* 6, 9, 11; *Thai* 1, 2, 3, 11, 17; *Maasi* 15, 16, 17; *Panguni* 6, 15, 19).
 2. **Paksham and Tithi Check:** Confirm *Valarpirai* (for major starts) and exclude *Ashtami* (8), *Navami* (9), *Amavasya* (30), *Pournami* (15, for weddings), and *Rikta Tithis* (4, 9, 14).
-3. **Vaaram and Marana Yogam Check:** Favor Mon, Wed, Thu, Fri; flag Tue/Sat and verify the *Vaara + Nakshatra* pair does not trigger *Marana Yogam*.
+   - **Krishna Paksha Muhurtham (Ksheena Chandra):** Major ceremonies (marriages, formal housewarmings) are restricted to the first half of the waning fortnight, Krishna *Prathama* to *Panchami* (Krishna tithi 1–5), with *Saptami* and *Dashami* allowed only where the rule is confirmed (open question). Other Krishna tithis are rejected for major beginnings.
+   - Worked check (corrected): Sun $120^\circ$, Moon $300^\circ$ gives $\Delta\lambda = 180^\circ$, which is Pournami. Sun $100^\circ$, Moon $310^\circ$ gives $\Delta\lambda = 210^\circ$ and block $\lfloor 210/12 \rfloor + 1 = 18$, which is Krishna Tritiya (block 16 is Prathama). Krishna Tritiya is inside Prathama to Panchami, so the verdict is `PASS (conditional)`: it also needs good Chandra Balam and Lagna Shuddhi. The earlier Navami example (Sun $120^\circ$, Moon $225^\circ$, $\Delta\lambda = 105^\circ$) is Shukla Navami, not Krishna Ashtami.
+floor + 1 = 9$, which is **Shukla Navami** (not Krishna Ashtami as first written). Navami is excluded by gate 2, so the verdict is still `FAIL`, but for the Navami reason.
+3. **Vaaram and Marana Yogam Check:** Favor Mon, Wed, Thu, Fri. Tuesday and Saturday are flagged, not blacked out (see §E). Verify the *Vaara + Nakshatra* pair does not trigger *Marana Yogam* (a blackout for all auspicious events; the classical lookup table is required and is still open).
 4. **Personal Compatibility (when birth star is provided):**
    - **Chandrashtamam:** Confirm transiting Moon Rasi is not the 8th Rasi from *Janma Rasi*.
    - **Thara Balam:** Compute $\text{Count} = ((\text{DayStar} - \text{BirthStar}) \pmod{27}) + 1$, then $\text{Thara} = \text{Count} \pmod{9}$ (with $0 \to 9$). Valid Tharas: `2` (*Sampath*), `4` (*Kshema*), `6` (*Sadhaka*), `8` (*Mitra*), `9` (*Parama Mitra*). Reject `1, 3, 5, 7`.
@@ -83,7 +86,8 @@ When validating a date/time for an auspicious event, verify all six gates in ord
 6. **Planetary Hora, Solar Noon, and Lagna Shuddhi:**
    - **Daytime Hora:** Divide $\Delta T$ into 12 equal segments ($\Delta T / 12$); **Nighttime Hora:** Divide $\Delta T_{\text{night}}$ into 12 equal segments ($\Delta T_{\text{night}} / 12$).
    - **Abhijit Muhurtham:** Centered on true local solar noon ($T_{\text{noon}} = T_{\text{rise}} + \Delta T / 2$), spanning $T_{\text{noon}} \pm \Delta T / 30$. Overrides minor Panchangam flaws except on Wednesdays.
-   - **Lagna Shuddhi:** Verify the 8th house from local Muhurtha Lagna is unoccupied by malefics.
+   - **Hora (detail):** The first Hora of a weekday belongs to that weekday's lord, then the Chaldean sequence Sun → Venus → Mercury → Moon → Saturn → Jupiter → Mars repeats. Benefic Horas (Jupiter, Venus, Mercury, Moon) suit financial dealings, agreements, travel and new work. Malefic Horas (Sun, Mars, Saturn) are kept for enforcement, physical labour and competitive filings, not delicate beginnings.
+   - **Lagna Shuddhi (detail):** The rising sign at the Muhurtham must be free of structural flaws: (a) the 8th house from the Muhurtham Lagna is unoccupied by Sun, Mars, Saturn, Rahu or Ketu; (b) benefics (Jupiter, Venus, Mercury, well-placed Moon) sit in Kendra (1, 4, 7, 10) or Trikona (1, 5, 9), and malefics in 3, 6, 11; (c) the Lagna lord is strong, not combust, and not in Dusthana (6, 8, 12). These need planetary house positions, which the app does not compute yet.
 
 ### C. Sraddha, Amavasai, and Mahalaya Rules
 Never use *Udaya Tithi* (sunrise Tithi) or hardcoded IST afternoon times to validate ancestral rites. Apply the **Local 5-Division Dinamana Rule**:
@@ -94,6 +98,22 @@ Never use *Udaya Tithi* (sunrise Tithi) or hardcoded IST afternoon times to vali
 4. **Darsha (Monthly Amavasai) Rule:** Check local *Madhyahna* (3rd fifth: $[T_{\text{rise}} + 2U,\; T_{\text{rise}} + 3U]$) and *Aparahna* overlap; if Amavasya covers local noon on Day 1 and ends before local noon on Day 2, Day 1 is valid.
 5. **Mahalaya Specifics:** Flag *Ghata Chaturdashi* (14th Tithi) as restricted strictly to unnatural/accidental deaths; direct natural-death annual Mahalaya rites to *Maha Bharani*, *Madhyashtami*, *Avidhava Navami*, the ancestor's death Tithi, or *Mahalaya Amavasai*.
 6. **Overrides:** Annual Sraddha is never postponed for *Kari Naal*, *Marana Yogam*, Tuesday, Saturday, or Rahu Kalam overlap—only for *Asaucham* (birth/death impurity) or an active *Grahanam* (eclipse).
+
+### D. Nakshatram and Yogam Quality
+- **Nakshatram quality:** Preferred *Dhruva* (fixed): Rohini, Uttara Phalguni, Uttara Ashadha, Uttara Bhadrapada. *Mridu* (soft/friendly): Mrigashira, Chitra, Anuradha, Revati. Avoided for foundations: *Adhomukha* (downward-facing): Bharani, Krittika, Ashlesha, Magha, Purva Phalguni, Vishakha, Mula, Purva Ashadha, Purva Bhadrapada.
+- **Yogam:** $\lfloor [(\lambda_{\text{Sun}} + \lambda_{\text{Moon}}) \bmod 360^\circ] / 13^\circ 20' 
+floor + 1$ (1 to 27). Strictly avoided malefic yogas (1-based numbers): Vishkambha (1), Ganda (6), Atiganda (7), Shula (9), Vyaghata (13), Vajra (15), Vyatipata (17), Parigha (19), Vaidhriti (27).
+
+### E. Tuesday and Saturday
+- Not blackouts for every activity. Both are *flagged* for fiery (Mars) or heavy (Saturn) energy.
+- Permitted: Saturday for mechanical maintenance, iron and steel work, legal defence and structural groundwork; Tuesday for surgery, engineering tests and dispute resolution.
+- Excluded for marriages, formal housewarmings and peaceful consumer ventures, unless a strong benefic Lagna counterbalances it.
+
+### F. Thara Balam and Chandrashtamam (personal)
+- Count inclusively from the Janma Nakshatra to the Muhurtham Nakshatra: $\text{Count} = N_{\text{Muhurtha}} - N_{\text{Janma}} + 1$, wrapping around 27 when zero or negative. Take $\text{Count} \bmod 9$, with remainder 0 read as 9.
+- Pass: 2 (Sampath), 4 (Kshema), 6 (Sadhaka), 8 (Mitra), 9 (Parama Mitra). Fail: 1 (Janma), 3 (Vipat), 5 (Pratyak), 7 (Naidhana).
+- Chandrashtamam: the transiting Moon must not be in the 8th Rasi counted from the natal Moon sign. A Muhurtham on such a day is disqualified.
+- Both need the participant's birth star and birth Rasi as inputs.
 
 ## Step 4: Output Format for Validation Reports
 
