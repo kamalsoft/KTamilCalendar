@@ -63,6 +63,7 @@ export class TamilCalendarEngine {
     const moonRasi = A.floorDiv(A.moonSidereal(c.sunriseJd), 30);
     const tithiNames = tithiNamesOf(tithiIdx);
 
+    const lagnaList = this.lagnaSegments(c.sunriseJd, next.sunriseJd);
     const panchangam = {
       tithi: { index: tithiIdx, nameTa: tithiNames[0], nameEn: tithiNames[1], endsAt: this.endOf(c.sunriseJd, ((tithiIdx + 1) % 30) * 12, A.elongation) },
       nakshatram: { index: starIdx, nameTa: names.nakshatras[starIdx][0], nameEn: names.nakshatras[starIdx][1], endsAt: this.endOf(c.sunriseJd, ((starIdx + 1) % 27) * NAK_SPAN, A.moonSidereal) },
@@ -71,9 +72,10 @@ export class TamilCalendarEngine {
       moonRasi,
       moonRasiEndsAt: this.endOf(c.sunriseJd, ((moonRasi + 1) % 12) * 30, A.moonSidereal, 3),
       sunRasi: A.floorDiv(A.sunSidereal(c.sunriseJd), 30),
-      lagnam: this.lagnaSegments(c.sunriseJd, next.sunriseJd),
+      lagnam: lagnaList,
       karanam: A.floorDiv(A.elongation(c.sunriseJd), 6),
       sraardhaTithi: this.sraardhaTithiOf(this.aparahnaCounts(c.sunriseJd, c.sunsetJd), this.aparahnaCounts(prev.sunriseJd, prev.sunsetJd)),
+      darsha: this.isDarsha(c) && !this.isDarsha(prev),
     };
 
     const timings = this.timingsFor(c.day, sunrise, sunset);
@@ -92,7 +94,7 @@ export class TamilCalendarEngine {
     if (c.tamilMonth === 3 && weekday === 5) tags.add('AADI_VELLI');
 
     const allEvents = events.slice();
-    if (this.isMuhurthamCandidate(c, tithiIdx, starIdx)) {
+    if (this.isMuhurthamCandidate(c, tithiIdx, starIdx, lagnaList)) {
       tags.add('SUBHA_MUHURTHAM');
       const window = timings.nallaNeram.find((w) => +w.start.slice(0, 2) < 12) || timings.nallaNeram[0];
       allEvents.push({
@@ -154,6 +156,14 @@ export class TamilCalendarEngine {
   }
 
   /** Sraardha tithi: the tithi that covers the whole window 13:30–16:00 local, Amavasai excluded (see Kotlin). */
+  /** Darsha (validator C.4): Amavasai covers most of Madhyahna Kala, the 3rd fifth of the daytime, over 16 samples. */
+  isDarsha(c) {
+    const unit = (c.sunsetJd - c.sunriseJd) / 5;
+    let n = 0;
+    for (let i = 0; i < 16; i++) if (A.floorDiv(A.elongation(c.sunriseJd + (2 + (i + 0.5) / 16) * unit), 12) === 29) n++;
+    return n * 2 > 16;
+  }
+
   /** Aparahna Kala (4th fifth of the daytime): the tithi counts over 16 samples. */
   aparahnaCounts(sunriseJd, sunsetJd) {
     const unit = (sunsetJd - sunriseJd) / 5;
@@ -261,7 +271,7 @@ export class TamilCalendarEngine {
     return out;
   }
 
-  isMuhurthamCandidate(c, tithi, star) {
+  isMuhurthamCandidate(c, tithi, star, lagna) {
     if (AVOIDED_MUHURTHAM_MONTHS.has(c.tamilMonth)) return false;
     // Validator gate 1: no Subakariyam on a Kari Naal day.
     if (isKariNaal(c.tamilMonth, c.tamilDay)) return false;
@@ -276,7 +286,21 @@ export class TamilCalendarEngine {
       const jd = c.sunriseJd + ((c.sunsetJd - c.sunriseJd) * i) / daylightSamples;
       if (MALEFIC_YOGA_INDICES.has(A.floorDiv(A.yogaSum(jd), NAK_SPAN) % 27)) malefic = true;
     }
-    return tithiOk && MUHURTHAM_STARS.has(star) && !malefic;
+    // Validator Lagna Shuddhi: some rising sign during daylight must have no Sun, Mars, Saturn, Rahu or Ketu in its 8th house.
+    return tithiOk && MUHURTHAM_STARS.has(star) && !malefic && this.lagnaShuddhiInDaylight(c, lagna);
+  }
+
+  /** True when a rising sign that starts in daylight has no malefic in its 8th house, at the moment it starts. */
+  lagnaShuddhiInDaylight(c, lagna) {
+    return lagna.some((seg) => {
+      const day = epochDay(+seg.start.slice(0, 4), +seg.start.slice(5, 7), +seg.start.slice(8, 10));
+      const [h, m, s] = seg.start.slice(11, 19).split(':').map(Number);
+      const jd = A.julianDay(zonedMs(day, h * 3600 + m * 60 + s, this.zone));
+      if (jd < c.sunriseJd || jd >= c.sunsetJd) return false;
+      const eighth = (seg.rasi + 7) % 12;
+      return [A.sunSidereal(jd), A.marsSidereal(jd), A.saturnSidereal(jd), A.rahuSidereal(jd), A.ketuSidereal(jd)]
+        .every((lon) => Math.floor(lon / 30) !== eighth);
+    });
   }
 
   // ------------------------------------------------------------ festivals & holidays

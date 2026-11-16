@@ -2,7 +2,7 @@
 import { PLACES, placeLabel, localHolidayRegions, timingConvention, usesImperialUnits } from './engine/locations.js';
 import { ICON, TAG_ORDER, RELIGION_ORDER } from './engine/icons.js';
 import { tithiNamesOf } from './engine/engine.js';
-import { soolam, abhijit, karanaName, isVishti, isKariNaal, hora } from './engine/rules.js';
+import { soolam, abhijit, karanaName, isVishti, isKariNaal, hora, tharaOf, tharaPasses, personalChandrashtamam } from './engine/rules.js';
 import { monthDays, importantDates, applying } from './engine/calendar.js';
 import { rasiPalan, skyPositions, grahasIn, gochara } from './engine/rasi.js';
 import { CONTENT } from './engine/content.js';
@@ -172,7 +172,13 @@ function viewToday() {
   const nav = `<div class="bar"><button class="nav" data-act="day" data-d="-1" aria-label="Previous day">‹</button>
     <h1>${esc(dateLong(d.epochDay))}</h1><button class="nav" data-act="day" data-d="1" aria-label="Next day">›</button></div>
     ${isToday ? '' : `<button class="today" data-act="day-today">${lb('இன்று', 'Today')}</button>`}`;
-  const chips = importantDates(d).map((x) => `<li class="chip${x.holiday ? ' holiday' : ''}">${esc(lbo(x.title))}</li>`).join('');
+  // Soft warning (validator section E), not a rejection: Tuesday is ruled by Mars, Saturday by Saturn.
+  const weekdayFlag = d.weekdayIndex === 2
+    ? `<li class="chip caution" title="Ruled by Mars: ideal for physical, engineering or litigation work; exercise caution for peaceful ventures.">${esc(lb('செவ்வாய் · Mars: எச்சரிக்கை', 'Mars day: caution'))}</li>`
+    : d.weekdayIndex === 6
+      ? `<li class="chip caution" title="Ruled by Saturn: favoured for foundational, mechanical or structural tasks; avoid hasty beginnings.">${esc(lb('சனி · Saturn: எச்சரிக்கை', 'Saturn day: caution'))}</li>`
+      : '';
+  const chips = weekdayFlag + importantDates(d).map((x) => `<li class="chip${x.holiday ? ' holiday' : ''}">${esc(lbo(x.title))}</li>`).join('');
   const hero = `<section class="hero">
     <p class="hero-week">${esc(lb(...CONTENT.names.weekdays[d.weekdayIndex]))}</p>
     <h2>${esc(lb(CONTENT.names.months[d.tamilDate.monthIndex][0] + ' ' + d.tamilDate.day, CONTENT.names.months[d.tamilDate.monthIndex][1] + ' ' + d.tamilDate.day))}</h2>
@@ -197,6 +203,13 @@ function viewToday() {
   const sraardha = p.sraardhaTithi;
   const secOf = (t) => { const [h, m, s] = t.split(':').map(Number); return h * 3600 + m * 60 + s; };
   const [abhijitFrom, abhijitTo] = abhijit(secOf(d.sunrise), secOf(d.sunset));
+  // Personal rules need the birth star and Rasi from Settings (Thara Balam, and your Chandrashtamam).
+  const { janmaStar, janmaRasi } = state.settings;
+  const tharaT = janmaStar >= 0 ? tharaOf(p.nakshatram.index, janmaStar) : null;
+  const personalTiles = [
+    tharaT === null ? '' : `<div class="tile"><span class="ico">✶</span><dt>${esc(lb('தாரா பலன்', 'Thara Balam'))}</dt><dd>${esc(lb(...CONTENT.names.nakshatras[p.nakshatram.index]))} <small>· ${tharaT} ${tharaPasses(tharaT) ? '✓ ' + esc(lb('நல்லது', 'good')) : '✗ ' + esc(lb('தவிர்க்க', 'avoid'))}</small></dd></div>`,
+    janmaRasi < 0 ? '' : `<div class="tile"><span class="ico">☾</span><dt>${esc(lb('உங்கள் சந்திராஷ்டமம்', 'Your Chandrashtamam'))}</dt><dd>${personalChandrashtamam(p.moonRasi, janmaRasi) ? esc(lb('ஆம் · Yes', 'Yes')) : esc(lb('இல்லை · No', 'No'))}</dd></div>`,
+  ].join('');
   const facts = [
     ['🌅', lb('உதயம்', 'Sunrise'), timeOf(d.sunrise)],
     ['🌇', lb('அஸ்தமனம்', 'Sunset'), timeOf(d.sunset)],
@@ -256,7 +269,7 @@ function viewToday() {
           <ul class="chips">${lagna.map((s) => `<li class="chip">${esc(lb(...CONTENT.names.rasis[s.rasi]))} · ${timeOf(s.start.slice(11, 19))}</li>`).join('')}</ul>
           <h3>${esc(lb('ஹோரை', 'Hora'))}</h3>
           <ul class="chips">${hora(d.weekdayIndex, secOf(d.sunrise), secOf(d.sunset), secOf(d.nextSunrise)).map((h) => `<li class="chip${h.benefic ? ' good' : ''}">${esc(lb(...h.lord))} · ${timeOf(hms(h.start))}</li>`).join('')}</ul></section>
-        <section class="detail"><div class="tiles">${facts}</div></section>
+        <section class="detail"><div class="tiles">${facts}${personalTiles}</div></section>
       </div>
       <p class="warn chandra">${esc(lb('சந்திராஷ்டமம்', 'Chandrashtamam'))} — ${esc(lb(...CONTENT.names.rasis[chandra.rasi]))}
         <br><small>${esc(chandra.nakshatras.map((k) => lb(...CONTENT.names.nakshatras[k])).join(', '))}</small></p>
@@ -635,7 +648,7 @@ function viewTheme() {
 function viewSettings() {
   const s = state.settings;
   const check = (key, label) => `<label class="toggle"><input type="checkbox" data-setting="${key}" ${s[key] ? 'checked' : ''}> ${esc(label)}</label>`;
-  const select = (key, label, opts) => `<label class="field">${esc(label)} <select data-setting="${key}">${opts.map(([v, t]) => `<option value="${v}"${s[key] === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
+  const select = (key, label, opts) => `<label class="field">${esc(label)} <select data-setting="${key}">${opts.map(([v, t]) => `<option value="${v}"${String(s[key]) === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
   const faiths = CONTENT.enums.Religion.filter((r) => r[0] !== 'HINDU').map((r) => `<label class="toggle"><input type="checkbox" data-faith="${r[0]}" ${s.hiddenFaiths.includes(r[0]) ? '' : 'checked'}> ${esc(lb(r[1], r[2]))}</label>`).join('');
   const tabs = TABS.filter(([id]) => !ALWAYS_SHOWN.has(id)).map(([id, ta, en]) => `<label class="toggle"><input type="checkbox" data-section="${id}" ${s.hiddenSections.includes(id) ? '' : 'checked'}> ${esc(lb(ta, en))}</label>`).join('');
   const m = s.music;
@@ -647,6 +660,10 @@ function viewSettings() {
       ${select('units', lb('அளவுகள்', 'Units'), [['AUTO', lb('தானியங்கி', 'Auto')], ['METRIC', '°C · km/h'], ['IMPERIAL', '°F · mph']])}
     </section>
     <section class="group"><h3>${esc(lb('நாட்காட்டி', 'Calendar'))}</h3>
+      <h3>${esc(lb('பிறப்பு விவரம் · Birth details', 'Birth details'))}</h3>
+      <p class="small">${esc(lb('தாரா பலன் மற்றும் உங்கள் சந்திராஷ்டமத்திற்கு. இந்த சாதனத்தில் மட்டும் சேமிக்கப்படும்.', 'For Thara Balam and your Chandrashtamam on Today. Stored on this device only.'))}</p>
+      ${select('janmaStar', lb('பிறந்த நட்சத்திரம் · Birth star', 'Birth star'), [['-1', '—']].concat(CONTENT.names.nakshatras.map((n, i) => [String(i), lb(...n)])))}
+      ${select('janmaRasi', lb('பிறந்த ராசி · Birth Rasi', 'Birth Rasi'), [['-1', '—']].concat(CONTENT.names.rasis.map((r, i) => [String(i), lb(...r)])))}
       ${select('convention', lb('ராகு காலம் கணக்கு', 'Rahu Kalam convention'), [['AUTO', lb('தானியங்கி', 'Auto')], ['TRADITIONAL_6AM', lb('காலை 6 – மாலை 6', 'Fixed 6 AM – 6 PM')], ['SUNRISE_BASED', lb('சூரிய உதயம்', 'Local sunrise–sunset')]])}
       ${check('usHolidays', lb('அமெரிக்க / இல்லினாய் விடுமுறைகள்', 'US & Illinois holidays'))}
       ${check('schoolCalendars', lb('பள்ளி நாட்காட்டி', 'School calendars'))}
@@ -674,7 +691,6 @@ function viewSettings() {
 }
 
 // ---- about
-const SITE_URL = 'https://kamalsoft.github.io/KTamilCalendar/';
 const RELATED_URL = 'https://thiruppugazh-ui.vercel.app/';
 
 /** True on iPhone/iPad Safari, the only browser that can add this page to the home screen. */
@@ -702,11 +718,6 @@ function viewAbout() {
         <li>${esc(lb('கீழே உருட்டி "Add to Home Screen" தட்டவும்.', 'Scroll down and tap "Add to Home Screen".'))}</li>
         <li>${esc(lb('"Add" தட்டவும். முகப்புத் திரையில் முழுத் திரை செயலியாகத் திறக்கும்.', 'Tap "Add". It opens full screen from your home screen.'))}</li>
       </ol>
-      <div class="row wrap">
-        <a class="pill on" href="${SITE_URL}" rel="noopener">${esc(lb('Safari-ல் திற · Open in Safari', 'Open in Safari'))} ↗</a>
-        <button class="pill" data-act="copy-link">${esc(lb('இணைப்பை நகலெடு', 'Copy link'))}</button>
-      </div>
-      <p class="small">${esc(SITE_URL)}</p>
     </section>
     <section class="detail">
       <h3>${esc(lb('தொடர்புடைய தளம் · Related', 'Related site'))}</h3>
@@ -727,8 +738,8 @@ function viewAbout() {
 // ---------------------------------------------------------------- offline year packs
 // A pack is one year of days for one place and timing convention, kept in Cache Storage. The app reads it
 // instead of recomputing; without a pack everything is still computed on the device.
-// v4: packs saved before the next-sunrise field (Hora) existed are dropped; save the offline years again.
-const PACK_CACHE = 'ktc-packs-v4';
+// v5: packs saved before the Darsha flag existed are dropped; save the offline years again.
+const PACK_CACHE = 'ktc-packs-v5';
 const packUrl = (placeId, convention, year) => `pack/${encodeURIComponent(placeId)}/${convention}/${year}.json`;
 const packYears = [2026, 2027, 2028];
 
@@ -1029,7 +1040,6 @@ function onClick(e) {
   else if (a === 'skin') { applySettingChange('skin', el.dataset.id); }
   else if (a === 'notify-allow') { if ('Notification' in window) Notification.requestPermission().then(() => rerender()); }
   else if (a === 'disclaimer') { state.settings.disclaimerSeen = false; saveSettings(state.settings); showDisclaimer(); }
-  else if (a === 'copy-link') { copySiteLink(el); }
   else if (a === 'reset-settings') { if (confirm(lb('அமைப்புகளை மீட்டமைக்கவா?', 'Reset all settings?'))) { localStorage.removeItem('ktc.settings.v2'); location.reload(); } }
 }
 
@@ -1048,12 +1058,6 @@ function toggleRasiSpeech() {
   const g = gochara(state.rasi, skyPositions(d.epochDay, state.place.zoneId));
   const text = [[p.messageTa], [g.month.ta], [g.year.ta]][state.rasiTab][0];
   speakText(text);
-}
-
-function copySiteLink(btn) {
-  const done = () => { btn.textContent = lb('நகலெடுக்கப்பட்டது', 'Copied'); };
-  if (navigator.clipboard) navigator.clipboard.writeText(SITE_URL).then(done, () => banner(SITE_URL));
-  else banner(SITE_URL);
 }
 
 function speakText(text) {
@@ -1075,7 +1079,7 @@ function onChange(e) {
   if (el.dataset.cmp === 'day') { if (el.value) state.cmpDay = parseIso(el.value); return rerender(); }
   if (el.dataset.setting) {
     const key = el.dataset.setting;
-    const value = el.type === 'checkbox' ? el.checked : (key === 'ambientMinutes' ? Number(el.value) : el.value);
+    const value = el.type === 'checkbox' ? el.checked : (['ambientMinutes', 'janmaStar', 'janmaRasi'].includes(key) ? Number(el.value) : el.value);
     applySettingChange(key, value);
   } else if (el.dataset.section) {
     const hidden = new Set(state.settings.hiddenSections);

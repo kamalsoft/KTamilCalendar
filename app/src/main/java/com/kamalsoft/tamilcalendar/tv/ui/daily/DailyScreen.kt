@@ -118,6 +118,8 @@ fun DailyScreen(
     weather: WeatherState,
     weatherEnabled: Boolean,
     imperialUnits: Boolean,
+    janmaStar: Int = -1,
+    janmaRasi: Int = -1,
     entryFocus: FocusRequester,
     onPreviousDay: () -> Unit,
     onNextDay: () -> Unit,
@@ -174,7 +176,7 @@ fun DailyScreen(
                     DayButton("🔊 ஸ்லோகம்", { slokaOpen = true }, Modifier.weight(1f).focusRequester(slokaButton))
                     DayButton("▶", onNextDay, Modifier.width(56.dp))
                 }
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { PanchangamColumn(day, location.label, firstPanchangamCard, show) }
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { PanchangamColumn(janmaStar, janmaRasi, day, location.label, firstPanchangamCard, show) }
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { TimingColumn(day, show) }
                 if (weatherEnabled) {
                     WeatherSection(
@@ -231,7 +233,7 @@ fun DailyScreen(
                     }
                 }
                 Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(TvDimens.Gap)) {
-                    PanchangamColumn(day, location.label, firstPanchangamCard, show)
+                    PanchangamColumn(janmaStar, janmaRasi, day, location.label, firstPanchangamCard, show)
                 }
                 Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(TvDimens.Gap)) {
                     TimingColumn(day, show)
@@ -371,6 +373,8 @@ private fun DayButton(label: String, onClick: () -> Unit, modifier: Modifier, hi
 
 @Composable
 private fun ColumnScope.PanchangamColumn(
+    janmaStar: Int,
+    janmaRasi: Int,
     day: TamilDayData,
     locationLabel: String,
     firstCard: FocusRequester,
@@ -488,6 +492,35 @@ private fun ColumnScope.PanchangamColumn(
             },
         ),
     )
+    if (janmaStar >= 0) {
+        val t = DayRules.thara(p.nakshatram.index, janmaStar)
+        InfoCard(
+            order = 11,
+            label = "தாரா பலன் · Thara Balam", value = if (DayRules.tharaPasses(t)) "✓ $t" else "✗ $t",
+            sub = if (DayRules.tharaPasses(t)) "Good for you today" else "Avoid for you today",
+            accent = TvColors.Gold, show = show,
+            detail = DetailContent(
+                "தாரா பலன் · Thara Balam", "Count from your birth star to today's star (inclusive), mod 9",
+                listOf(
+                    "இன்றைய நட்சத்திரம் · Today's star" to TamilNames.nakshatras[p.nakshatram.index].let { "${it.first} · ${it.second}" },
+                    "தாரா · Thara" to "$t (${if (DayRules.tharaPasses(t)) "Pass" else "Avoid"})",
+                ),
+            ),
+        )
+    }
+    if (janmaRasi >= 0) {
+        val mine = DayRules.personalChandrashtamam(p.moonRasi, janmaRasi)
+        InfoCard(
+            order = 12,
+            label = "உங்கள் சந்திராஷ்டமம் · Your Chandrashtamam", value = if (mine) "Yes" else "No",
+            sub = if (mine) "Moon in your Chandrashtamam Rasi" else "Moon not in your Chandrashtamam Rasi",
+            accent = if (mine) TvColors.Crimson else TvColors.Gold, show = show,
+            detail = DetailContent(
+                "உங்கள் சந்திராஷ்டமம் · Your Chandrashtamam", "Moon Rasi today: ${p.moonRasiTa} · ${p.moonRasiEn}",
+                listOf("பிறந்த ராசி · Birth Rasi" to TamilNames.rasis[janmaRasi].let { "${it.first} · ${it.second}" }),
+            ),
+        )
+    }
     val sraardha = p.sraardhaTithi
     InfoCard(
         order = 9,

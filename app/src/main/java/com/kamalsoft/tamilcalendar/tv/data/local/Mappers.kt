@@ -64,6 +64,7 @@ class CalendarMapper(
         karanam = d.panchangam.karanam,
         sraardhaTithi = d.panchangam.sraardhaTithi ?: -1,
         nextSunriseSec = d.nextSunrise.toSecondOfDay(),
+        darsha = d.panchangam.darsha,
     )
 
     fun toTimingEntities(d: TamilDayData): List<TimingEntity> = d.timings.all().map {
@@ -124,6 +125,7 @@ class CalendarMapper(
                 },
                 karanam = e.karanam,
                 sraardhaTithi = e.sraardhaTithi.takeIf { it >= 0 },
+                darsha = e.darsha,
             ),
             timings = DayTimings(
                 nallaNeram = windows.filter { it.type == TimingType.NALLA_NERAM },

@@ -15,7 +15,7 @@ class PanchangamExportTest {
         val from = LocalDate.now()
         val days = TamilCalendarEngine(GeoLocation.NAPERVILLE, TimingConvention.SUNRISE_BASED).compute(from, from.plusDays(364))
         File(path!!).printWriter().use { w ->
-            w.println("date,sunrise,sunset,tithi,tithiEnd,nak,nakEnd,yoga,yogaEnd,tmonth,tday,lagna,karanam,sraardha")
+            w.println("date,sunrise,sunset,tithi,tithiEnd,nak,nakEnd,yoga,yogaEnd,tmonth,tday,lagna,karanam,sraardha,mars,saturn,darsha")
             days.forEach { d ->
                 val p = d.panchangam
                 w.println(
@@ -23,9 +23,18 @@ class PanchangamExportTest {
                         d.date, d.sunrise, d.sunset, p.tithi.index, p.tithi.endsAt, p.nakshatram.index, p.nakshatram.endsAt,
                         p.yogam.index, p.yogam.endsAt, d.tamilDate.monthIndex, d.tamilDate.day,
                         p.lagnam.joinToString(";") { "${it.rasi}@${it.start}" }, p.karanam, p.sraardhaTithi ?: -1,
+                        marsAt(d), saturnAt(d), p.darsha,
                     ).joinToString(","),
                 )
             }
         }
     }
+
+    private val zoneNaperville = java.time.ZoneId.of("America/Chicago")
+    private fun jdAtSunrise(d: com.kamalsoft.tamilcalendar.tv.domain.model.TamilDayData) =
+        com.kamalsoft.tamilcalendar.tv.core.astro.Astro.julianDay(java.time.LocalDateTime.of(d.date, d.sunrise).atZone(zoneNaperville).toInstant())
+    private fun marsAt(d: com.kamalsoft.tamilcalendar.tv.domain.model.TamilDayData) =
+        com.kamalsoft.tamilcalendar.tv.core.astro.Planets.marsSidereal(jdAtSunrise(d))
+    private fun saturnAt(d: com.kamalsoft.tamilcalendar.tv.domain.model.TamilDayData) =
+        com.kamalsoft.tamilcalendar.tv.core.astro.Planets.saturnSidereal(jdAtSunrise(d))
 }

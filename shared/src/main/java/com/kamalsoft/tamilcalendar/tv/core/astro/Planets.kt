@@ -22,6 +22,9 @@ object Planets {
         100.46457166, 35999.37244981, 102.93768193, 0.32327364, 0.0, 0.0)
     private val JUPITER = Elements(5.20288700, -0.00011607, 0.04838624, -0.00013253, 1.30439695, -0.00183714,
         34.39644051, 3034.74612775, 14.72847983, 0.21252668, 100.47390909, 0.20469106)
+    // Mars: JPL Keplerian elements, same source and validity as the others (for the Lagna Shuddhi 8th-house check).
+    private val MARS = Elements(1.52371034, 0.00001847, 0.09339410, 0.00007882, 1.84969142, -0.00813131,
+        -4.55343205, 19140.30268499, -23.94362959, 0.44441088, 49.55953891, -0.29257343)
     private val SATURN = Elements(9.53667594, -0.00125060, 0.05386179, -0.00050991, 2.48599187, 0.00193609,
         49.95424423, 1222.49362201, 92.59887831, -0.41897216, 113.66242448, -0.28867794)
 
@@ -55,6 +58,7 @@ object Planets {
         return Astro.norm360(atan2(p[1] - e[1], p[0] - e[0]) / RAD)
     }
 
+    fun marsSidereal(jd: Double) = Astro.norm360(geocentricTropical(MARS, jd) - Astro.ayanamsa(jd))
     fun jupiterSidereal(jd: Double) = Astro.norm360(geocentricTropical(JUPITER, jd) - Astro.ayanamsa(jd))
     fun saturnSidereal(jd: Double) = Astro.norm360(geocentricTropical(SATURN, jd) - Astro.ayanamsa(jd))
 

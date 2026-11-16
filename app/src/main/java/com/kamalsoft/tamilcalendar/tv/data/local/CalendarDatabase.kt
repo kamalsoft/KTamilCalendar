@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [DayEntity::class, TimingEntity::class, EventEntity::class, RasiPalanEntity::class],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 abstract class CalendarDatabase : RoomDatabase() {

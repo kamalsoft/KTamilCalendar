@@ -140,6 +140,7 @@ const MOON_TERMS = [
 // ---- Planets.kt: Jupiter, Saturn (JPL Keplerian elements) and the lunar node.
 const EARTH = [1.00000261, 0.00000562, 0.01671123, -0.00004392, -0.00001531, -0.01294668, 100.46457166, 35999.37244981, 102.93768193, 0.32327364, 0, 0];
 const JUPITER = [5.20288700, -0.00011607, 0.04838624, -0.00013253, 1.30439695, -0.00183714, 34.39644051, 3034.74612775, 14.72847983, 0.21252668, 100.47390909, 0.20469106];
+const MARS = [1.52371034, 0.00001847, 0.09339410, 0.00007882, 1.84969142, -0.00813131, -4.55343205, 19140.30268499, -23.94362959, 0.44441088, 49.55953891, -0.29257343];
 const SATURN = [9.53667594, -0.00125060, 0.05386179, -0.00050991, 2.48599187, 0.00193609, 49.95424423, 1222.49362201, 92.59887831, -0.41897216, 113.66242448, -0.28867794];
 
 function helio(el, t) {
@@ -170,6 +171,7 @@ function geocentricTropical(el, jd) {
 
 export const jupiterSidereal = (jd) => norm360(geocentricTropical(JUPITER, jd) - ayanamsa(jd));
 export const saturnSidereal = (jd) => norm360(geocentricTropical(SATURN, jd) - ayanamsa(jd));
+export const marsSidereal = (jd) => norm360(geocentricTropical(MARS, jd) - ayanamsa(jd));
 export function rahuSidereal(jd) {
   const t = (jd - 2451545.0) / 36525.0;
   return norm360(125.0445479 - 1934.1362891 * t + 0.0020754 * t * t - ayanamsa(jd));

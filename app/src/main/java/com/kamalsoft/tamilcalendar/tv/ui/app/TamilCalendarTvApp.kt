@@ -284,6 +284,8 @@ fun TamilCalendarTvApp(vm: CalendarViewModel) {
                         location = location,
                         weather = weather,
                         weatherEnabled = settings.weather,
+                        janmaStar = settings.janmaStar,
+                        janmaRasi = settings.janmaRasi,
                         imperialUnits = imperial,
                         entryFocus = contentFocus,
                         onPreviousDay = { vm.shiftDay(-1) },

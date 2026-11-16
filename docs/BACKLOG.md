@@ -40,9 +40,9 @@
 
 1. **Krishna Paksha Muhurtham:** done. Only Krishna Prathama to Panchami (tithi 1–5) is used. Open: what "select Saptami/Dashami" means.
 2. **Hora:** done (engine 11). Remaining: none.
-3. **Lagna Shuddhi** (skill gate 6): the rule is defined. Needs planetary house positions, which the app does not compute.
+3. **Lagna Shuddhi:** 8th-house gate done (engine 12). Open: benefic placement in Kendra and Trikona, malefic placement, and Lagna lord strength. These need Mercury and Venus.
 4. **Marana Yogam** (skill gate 3): needs the classical weekday and Nakshatra lookup table, which is not yet supplied.
-5. **Thara Balam and personal Chandrashtamam** (skill gate 4): need the user's birth star as a setting.
+5. **Thara Balam:** done (Settings: Birth details). **Personal Chandrashtamam:** done, with offset 5 (see item 21).
 6. **Sraardha tie rule:** done (engine 11). The second day takes an exact-half tithi.
 7. **Darsha and Mahalaya rules** (skill section C, points 4–5): not implemented. Darsha: Amavasai over Madhyahna on day 1. Mahalaya: Ghata Chaturdashi limited to unnatural deaths.
 8. **Tuesday and Saturday** (skill section E): the Subha Muhurtham tag excludes them (marriage rule). The day view does not yet flag them with their permitted uses (Saturday for maintenance and legal defence; Tuesday for surgery and disputes).
@@ -55,6 +55,11 @@
 15. **Malefic yogas:** implemented as audited (1, 6, 9, 10, 13, 15, 17, 19, 27). Open: partial-ghati rules (Tyajya ghatis) for the yogas that are not full-day blacklists.
 16. **Tuesday and Saturday day-view flags** (skill section E): permitted uses are not shown on the day view yet.
 17. **Nakshatram quality** (skill section D): Dhruva, Mridu and Adhomukha are not displayed.
-18. **Lagna Shuddhi** (skill gate 6): needs positions of Mars, Mercury and Venus, which the app does not compute.
+18. **Lagna Shuddhi** placement and Lagna lord strength: need Mercury and Venus positions (8th-house gate done).
 19. **Marana Yogam** (skill gate 3): needs the classical weekday and Nakshatra lookup table.
-20. **Thara Balam and personal Chandrashtamam** (skill gate 4): need birth star and birth Rasi settings.
+20. **Thara Balam and personal Chandrashtamam** (skill gate 4): done, see item 5 and item 21.
+21. **Chandrashtamam offset (decision):** the engine and the personal check use the Moon's Rasi plus 5. The validator's inclusive count, with the Moon as the 1st sign, gives plus 7. For 16 Nov 2026 (Moon in Magaram), plus 5 gives Mithunam and plus 7 gives Simmam. Confirm which is correct before changing the day-level card.
+22. **Marana Yogam table:** needs a verifiable classical source. The pasted matrix is not used until it is checked.
+23. **Darsha:** done (engine 13). **Tuesday and Saturday badge:** done on the web Today tab. Open: the APK day view.
+24. **Lagna placement scoring** (Kendra and Trikona, Lagna lord strength): the pasted note assumes Mercury and Venus are in the pipeline. They are not yet. The scoring thresholds (combustion, debilitation) need a source before they are built.
+25. **Chandrashtamam offset:** the pasted note keeps +5 and cites Aries to Scorpio as an example. Aries (0) to Scorpio (7) is +7, and its star example (Ashwini to Anuradha) is also wrong (the 8th star is Pushya). Still an open decision (item 21).

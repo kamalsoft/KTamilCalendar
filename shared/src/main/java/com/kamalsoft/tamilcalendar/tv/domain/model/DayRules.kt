@@ -74,6 +74,24 @@ object DayRules {
 
     fun isKariNaal(monthIndex: Int, day: Int): Boolean = KARI_NAAL[monthIndex]?.contains(day) == true
 
+    /** Thara Balam (validator section F): count inclusively from the birth star to the day's star; mod 9, with 0 read as 9. */
+    fun thara(dayStar: Int, janmaStar: Int): Int {
+        val t = (Math.floorMod(dayStar - janmaStar, 27) + 1) % 9
+        return if (t == 0) 9 else t
+    }
+
+    /** Passing Tharas: Sampath 2, Kshema 4, Sadhaka 6, Mitra 8, Parama Mitra 9. */
+    fun tharaPasses(t: Int): Boolean = t in setOf(2, 4, 6, 8, 9)
+
+    /**
+     * Offset from the Moon's Rasi to the Chandrashtamam Rasi, as used by the engine. The validator's inclusive count is 7;
+     * this stays 5 until the open question in docs/BACKLOG.md is answered.
+     */
+    const val CHANDRASHTAMA_OFFSET = 5
+
+    /** True when the Moon's Rasi is the person's Chandrashtamam Rasi. */
+    fun personalChandrashtamam(moonRasi: Int, janmaRasi: Int): Boolean = moonRasi == (janmaRasi + CHANDRASHTAMA_OFFSET) % 12
+
     /** Planetary lords of the Chaldean sequence, for the Hora. Benefic: Jupiter, Venus, Mercury, Moon. */
     enum class Planet(val ta: String, val en: String, val benefic: Boolean) {
         SUN("சூரியன்", "Sun", false), VENUS("சுக்கிரன்", "Venus", true), MERCURY("புதன்", "Mercury", true),

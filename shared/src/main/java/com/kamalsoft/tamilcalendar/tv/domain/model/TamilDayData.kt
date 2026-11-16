@@ -110,6 +110,8 @@ data class Panchangam(
     val karanam: Int = 0,
     /** Tithi (0..28, Amavasai excluded) that covers the whole Sraardha window, or null. */
     val sraardhaTithi: Int? = null,
+    /** Darsha (Amavasai) day for Tharpanam: Amavasai prevails over Madhyahna Kala on this day (validator section C.4). */
+    val darsha: Boolean = false,
 ) {
     val moonRasiTa: String get() = TamilNames.rasis[moonRasi].first
     val moonRasiEn: String get() = TamilNames.rasis[moonRasi].second

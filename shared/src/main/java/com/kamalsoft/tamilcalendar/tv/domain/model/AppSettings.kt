@@ -22,6 +22,9 @@ data class AppSettings(
     val weatherAnimations: Boolean = true,
     val clock24h: Boolean = false,
     val tamilOnly: Boolean = false,
+    /** Birth star (0 Aswini .. 26 Revathi) and birth Rasi (0 Mesham .. 11 Meenam); -1 when not set. */
+    val janmaStar: Int = -1,
+    val janmaRasi: Int = -1,
     val units: UnitsPref = UnitsPref.AUTO,
     val convention: ConventionPref = ConventionPref.AUTO,
     /** Full-screen ambient clock after [ambientMinutes] without input. */

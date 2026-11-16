@@ -191,15 +191,16 @@ Each rule is taken from the astronomer-validator skill (`.claude/skills/tamil-pa
 | Krishna Paksha Muhurtham: Prathama to Panchami only (Krishna tithi 1–5). Saptami and Dashami not included (open question) | Implemented (engine 9) |
 | Malefic yogas (1-based 1, 6, 9, 10, 13, 15, 17, 19, 27) block Subha Muhurtham if they occur at any time between sunrise and sunset. Sampled every 30 min. Sukarma (7) is auspicious | Implemented (engine 10–11) |
 | Subha Muhurtham excludes Kari Naal days (gate 1) | Implemented (engine 8) |
-| Tuesday and Saturday excluded from the Subha Muhurtham tag (marriage rule) | Implemented. The day view does not yet flag them with their permitted uses. |
+| Tuesday and Saturday: soft flags (warning badge) rather than rejection | Subha Muhurtham excludes them (marriage rule). Web Today shows an amber caution badge. The APK day view does not show it yet. |
 | Hora: 12 equal parts of daytime and 12 of night, Chaldean order from the weekday lord | Implemented (engine 11): APK Hora card, web Today chips |
 | Sraardha tithi tie rule (second day gets an exact-half tithi) | Implemented (engine 11) |
 | Magha and Moola permitted for marriage; Adhomukha applies to construction only | Adhomukha filters not used by the app (no construction filters) |
 | Nakshatram quality (Dhruva, Mridu, Adhomukha) | Not displayed |
-| Lagna Shuddhi (8th house, benefics in Kendra and Trikona, Lagna lord strength) | Not implemented. Needs positions of all planets (Mars, Mercury and Venus are not computed yet). |
-| Marana Yogam (weekday and Nakshatra pair) | Not implemented. Needs the classical lookup table. |
-| Thara Balam and personal Chandrashtamam | Not implemented. Needs the birth star and birth Rasi as settings. |
-| Darsha (Amavasai) day selection with Madhyahna | Not implemented |
+| Lagna Shuddhi, 8th-house gate: some rising sign that starts in daylight has no Sun, Mars, Saturn, Rahu or Ketu in its 8th house | Implemented (engine 12). Benefic placement in Kendra and Trikona and Lagna lord strength are not implemented (they need Mercury and Venus). |
+| Marana Yogam (weekday and Nakshatra pair) | Not implemented. The lookup table needs a verifiable source. The matrix in the pasted note cites Muhurtha Chintamani and Kalaprakasika, which are not verified here. |
+| Thara Balam (personal) | Implemented (engine 11, Settings: Birth details). Shown on the APK Daily screen and the web Today tab. |
+| Personal Chandrashtamam | Implemented with the engine's offset (5). Open question: the validator's inclusive count is 7 (see below). |
+| Darsha (Amavasai) day selection with Madhyahna | Implemented (engine 13). Verified against Swiss Ephemeris, 365 days, 0 mismatches. |
 | Mahalaya rules (Ghata Chaturdashi restriction and the designated days) | Not implemented |
 | Partial-ghati (Tyajya) rules for malefic yogas | Not implemented. The app uses whole-day rejection. |
 | Kari Naal table in the day view | Implemented (Karanam card) |
@@ -207,6 +208,18 @@ Each rule is taken from the astronomer-validator skill (`.claude/skills/tamil-pa
 **Worked checks.** Sun $120^\circ$ with Moon $300^\circ$ gives $\Delta\lambda = 180^\circ$ (Pournami). Sun $100^\circ$ with Moon
 $310^\circ$ gives $\Delta\lambda = 210^\circ$ and block 18, Krishna Tritiya, so the verdict is `PASS (conditional)` on Chandra
 Balam and Lagna Shuddhi. The earlier Navami example ($\Delta\lambda = 105^\circ$) is Shukla Navami, not Krishna Ashtami.
+
+## 14a. Personal rules (Settings: Birth details)
+
+Two values are entered once in Settings, stored on the device only: the birth star (Janma Nakshatra, 0 Aswini to 26 Revathi)
+and the birth Rasi (Janma Rasi, 0 Mesham to 11 Meenam). Both are `-1` when not set, and then no personal card is shown.
+
+- **Thara Balam:** `count = ((dayStar − janmaStar) mod 27) + 1`, then `thara = count mod 9`, with 0 read as 9. The day's
+  star is the Moon's Nakshatra at sunrise. Passing Tharas: 2, 4, 6, 8, 9. Failing: 1, 3, 5, 7.
+- **Personal Chandrashtamam:** true when the Moon's Rasi at sunrise equals `(janmaRasi + 5) mod 12`.
+  **Open question:** the validator's skill counts inclusively, which would give offset 7. The engine's day-level
+  Chandrashtamam card also uses offset 5, so the two are consistent with each other but not yet with the skill. Decide
+  before changing either.
 
 ## 14. Day-level rules (`DayRules.kt`, `rules.js`)
 
@@ -284,10 +297,10 @@ Balam and Lagna Shuddhi. The earlier Navami example ($\Delta\lambda = 105^\circ$
 
 ## 17. Versions and caches
 
-- `TamilCalendarEngine.VERSION` (currently 11) is part of the cached-day key. Bumping it recomputes cached days.
-- The APK's Room database (`CalendarDatabase`, currently version 6) stores the computed day, including the next sunrise. Changing the stored fields
+- `TamilCalendarEngine.VERSION` (currently 13) is part of the cached-day key. Bumping it recomputes cached days.
+- The APK's Room database (`CalendarDatabase`, currently version 7) stores the computed day, including the next sunrise. Changing the stored fields
   bumps the database version, which wipes and rebuilds the cache.
-- Web offline years are kept in Cache Storage under `ktc-packs-v4`. Saved years from before engine 11 are dropped (cache `ktc-packs-v4`) and should be saved again. Changing the day shape means bumping that name.
+- Web offline years are kept in Cache Storage under `ktc-packs-v5`. Saved years from before engine 11 are dropped (cache `ktc-packs-v5`) and should be saved again. Changing the day shape means bumping that name.
 
 ## 18. How it is verified
 
@@ -300,3 +313,32 @@ Balam and Lagna Shuddhi. The earlier Navami example ($\Delta\lambda = 105^\circ$
 Known limits: sunrise and sunset use the standard −0.833° altitude, not a local almanac table. Tithi and star ends
 are accurate to about a minute. Festival and Muhurtham rules follow the tradition as recorded in the code and the
 sources listed in `docs/BACKLOG.md`, and they are not independently verified.
+
+## 14b. Lagna Shuddhi (8th-house gate) — `lagnaShuddhiInDaylight`
+
+- **Rising sign (Lagna):** the sidereal ascendant at a moment, `atan2(cos LST, −(sin LST·cos ε + tan φ·sin ε))` minus the
+  Lahiri ayanamsa (§9). Verified against Swiss Ephemeris houses (0.25 minutes). The formula in the pasted note has a sign
+  error and is not used.
+- **Rising sign segments:** §9 gives each sign and its start time.
+- **Test:** a segment counts if it starts in daylight (between sunrise and sunset). At its start, the 8th house is
+  `(Lagna Rasi + 7) mod 12` (the Lagna is house 1). The segment is clean if none of the Sun, Mars, Saturn, Rahu and Ketu lies
+  in that sign. Ketu is Rahu + 180°.
+- **Day rule:** a day can carry the Subha Muhurtham tag only if at least one daylight rising sign is clean.
+- **Planet accuracy:** Mars (JPL Keplerian elements) against Swiss Ephemeris at sunrise, 365 days: mean error 0.38°, max
+  0.39°, with 6 sign mismatches, all near sign boundaries. Saturn: mean 0.31°, 7 mismatches. Sun and Rahu are from the
+  existing engine.
+- **Not implemented:** benefic placement in Kendra and Trikona, malefic placement in 3, 6 and 11, and the strength of the
+  Lagna lord. These need Mercury and Venus positions and a scoring rule.
+
+## 14c. Darsha (monthly Amavasai) — `isDarsha`
+
+- Madhyahna Kala is the 3rd fifth of the daytime: `[sunrise + 2U, sunrise + 3U]`, with `U = (sunset − sunrise) / 5`.
+- Sampled at 16 points. The day is a Darsha day when tithi 29 (Amavasai) covers more than half of them.
+- Only the first such day counts: a day is Darsha only if the previous day was not (validator C.4).
+- Shown in the data as `Panchangam.darsha`. Verified against Swiss Ephemeris over 365 days (11 Darsha days, 0 mismatches).
+
+## 14d. Tuesday and Saturday warnings
+
+- Tuesday (Mars) and Saturday (Saturn) are soft warnings, not rejections. Web Today shows an amber badge with the
+  validator's wording. Subha Muhurtham still excludes both days (the marriage rule in section E).
+- The APK day view does not show the badge yet.

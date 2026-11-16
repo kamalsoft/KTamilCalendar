@@ -4,6 +4,8 @@ const KEY = 'ktc.settings.v2';
 
 export const DEFAULTS = {
   theme: 'GRAPHITE',
+  janmaStar: -1,                        // birth star (0 Aswini .. 26 Revathi), -1 = not set
+  janmaRasi: -1,                        // birth Rasi (0 Mesham .. 11 Meenam), -1 = not set
   monthView: 'grid',                    // grid | page: the Month tab as a grid or as a wall-calendar page
   skin: 'CLASSIC',                      // CLASSIC | GLASS | PAPER: how cards are drawn
   place: { preset: 'chennai' },          // { preset: key } or { custom: GeoLocation }

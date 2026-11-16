@@ -8,6 +8,7 @@ import com.kamalsoft.tamilcalendar.tv.domain.model.EventKind
 import com.kamalsoft.tamilcalendar.tv.domain.model.GeoLocation
 import com.kamalsoft.tamilcalendar.tv.domain.model.LocationPolicy
 import com.kamalsoft.tamilcalendar.tv.domain.model.PanchangaElement
+import com.kamalsoft.tamilcalendar.tv.domain.model.DayTag
 import com.kamalsoft.tamilcalendar.tv.domain.model.TamilDayData
 import com.kamalsoft.tamilcalendar.tv.domain.model.TamilNames
 import com.kamalsoft.tamilcalendar.tv.domain.model.TimingWindow
@@ -79,6 +80,8 @@ private fun dayJson(d: TamilDayData): Map<String, Any?> = mapOf(
     "moonRasi" to label(d.panchangam.moonRasiTa, d.panchangam.moonRasiEn),
     "lagnam" to d.panchangam.lagnam.map { mapOf("rasi" to it.rasi, "start" to it.start.toString()) },
     "karanam" to d.panchangam.karanam,
+    "subhaMuhurtham" to (DayTag.SUBHA_MUHURTHAM in d.tags),
+    "darsha" to d.panchangam.darsha,
     "sraardhaTithi" to (d.panchangam.sraardhaTithi ?: -1),
     "timings" to d.timings.all().map(::timingJson),
     "chandrashtamam" to mapOf(

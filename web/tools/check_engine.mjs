@@ -43,6 +43,8 @@ for (const r of ref.days) {
   check(r.date, 'chandrashtamam.nakshatras', d.chandrashtamam.nakshatras.length, r.chandrashtamam.nakshatras.split(', ').filter(Boolean).length);
   check(r.date, 'holiday', d.holiday, r.holiday);
   check(r.date, 'karanam', d.panchangam.karanam, r.karanam);
+  check(r.date, 'subhaMuhurtham', d.tags.includes('SUBHA_MUHURTHAM'), r.subhaMuhurtham);
+  check(r.date, 'darsha', d.panchangam.darsha, r.darsha);
   check(r.date, 'sraardhaTithi', d.panchangam.sraardhaTithi ?? -1, r.sraardhaTithi);
   check(r.date, 'lagnam.rasi', d.panchangam.lagnam.map((s) => s.rasi), r.lagnam.map((s) => s.rasi));
   check(r.date, 'lagnam.start', d.panchangam.lagnam.map((s) => s.start.slice(0, 16)), r.lagnam.map((s) => s.start.slice(0, 16)));

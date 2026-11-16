@@ -164,6 +164,7 @@ class TamilCalendarEngine(
         val yogaIdx = Astro.floorDiv(Astro.yogaSum(c.sunriseJd), NAK_SPAN) % 27
         val moonRasi = Astro.floorDiv(Astro.moonSidereal(c.sunriseJd), 30.0)
 
+        val lagnaList = lagnaSegments(c.sunriseJd, next.sunriseJd)
         val tithiNames = Panchangam.tithiNames(tithiIdx)
         val panchangam = Panchangam(
             tithi = PanchangaElement(
@@ -182,9 +183,10 @@ class TamilCalendarEngine(
             moonRasi = moonRasi,
             moonRasiEndsAt = endOf(c.sunriseJd, ((moonRasi + 1) % 12) * 30.0, Astro::moonSidereal, maxDays = 3.0),
             sunRasi = Astro.floorDiv(Astro.sunSidereal(c.sunriseJd), 30.0),
-            lagnam = lagnaSegments(c.sunriseJd, next.sunriseJd),
+            lagnam = lagnaList,
             karanam = Astro.floorDiv(Astro.elongation(c.sunriseJd), 6.0),
             sraardhaTithi = sraardhaTithiOf(aparahnaCounts(c.sunriseJd, c.sunsetJd), aparahnaCounts(prev.sunriseJd, prev.sunsetJd)),
+            darsha = isDarsha(c) && !isDarsha(prev),
         )
 
         val timings = timingsFor(c.date, sunrise, sunset)
@@ -205,7 +207,7 @@ class TamilCalendarEngine(
         if (c.tamilMonth == 3 && weekday == 5) tags += DayTag.AADI_VELLI
 
         val allEvents = events.toMutableList()
-        if (isMuhurthamCandidate(c, tithiIdx, starIdx)) {
+        if (isMuhurthamCandidate(c, tithiIdx, starIdx, lagnaList)) {
             tags += DayTag.SUBHA_MUHURTHAM
             val window = timings.nallaNeram.firstOrNull { it.start.hour < 12 } ?: timings.nallaNeram.firstOrNull()
             allEvents += CalendarEvent(
@@ -273,6 +275,20 @@ class TamilCalendarEngine(
      * [sunrise + 3U, sunrise + 4U] with U = daytime / 5. The tithi covering more than half of it is the Sraardha
      * tithi. Amavasai is not used, and no tithi with a majority gives null.
      */
+    /**
+     * Darsha (validator section C.4): Amavasai (tithi 29) covers most of Madhyahna Kala, the 3rd fifth of the daytime,
+     * sampled at 16 points. Day 1 is chosen if it covers noon; the next day only when the previous day did not.
+     */
+    private fun isDarsha(d: DayCore): Boolean {
+        val unit = (d.sunsetJd - d.sunriseJd) / 5
+        var amavasai = 0
+        for (i in 0 until 16) {
+            val jd = d.sunriseJd + (2 + (i + 0.5) / 16) * unit
+            if (Astro.floorDiv(Astro.elongation(jd), 12.0) == 29) amavasai++
+        }
+        return amavasai * 2 > 16
+    }
+
     private fun aparahnaCounts(sunriseJd: Double, sunsetJd: Double): IntArray {
         val unit = (sunsetJd - sunriseJd) / 5
         val counts = IntArray(30)
@@ -379,7 +395,7 @@ class TamilCalendarEngine(
 
     // ---------------------------------------------------------------- muhurtham
 
-    private fun isMuhurthamCandidate(c: DayCore, tithi: Int, star: Int): Boolean {
+    private fun isMuhurthamCandidate(c: DayCore, tithi: Int, star: Int, lagna: List<LagnaSegment>): Boolean {
         if (c.tamilMonth in AVOIDED_MUHURTHAM_MONTHS) return false
         // Validator gate 1: no Subakariyam on a Kari Naal day.
         if (DayRules.isKariNaal(c.tamilMonth, c.tamilDay)) return false
@@ -394,8 +410,19 @@ class TamilCalendarEngine(
             val jd = c.sunriseJd + (c.sunsetJd - c.sunriseJd) * i / daylightSamples
             Astro.floorDiv(Astro.yogaSum(jd), NAK_SPAN) % 27 in MALEFIC_YOGA_INDICES
         }
-        return tithiOk && star in MUHURTHAM_STARS && !malefic
+        // Validator Lagna Shuddhi: some rising sign during daylight must have no malefic in its 8th house.
+        return tithiOk && star in MUHURTHAM_STARS && !malefic && lagnaShuddhiInDaylight(lagna, c.sunriseJd, c.sunsetJd)
     }
+
+    /** True when a rising sign that starts in daylight has no Sun, Mars, Saturn, Rahu or Ketu in its 8th house at its start. */
+    private fun lagnaShuddhiInDaylight(lagna: List<LagnaSegment>, sunriseJd: Double, sunsetJd: Double): Boolean =
+        lagna.any { seg ->
+            val jd = Astro.julianDay(seg.start.atZone(zone).toInstant())
+            if (jd < sunriseJd || jd >= sunsetJd) return@any false
+            val eighth = (seg.rasi + 7) % 12
+            listOf(Astro.sunSidereal(jd), Planets.marsSidereal(jd), Planets.saturnSidereal(jd), Planets.rahuSidereal(jd), Planets.ketuSidereal(jd))
+                .none { Astro.floorDiv(it, 30.0) == eighth }
+        }
 
     // ---------------------------------------------------------------- festivals & holidays
 
@@ -577,7 +604,7 @@ class TamilCalendarEngine(
 
     companion object {
         /** Engine output version; bump to force the offline DB to regenerate. */
-        const val VERSION = 11
+        const val VERSION = 13
 
         private const val NAK_SPAN = 360.0 / 27.0
         private const val LAGNA_STEP_DAYS = 10.0 / 1440.0

@@ -55,4 +55,21 @@ class DayRulesTest {
         assertEquals(LocalTime.of(18, 0), h[12].start)
         assertEquals(LocalTime.of(6, 0), h[23].end)
     }
+
+    /** Thara: inclusive count from the birth star to the day's star, mod 9; 2, 4, 6, 8, 9 pass. */
+    @Test fun tharaCountsInclusivelyAndPassesOnlyGoodTharas() {
+        assertEquals(2, DayRules.thara(4, 3))
+        assertTrue(DayRules.tharaPasses(2))
+        assertEquals(1, DayRules.thara(3, 3))
+        assertFalse(DayRules.tharaPasses(1))
+        assertEquals(3, DayRules.thara(5, 3))
+        assertEquals(1, DayRules.thara(8, 8)) // count 1
+        assertEquals(9, DayRules.thara(8, 0)) // count 9, remainder 0 read as 9
+    }
+
+    /** Personal Chandrashtamam uses the engine's offset (5) until the open question is answered. */
+    @Test fun personalChandrashtamamUsesEngineOffset() {
+        assertTrue(DayRules.personalChandrashtamam((4 + DayRules.CHANDRASHTAMA_OFFSET) % 12, 4))
+        assertFalse(DayRules.personalChandrashtamam(4, 4))
+    }
 }

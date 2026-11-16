@@ -36,6 +36,8 @@ class SettingsRepository(private val prefs: SharedPreferences) {
             weatherAnimations = b("weatherAnimations", d.weatherAnimations),
             clock24h = b("clock24h", d.clock24h),
             tamilOnly = b("tamilOnly", d.tamilOnly),
+            janmaStar = prefs.getInt("s_janmaStar", d.janmaStar),
+            janmaRasi = prefs.getInt("s_janmaRasi", d.janmaRasi),
             units = UnitsPref.entries.firstOrNull { it.name == prefs.getString("s_units", null) } ?: d.units,
             convention = ConventionPref.entries.firstOrNull { it.name == prefs.getString("s_convention", null) } ?: d.convention,
             ambient = b("ambient", d.ambient),
@@ -69,6 +71,8 @@ class SettingsRepository(private val prefs: SharedPreferences) {
             .putBoolean("s_weatherAnimations", s.weatherAnimations)
             .putBoolean("s_clock24h", s.clock24h)
             .putBoolean("s_tamilOnly", s.tamilOnly)
+            .putInt("s_janmaStar", s.janmaStar)
+            .putInt("s_janmaRasi", s.janmaRasi)
             .putString("s_units", s.units.name)
             .putString("s_convention", s.convention.name)
             .putBoolean("s_ambient", s.ambient)

@@ -29,6 +29,7 @@ import com.kamalsoft.tamilcalendar.tv.domain.model.AMBIENT_MINUTE_CHOICES
 import com.kamalsoft.tamilcalendar.tv.domain.model.AppSettings
 import com.kamalsoft.tamilcalendar.tv.domain.model.BellStyle
 import com.kamalsoft.tamilcalendar.tv.domain.model.MusicMix
+import com.kamalsoft.tamilcalendar.tv.domain.model.TamilNames
 import com.kamalsoft.tamilcalendar.tv.domain.model.MusicPitch
 import com.kamalsoft.tamilcalendar.tv.domain.model.MusicTempo
 import com.kamalsoft.tamilcalendar.tv.domain.model.Raga
@@ -104,6 +105,14 @@ fun SettingsScreen(
         add(Row.Toggle("தமிழ் மட்டும் · Tamil only", "Hide the English half of labels (weather stays English)", settings.tamilOnly) {
             onUpdate { it.copy(tamilOnly = !it.tamilOnly) }
         })
+        add(Row.Choice(
+            "பிறந்த நட்சத்திரம் · Birth star", "For Thara Balam on Today. Press OK to step through the stars.",
+            if (settings.janmaStar < 0) "—" else TamilNames.nakshatras[settings.janmaStar].let { "${it.first} · ${it.second}" },
+        ) { onUpdate { it.copy(janmaStar = if (it.janmaStar >= 26) -1 else it.janmaStar + 1) } })
+        add(Row.Choice(
+            "பிறந்த ராசி · Birth Rasi", "For your Chandrashtamam on Today. Press OK to step through the Rasis.",
+            if (settings.janmaRasi < 0) "—" else TamilNames.rasis[settings.janmaRasi].let { "${it.first} · ${it.second}" },
+        ) { onUpdate { it.copy(janmaRasi = if (it.janmaRasi >= 11) -1 else it.janmaRasi + 1) } })
         add(Row.Choice("அலகுகள் · Units", "Weather temperature and wind", settings.units.en) {
             onUpdate { it.copy(units = UnitsPref.entries.after(it.units)) }
         })

@@ -103,3 +103,26 @@ for r in rows:
     want = sraardha_expected(date)
     if int(r["sraardha"]) != want: sr_bad.append((r["date"], r["sraardha"], want))
 print(f"sraardha  days={len(rows)}  mismatches={len(sr_bad)} {sr_bad[:4]}")
+
+# Planets for Lagna Shuddhi (Mars) and the Saturn check: sidereal longitude at local sunrise vs Swiss Ephemeris.
+pl_err = {"mars": [], "saturn": []}; pl_rasi = {"mars": 0, "saturn": 0}
+for r in rows:
+    date = dt.date.fromisoformat(r["date"]); when = jd_of(parse_t(date, r["sunrise"]))
+    for name, body, col in [("mars", swe.MARS, "mars"), ("saturn", swe.SATURN, "saturn")]:
+        ours = float(r[col]); theirs = swe.calc_ut(when, body, F | swe.FLG_SIDEREAL)[0][0]
+        d_deg = ((ours - theirs + 180) % 360) - 180
+        pl_err[name].append(d_deg)
+        if int(ours // 30) != int(theirs // 30): pl_rasi[name] += 1
+for name, v in pl_err.items():
+    a = [abs(x) for x in v]
+    print(f"{name:8s} n={len(v)} mean|Δ|={statistics.mean(a):.3f}° max|Δ|={max(a):.3f}°  rasi mismatches={pl_rasi[name]}")
+
+# Darsha (validator C.4): Amavasai (tithi 29) covers most of Madhyahna Kala (3rd fifth), chosen only if the previous day did not.
+def darsha_count(date):
+    sr, ss = rise_set(date); unit = (ss - sr) / 5
+    return sum(1 for i in range(16) if int(elong(sr + (2 + (i + 0.5) / 16) * unit) // 12) == 29)
+def darsha_expected(date):
+    return darsha_count(date) * 2 > 16 and not (darsha_count(date - dt.timedelta(days=1)) * 2 > 16)
+dar_bad = [r["date"] for r in rows if (r["darsha"] == "true") != darsha_expected(dt.date.fromisoformat(r["date"]))]
+print(f"darsha    days={len(rows)} Darsha days={sum(1 for r in rows if r['darsha'] == 'true')} mismatches={len(dar_bad)} {dar_bad[:4]}")
+

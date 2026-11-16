@@ -65,6 +65,21 @@ const KARI_NAAL = [
 
 export const isKariNaal = (monthIndex, day) => KARI_NAAL[monthIndex].includes(day);
 
+// Thara Balam (validator section F): count inclusively from the birth star to the day's star; take mod 9 (0 -> 9).
+export const tharaOf = (dayStar, janmaStar) => {
+  const count = (((dayStar - janmaStar) % 27) + 27) % 27 + 1;
+  const t = count % 9;
+  return t === 0 ? 9 : t;
+};
+/** Passing Tharas: Sampath 2, Kshema 4, Sadhaka 6, Mitra 8, Parama Mitra 9. */
+export const tharaPasses = (t) => [2, 4, 6, 8, 9].includes(t);
+
+/** Offset from the Moon's Rasi to the Chandrashtamam Rasi, as used by the engine. The validator's inclusive count is 7;
+ *  this is an open question (see docs/BACKLOG.md). */
+export const CHANDRASHTAMA_OFFSET = 5;
+/** True when the Moon's Rasi is the Chandrashtamam Rasi of the person's birth Rasi. */
+export const personalChandrashtamam = (moonRasi, janmaRasi) => moonRasi === (janmaRasi + CHANDRASHTAMA_OFFSET) % 12;
+
 // Hora (validator Step 3B.6): 24 horas, 12 of daytime from sunrise and 12 of night from sunset. The first hora of a
 // weekday belongs to that weekday's lord, then Sun, Venus, Mercury, Moon, Saturn, Jupiter, Mars repeats.
 // Times are seconds since midnight; the night wraps past midnight.

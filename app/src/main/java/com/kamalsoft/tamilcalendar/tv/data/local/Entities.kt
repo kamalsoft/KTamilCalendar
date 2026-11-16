@@ -38,6 +38,7 @@ data class DayEntity(
     val sraardhaTithi: Int = -1,
     /** Seconds since midnight of the next Tamil day's sunrise. */
     val nextSunriseSec: Int = 0,
+    val darsha: Boolean = false,
 )
 
 @Entity(tableName = "timing_window", indices = [Index("epochDay")])

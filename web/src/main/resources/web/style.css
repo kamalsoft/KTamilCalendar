@@ -230,6 +230,7 @@ small { color: var(--dim); }
 .rasi-card .nav { width: 36px; height: 36px; font-size: 16px; }
 .center { text-align: center; }
 .chip.good { background: var(--accent); color: var(--bg-deep); }
+.chip.caution { background: var(--amber); color: var(--bg-deep); }
 .chip.neutral { background: var(--surface-hi); }
 .chip.caution { background: var(--amber); color: var(--bg-deep); }
 .chip.chandrashtamam { background: var(--alert); color: #FFFFFF; }
