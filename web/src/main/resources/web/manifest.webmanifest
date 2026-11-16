@@ -1,7 +1,7 @@
 {
-  "name": "Tamizh Panchangam · தமிழ்ப் பஞ்சாங்கம்",
-  "short_name": "Tamizh",
-  "description": "Tamizh Panchangam: tithi, nakshatram, yogam, Rahu Kalam, Rasi Palan and festivals.",
+  "name": "Panchangam · பஞ்சாங்கம்",
+  "short_name": "Panchangam",
+  "description": "Panchangam: Tamil panchangam for your place. Rasi Palan, Muhurtham and festivals.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

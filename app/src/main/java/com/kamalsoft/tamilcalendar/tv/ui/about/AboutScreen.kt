@@ -99,8 +99,9 @@ fun AboutScreen(location: GeoLocation, entryFocus: FocusRequester) {
             verticalArrangement = Arrangement.Center,
         ) {
             Image(painterResource(R.drawable.gopuram), contentDescription = null, modifier = Modifier.size(64.dp))
-            Text("தமிழ் நாள்காட்டி", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = TvColors.Text)
-            Text("Tamil Calendar for Google TV", style = MaterialTheme.typography.bodyMedium, color = TvColors.TextMuted)
+            Text("பஞ்சாங்கம்", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = TvColors.Text)
+            Text("Panchangam · Tamil panchangam for your place", style = MaterialTheme.typography.bodyMedium, color = TvColors.TextMuted)
+            Text("Panchangam, Rasi Palan and Muhurtham", style = MaterialTheme.typography.labelMedium, color = TvColors.TextDim)
             Text(
                 "Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) · Android ${Build.VERSION.RELEASE}",
                 style = MaterialTheme.typography.labelMedium, color = TvColors.TextDim,

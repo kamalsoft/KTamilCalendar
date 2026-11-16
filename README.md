@@ -1,11 +1,11 @@
-# KTamilCalendar — Tamil Calendar for Android TV / Google TV
+# Panchangam — Tamil panchangam for Android TV / Google TV
 
 A 10-foot, D-pad-only Tamil calendar and panchangam. It works fully offline: on first launch the app
 computes a year of data on the device from an astronomical engine and stores it in Room.
 
 ## Demo
 
-![Tamil Calendar demo on Google TV](docs/demo.gif)
+![Panchangam demo on Google TV](docs/demo.gif)
 
 ▶️ **[Full demo video (MP4)](docs/demo.mp4)**: Today with live clock and the day's special dates, the daily sloka,
 weather with animated forecast preview, Month grid, சிறப்பு (special dates), Festivals, Muhurtham, the Rasi chart
@@ -252,7 +252,7 @@ adb shell am start -n com.kamalsoft.tamilcalendar.tv/.MainActivity
 </details>
 
 ### 4. Open it
-The app appears in **Apps** on the Google TV home screen ("தமிழ் நாள்காட்டி"). To keep it on the home row, highlight it,
+The app appears in **Apps** on the Google TV home screen ("பஞ்சாங்கம்"). To keep it on the home row, highlight it,
 long-press **OK** and choose **Move** / **Add to favorites**. On first launch the remote help appears once. It's
 always available again under the **About (ⓘ)** tab.
 

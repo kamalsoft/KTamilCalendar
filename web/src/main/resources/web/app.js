@@ -437,7 +437,7 @@ function printTable(y, m, from, to) {
       <td>${esc(lb(d.panchangam.tithi.nameTa, d.panchangam.tithi.nameEn))}</td><td>${esc(lb(d.panchangam.nakshatram.nameTa, d.panchangam.nakshatram.nameEn))}</td><td>${esc(notes)}</td></tr>`;
   }).join('');
   return `<section class="print-only"><h2>${esc(MONTHS_EN[m])} ${y} · ${esc(MONTHS_TA[m])}</h2>
-    <p>${esc(state.place.nameEn)} · Tamizh Panchangam</p>
+    <p>${esc(state.place.nameEn)} · Panchangam</p>
     <table><thead><tr><th>Date</th><th>Day</th><th>Tamil date</th><th>Tithi</th><th>Nakshatram</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table></section>`;
 }
 
@@ -794,8 +794,8 @@ function viewAbout() {
   return `<h1 class="page">${esc(lb('பற்றி', 'About'))}</h1>
     <section class="about-hero">
       <img src="logo.svg" alt="" width="56" height="56">
-      <div><h2>${esc(lb('தமிழ் பஞ்சாங்கம்', 'Tamizh Panchangam'))}</h2>
-      <p class="small">${esc(lb('பஞ்சாங்கம், ராசி பலன், முகூர்த்தம் — ஒரு இடத்துக்கான கணக்கீடு.', 'Panchangam, Rasi Palan and Muhurtham, calculated for your place.'))}</p>
+      <div><h2>${esc(lb('பஞ்சாங்கம்', 'Panchangam'))}</h2>
+      <p class="small">${esc(lb('உங்கள் ஊருக்கான தமிழ் பஞ்சாங்கம்.', 'Tamil panchangam for your place.'))}</p>
       <small>Version ${esc(APP_VERSION)}</small></div>
     </section>
     <section class="detail install">

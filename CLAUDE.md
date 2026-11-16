@@ -1,6 +1,7 @@
 # KTamilCalendar — project brief for Claude
 
-Tamil calendar + panchangam for **Android TV / Google TV**, also phones/tablets (one adaptive APK).
+Panchangam (பஞ்சாங்கம்): Tamil calendar + panchangam for **Android TV / Google TV**, also phones/tablets (one adaptive APK).
+Brand name, tagline and rebrand status: `docs/REBRAND_PLAN.md`. Package and repo names stay `com.kamalsoft.tamilcalendar` / `KTamilCalendar`.
 Kotlin, Jetpack Compose + `androidx.tv:tv-material`, MVVM, Room, Retrofit. minSdk 21 · targetSdk 30 · compileSdk 34.
 
 ## Rules

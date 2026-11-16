@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Build and install Tamil Calendar on a Google TV / Android TV over Wi-Fi.
+# Build and install Panchangam on a Google TV / Android TV over Wi-Fi.
 #
 # Usage:
 #   tools/install_tv.sh <TV_IP>                       # Android 11–13 TVs (incl. Chromecast with Google TV)
@@ -193,8 +193,8 @@ fi
 ok "Installed $(sh_ dumpsys package "$PACKAGE" | grep -m1 versionName | sed 's/^ *//')"
 
 step "Launching"
-sh_ am start -n "$ACTIVITY" >/dev/null && ok "Tamil Calendar is open on the TV"
+sh_ am start -n "$ACTIVITY" >/dev/null && ok "Panchangam is open on the TV"
 
 printf '\n'
-bold "Done. Find the app later under Apps on the Google TV home screen (தமிழ் நாள்காட்டி)."
+bold "Done. Find the app later under Apps on the Google TV home screen (பஞ்சாங்கம்)."
 printf 'Tip: to update later, run this script again; settings and the chosen location are kept.\n'
