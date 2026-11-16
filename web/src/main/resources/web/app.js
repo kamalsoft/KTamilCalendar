@@ -9,6 +9,7 @@ import { rasiPalan, skyPositions, grahasIn, gochara } from './engine/rasi.js';
 import { CONTENT } from './engine/content.js';
 import { epochDay, isoOf, parseIso, dayOfWeek, dayOfMonth, monthOf, yearOf, fromEpochDay, wallClock, zonedMs, hms, MS_DAY } from './engine/civil.js';
 import { loadSettings, saveSettings } from './app/store.js';
+import { LANGUAGES, translated } from './app/i18n.js';
 import { fetchWeather, sceneOf, labelOf } from './app/weather.js';
 import { slokaFor, speak, stopSpeaking, TempleMusic } from './app/sloka.js';
 import { scheduleReminders, notifyUser, clearReminders } from './app/reminders.js';
@@ -57,7 +58,18 @@ const state = {
 };
 
 // ---------------------------------------------------------------- helpers
-const lb = (ta, en) => (state.settings.tamilOnly ? ta : `${ta} · ${en}`);
+// Label for the chosen language: English only, Tamil or the other language with English, or English when untranslated.
+const pair = (ta, en) => {
+  const lang = state.settings.language;
+  if (lang === 'en') return [en, ''];
+  if (lang === 'ta-en' || !lang) return [ta, en];
+  return [translated(lang, ta) ?? en, en];
+};
+const lb = (ta, en) => {
+  const [big, small] = pair(ta, en);
+  if (big === small || !small) return big;
+  return state.settings.tamilOnly && (!state.settings.language || state.settings.language === 'ta-en') ? big : `${big} · ${small}`;
+};
 const lbo = (o) => lb(o.ta, o.en);
 const tzNow = () => wallClock(Date.now(), state.place.zoneId);
 const todayEpoch = () => tzNow().day;
@@ -122,7 +134,7 @@ function daysFrom(start, count) {
 function renderTabs() {
   const hidden = new Set(state.settings.hiddenSections);
   $('tabs').innerHTML = TABS.filter(([id]) => ALWAYS_SHOWN.has(id) || !hidden.has(id)).map(([id, ta, en]) =>
-    `<button class="tab${state.tab === id ? ' on' : ''}" data-act="tab" data-tab="${id}">${esc(ta)}${state.settings.tamilOnly ? '' : `<small>${esc(en)}</small>`}</button>`).join('');
+    `<button class="tab${state.tab === id ? ' on' : ''}" data-act="tab" data-tab="${id}">${esc(pair(ta, en)[0])}${state.settings.tamilOnly || pair(ta, en)[1] === '' ? '' : `<small>${esc(pair(ta, en)[1])}</small>`}</button>`).join('');
   $('place-chip').textContent = state.place.nameEn + (state.place.countryCode ? '' : '');
 }
 
@@ -414,7 +426,7 @@ function viewMonth() {
   const flip = state.flipDir ? ` flip-${state.flipDir > 0 ? 'next' : 'prev'}` : '';
   state.flipDir = 0;
   return `<div class="month-wrap${page ? ' page' : ''}${flip}"><div class="bar"><button class="nav" data-act="month" data-m="-1" aria-label="Previous month">‹</button>
-    <h1>${esc(MONTHS_TA[m])} ${y} · ${MONTHS_EN[m]}</h1><button class="nav" data-act="month" data-m="1" aria-label="Next month">›</button></div>
+    <h1>${esc(pair(MONTHS_TA[m], MONTHS_EN[m])[0])} ${y} · ${MONTHS_EN[m]}</h1><button class="nav" data-act="month" data-m="1" aria-label="Next month">›</button></div>
     <p class="month-sub">${esc(tamilMonths)}</p>
     <button class="today" data-act="month-today">${lb('இன்று', 'Today')}</button>
     <div class="row no-print"><button class="pill" data-act="month-view" aria-pressed="${page}">${page ? esc(lb('கட்டம்', 'Grid')) : esc(lb('தாள்', 'Page'))}</button><button class="pill" data-act="print-month">🖨 ${esc(lb('அச்சிடு', 'Print month'))}</button></div>
@@ -738,6 +750,7 @@ function viewSettings() {
     <div class="settings-grid">
     <section class="group"><h3>${esc(lb('காட்சி', 'Display'))}</h3>
       ${check('weather', lb('வானிலை', 'Weather'))}${check('animations', lb('அனிமேஷன்', 'Animations'))}${check('weatherAnimations', lb('வானிலை அனிமேஷன்', 'Weather animations'))}
+      ${select('language', lb('மொழி', 'Language'), LANGUAGES)}
       ${check('clock24h', lb('24 மணி நேரம்', '24-hour clock'))}${check('tamilOnly', lb('தமிழ் மட்டும்', 'Tamil only'))}
       ${select('units', lb('அளவுகள்', 'Units'), [['AUTO', lb('தானியங்கி', 'Auto')], ['METRIC', '°C · km/h'], ['IMPERIAL', '°F · mph']])}
     </section>
@@ -834,6 +847,10 @@ function viewAbout() {
         <li>Hora: 12 h ÷ 12 = 60 min each. The first Sunday hora is the Sun, 06:00 to 07:00, then Venus.</li>
         <li>Thara: day star and birth star 10 apart → count 11 → 11 mod 9 = 2 → Sampath (a good Thara).</li>
       </ul>
+    </section>
+    <section class="detail">
+      <h3>${esc(lb('தனியுரிமை & விதிமுறைகள்', 'Privacy and terms'))}</h3>
+      <p><a href="privacy.html">${esc(lb('தனியுரிமைக் கொள்கை', 'Privacy Policy'))}</a> · <a href="terms.html">${esc(lb('விதிமுறைகள்', 'Terms and Conditions'))}</a></p>
     </section>
     <section class="detail">
       <h3>${esc(lb('தொடர்புடைய தளம்', 'Related site'))}</h3>

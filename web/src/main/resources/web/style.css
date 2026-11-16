@@ -12,7 +12,7 @@
 html, body { margin: 0; background: var(--bg); color: var(--text); }
 body { background: var(--bg-grad, var(--bg)) fixed; }
 body {
-  font-family: "Noto Sans Tamil", system-ui, -apple-system, sans-serif;
+  font-family: "Noto Sans Tamil", "Noto Sans Telugu", "Noto Sans Malayalam", "Noto Sans Kannada", "Noto Sans Devanagari", system-ui, -apple-system, sans-serif;
   min-height: 100vh;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   -webkit-text-size-adjust: 100%;

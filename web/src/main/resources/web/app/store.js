@@ -22,6 +22,7 @@ export const DEFAULTS = {
   weatherAnimations: true,
   clock24h: false,
   tamilOnly: false,
+  language: 'ta-en',                    // ta-en | en | te-en | ml-en | kn-en | hi-en
   units: 'AUTO',                        // AUTO | IMPERIAL | METRIC
   convention: 'AUTO',                   // AUTO | TRADITIONAL_6AM | SUNRISE_BASED
   ambient: true,

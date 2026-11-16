@@ -49,8 +49,9 @@ Sraardham, confirm the date and time with a qualified temple priest. The About p
 example.
 
 Privacy: there is no account, no ads and no analytics. Your settings and places stay on the device. The app contacts
-two services: Open-Meteo for the weather and place search, and ipapi.co for an approximate location when you do not
-allow location.
+Open-Meteo for the weather and place search. On Android TV it uses ipapi.co for an approximate location when location is
+not allowed. The web app uses api-bdc.net for the town name when you choose to use your location. Full policy:
+https://kamalsoft.github.io/KTamilCalendar/privacy.html (address to be confirmed after the Pages deploy).
 
 ## What's new (version 1.0.0)
 
@@ -66,13 +67,15 @@ nakshatram
 ## Category and contact
 
 - Category: Lifestyle (or Reference, if the store offers it for the TV form factor).
-- Contact details and the privacy policy URL: to be added by the developer. The privacy text above can be used as the
-  policy until a separate page is written.
+- Contact details: to be added by the developer.
+- Privacy policy URL: https://kamalsoft.github.io/KTamilCalendar/privacy.html (drafted in `web/src/main/resources/web/privacy.html`).
 
 ## Data safety answers (for the Play Console form)
 
-- Data collected: approximate location (on the device, and as a city-level lookup through ipapi.co). Data is not
-  shared with third parties, except that the location is sent to ipapi.co for the lookup.
+- Data collected: approximate location. On TV it is read on the device, and an IP-based lookup through ipapi.co is used
+  when location is not allowed. On the web it is sent to api-bdc.net when you choose your location. Weather requests
+  send the place's coordinates to Open-Meteo.
+- Data shared with third parties: only the location and search requests above, to those services.
 - Data stored on the device only: settings, places and birth details.
 - Data encrypted in transit: yes. `network_security_config.xml` blocks cleartext traffic, so every call is HTTPS.
 - Users can request deletion: uninstalling the app deletes its data.
