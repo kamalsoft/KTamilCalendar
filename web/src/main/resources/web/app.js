@@ -2,7 +2,7 @@
 import { PLACES, placeLabel, localHolidayRegions, timingConvention, usesImperialUnits } from './engine/locations.js';
 import { ICON, TAG_ORDER, RELIGION_ORDER } from './engine/icons.js';
 import { tithiNamesOf } from './engine/engine.js';
-import { ayanamOfSun, ayanamFacts, ayanamYear, ayanamChanges, sunRasiOn, AYANAM_NAMES } from './engine/ayanam.js';
+import { ayanamOfSun, ayanamFacts, ayanamYearEffective, ayanamChanges, sunRasiOn, AYANAM_NAMES } from './engine/ayanam.js';
 import { soolam, abhijit, karanaName, isVishti, isKariNaal, hora, tharaOf, tharaPasses, personalChandrashtamam, moonPhase, moonPhaseInfo } from './engine/rules.js';
 import { monthDays, importantDates, applying } from './engine/calendar.js';
 import { rasiPalan, skyPositions, grahasIn, gochara } from './engine/rasi.js';
@@ -19,7 +19,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(
 const TABS = [
   ['today', 'இன்று', 'Today'], ['month', 'மாதம்', 'Month'], ['festivals', 'விழாக்கள்', 'Festivals'],
   ['important', 'முக்கிய நாட்கள்', 'Important'], ['muhurtham', 'சுப முகூர்த்தம்', 'Muhurtham'], ['rasi', 'ராசி', 'Rasi'], ['location', 'இடம்', 'Location'],
-  ['learn', 'அறிவோம்', 'Learn'],
+  ['learn', 'நிலவு · சூரியன்', 'Moon & Sun'],
   ['theme', 'தீம்', 'Theme'], ['settings', 'அமைப்புகள்', 'Settings'], ['about', 'பற்றி', 'About'],
 ];
 const ALWAYS_SHOWN = new Set(['today', 'location', 'theme', 'settings', 'about']);
@@ -1282,7 +1282,7 @@ function viewLearn() {
   const today = state.day || todayEpoch();
   const zone = state.place.zoneId;
   const year = yearOf(today);
-  const days = ayanamYear(year, zone);
+  const days = ayanamYearEffective(year, zone, state.place.latitude, state.place.longitude);
   // Exact crossings, with the day each one counts from (after sunset, the next sunrise).
   const exact = ayanamChanges(year, zone, state.place.latitude, state.place.longitude);
   const now = ayanamFacts(today, state.place);
@@ -1318,7 +1318,7 @@ function viewLearn() {
     ['🔁', lb('சங்கராந்தி', 'Sankranti'), lb('சூரியன் ஒரு ராசியிலிருந்து அடுத்த ராசிக்குள் நுழையும் நாள்.', 'The day the Sun enters a new sign. Uttarayanam starts at Makara Sankranti.')],
     ['🌑', lb('அமாவாசை', 'Amavasai'), lb('சந்திரன் சூரியனுடன் ஒரே திசையில் இருக்கும் நாள். நிலா தெரியாது.', 'New Moon: the Moon is in line with the Sun, so we see no lit face.')],
   ].map(([icon, label, text]) => `<div class="gloss-item"><span>${icon}</span><div><b>${esc(label)}</b><p>${esc(text)}</p></div></div>`).join('');
-  return `<h1 class="page">${esc(lb('அறிவோம் · நிலவு, சூரியன், அயனம்', 'Learn · Moon, Sun and Ayanam'))}</h1>
+  return `<h1 class="page">${esc(lb('நிலவு & சூரியன் · அயனம்', 'Moon and Sun · Ayanam'))}</h1>
     <p class="page-sub">${esc(lb('நிலவும் சூரியனும் வானில் நகர்வதால் நாட்காட்டி எப்படி மாறுகிறது என்பதை எளிமையாகப் பாருங்கள்.', 'See, in simple steps, how the Moon and the Sun move across the sky and change the calendar.'))}</p>
 
     <section class="learn-sec">
@@ -1357,7 +1357,7 @@ function viewLearn() {
 
     <section class="learn-sec">
       <h2>${esc(lb('ஆண்டு வரைபடம்', 'Year map'))}</h2>
-      <p class="small"><i class="ay-cell ay-u"></i> ${esc(lb('உத்தராயணம்', 'Uttarayanam'))} &nbsp; <i class="ay-cell ay-d"></i> ${esc(lb('தட்சிணாயனம்', 'Dakshinayanam'))} &nbsp; <i class="ay-cell ay-u today"></i> ${esc(lb('இன்று', 'Today'))}</p>
+      <p class="small"><i class="ay-cell ay-u"></i> ${esc(lb('உத்தராயணம்', 'Uttarayanam'))} &nbsp; <i class="ay-cell ay-d"></i> ${esc(lb('தட்சிணாயனம்', 'Dakshinayanam'))} &nbsp; <i class="ay-cell today"></i> ${esc(lb('இன்று', 'Today'))}</p>
       <div class="year-map">${monthMaps}</div>
     </section>
 

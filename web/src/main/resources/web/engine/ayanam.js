@@ -90,3 +90,20 @@ export function ayanamChanges(year, zone, latitude, longitude) {
 
 /** Sidereal Rasi (0 Mesham .. 11 Meenam) of the Sun at local noon of an epoch day. */
 export const sunRasiOn = (epochDay, zone) => Math.floor(A.sunSidereal(noonJd(epochDay, zone)) / 30) % 12;
+
+/**
+ * Ayanam kind for every day of a year, using the same start-day rule as the change list: each change takes effect
+ * on its counts-from day (the next sunrise when the crossing is after sunset). Before the first change of the year,
+ * the previous ayanam continues, which is the opposite of the first change.
+ */
+export function ayanamYearEffective(year, zone, latitude, longitude) {
+  const changes = ayanamChanges(year, zone, latitude, longitude);
+  const out = [];
+  let kind = changes.length ? (changes[0].kind === 'UTTARAYANAM' ? 'DAKSHINAYANAM' : 'UTTARAYANAM') : ayanamOfSun(A.sunSidereal(noonJd(epochDay(year, 1, 1), zone)));
+  let next = 0;
+  for (let e = epochDay(year, 1, 1); e <= epochDay(year, 12, 31); e++) {
+    while (next < changes.length && changes[next].effectiveDay <= e) kind = changes[next++].kind;
+    out.push([e, kind]);
+  }
+  return out;
+}
