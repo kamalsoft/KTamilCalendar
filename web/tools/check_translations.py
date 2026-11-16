@@ -25,6 +25,37 @@ def content_pairs():
     return dict(json.loads(out))
 
 
+TAMIL = re.compile(r"[\u0B80-\u0BFF]")
+ASCII_WORD = re.compile(r"[A-Za-z]")
+# Pairs written next to each other in the source: 'tamil', 'english' (festival rules, holidays, labels) and
+# object fields such as titleTa: '...', titleEn: '...'.
+STRING = re.compile(r"'((?:[^'\\\n]|\\.)*)'|\"((?:[^\"\\\n]|\\.)*)\"")
+BETWEEN = re.compile(r"\s*,\s*$")
+OBJECT_PAIR = re.compile(r"\b\w*Ta\s*:\s*'([^'\n]*)'\s*,\s*\w*En\s*:\s*'((?:[^'\\\n]|\\.)*)'")
+
+
+def source_pairs():
+    """Tamil text and its English, as written in the web source files (not the sloka verses).
+
+    Two string literals separated only by a comma are a pair ('tamil', 'english'), whatever quotes they use. Object fields
+    such as titleTa: '...', titleEn: '...' are read separately.
+    """
+    files = [ROOT / "app.js", *sorted((ROOT / "app").glob("*.js")), *sorted((ROOT / "engine").glob("*.js"))]
+    found = {}
+    for path in files:
+        if path.name in ("content.js", "icons.js"):
+            continue
+        text = path.read_text(encoding="utf-8")
+        tokens = [(m.start(), m.end(), m.group(1) if m.group(1) is not None else m.group(2)) for m in STRING.finditer(text)]
+        for (_, end_a, ta), (start_b, _, en) in zip(tokens, tokens[1:]):
+            if BETWEEN.match(text[end_a:start_b]) and TAMIL.search(ta) and ASCII_WORD.search(en) and not TAMIL.search(en) and "\\n" not in ta:
+                found.setdefault(ta, en)
+        for ta, en in OBJECT_PAIR.findall(text):
+            if TAMIL.search(ta) and ASCII_WORD.search(en) and not TAMIL.search(en) and "\\n" not in ta:
+                found.setdefault(ta, en)
+    return found
+
+
 def tamil_labels():
     """Every Tamil key the app looks up, with the English it is paired with: labels in the code, then the content names."""
     sources = [ROOT / "app.js", *sorted((ROOT / "app").glob("*.js"))]
@@ -40,6 +71,22 @@ def tamil_labels():
                 found.setdefault(word, word)
     for ta, en in content_pairs().items():
         found.setdefault(ta, en)
+    for ta, en in source_pairs().items():
+        found.setdefault(ta, en)
+    # Words built in code from pieces, so no literal pair exists in the source.
+    for ta, en in [("பின்னிரவு", "Late night"), ("காலை", "Morning"), ("மதியம்", "Afternoon"), ("மாலை", "Evening"), ("இரவு", "Night"),
+                   ("சுப முகூர்த்தம் (வளர்பிறை)", "Subha Muhurtham (Shukla)"), ("சுப முகூர்த்தம் (தேய்பிறை)", "Subha Muhurtham (Krishna)"),
+                   ("கரி நாள்", "Kari Naal"), ("சந்திர ராசியிலிருந்து கோசாரம்", "Rule-based gochara from current planetary transits"),
+                   ("தமிழ் · English", "Tamil · English")]:
+        found.setdefault(ta, en)
+    # Short labels defined as lists or maps in the source: weekdays (Su, Mo ...) and the grahas (Sun, Moon ...).
+    app = (ROOT / "app.js").read_text(encoding="utf-8")
+    short = re.search(r"const WEEKDAYS_TA_SHORT = \[(.*?)\];", app).group(1)
+    for ta, en in zip(re.findall(r"'([^']+)'", short), ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]):
+        found.setdefault(ta, en)
+    grahas = (ROOT / "engine/rasi.js").read_text(encoding="utf-8")
+    for key, ta in re.findall(r"(\w+): '([^']+)'", re.search(r"const GRAHA_LABELS = \{(.*?)\};", grahas).group(1)):
+        found.setdefault(ta, key.capitalize())
     return {ta: en for ta, en in found.items() if any(ord(c) > 127 for c in ta)}
 
 

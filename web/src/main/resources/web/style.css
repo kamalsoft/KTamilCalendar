@@ -622,3 +622,6 @@ a.pill { display: inline-block; text-decoration: none; }
 .wx-range { position: relative; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .1); }
 .wx-range i { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: linear-gradient(90deg, #6ec6ff, var(--accent)); }
 @media (max-width: 600px) { .wx-dcond { display: none; } .wx-day { grid-template-columns: 52px minmax(0, 1fr) 80px; } .wx-day .wx-range { grid-column: 2; grid-row: 2; } }
+
+/* ---- Settings: one panel at a time, full width. */
+.settings-panel { display: flex; flex-direction: column; gap: 14px; }

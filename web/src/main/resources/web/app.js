@@ -31,6 +31,7 @@ const WEEKDAYS_TA_SHORT = ['ஞா', 'தி', 'செ', 'பு', 'வி', '�
 const state = {
   settings: loadSettings(),
   tab: 'today',
+  settingsPanel: 'location',
   watermarkCustom: null, // the uploaded image as a data URL, if any
   watermarkError: '',
   datesPanel: 'important',  // important | festivals | muhurtham
@@ -204,8 +205,8 @@ function viewToday() {
   const chips = weekdayFlag + importantDates(d).map((x) => `<li class="chip${x.holiday ? ' holiday' : ''}">${esc(lbo(x.title))}</li>`).join('');
   const hero = `<section class="hero">
     <p class="hero-week">${esc(lb(...CONTENT.names.weekdays[d.weekdayIndex]))}</p>
-    <h2>${esc(lb(CONTENT.names.months[d.tamilDate.monthIndex][0] + ' ' + d.tamilDate.day, CONTENT.names.months[d.tamilDate.monthIndex][1] + ' ' + d.tamilDate.day))}</h2>
-    <p class="hero-year">${esc(lb(CONTENT.names.years[d.tamilDate.yearCycleIndex][0] + ' வருடம்', CONTENT.names.years[d.tamilDate.yearCycleIndex][1] + ' year'))}</p>
+    <h2>${esc(lb(CONTENT.names.months[d.tamilDate.monthIndex][0], CONTENT.names.months[d.tamilDate.monthIndex][1])) + ' ' + d.tamilDate.day}</h2>
+    <p class="hero-year">${esc(lb(CONTENT.names.years[d.tamilDate.yearCycleIndex][0], CONTENT.names.years[d.tamilDate.yearCycleIndex][1])) + ' ' + esc(lb('வருடம்', 'year'))}</p>
     ${d.holiday || chips ? `<ul class="chips">${d.holiday ? `<li class="chip holiday">${esc(lb('விடுமுறை', 'Holiday'))}</li>` : ''}${chips}</ul>` : ''}
   </section>`;
   let nowCard = '';
@@ -242,7 +243,7 @@ function viewToday() {
     ['☾', lb('சந்திர ராசி', 'Moon sign'), esc(lb(...CONTENT.names.rasis[p.moonRasi]))],
     ['⬆', lb('லக்னம்', 'Lagnam'), lagnaValue],
     ['⚑', lb('சூலம்', 'Soolam'), `${esc(lb(...sool.direction))} <small>${esc(lb(sool.remedyTa, sool.remedyEn))}</small>`],
-    ['☯', lb('கரணம்', 'Karanam'), `${esc(lb(karanaTa, karanaEn))}${isVishti(p.karanam) ? ' <small>· Vishti</small>' : ''}${isKariNaal(d.tamilDate.monthIndex, d.tamilDate.day) ? ' <small>· கரி நாள் · Kari Naal</small>' : ''}`],
+    ['☯', lb('கரணம்', 'Karanam'), `${esc(lb(karanaTa, karanaEn))}${isVishti(p.karanam) ? ' <small>· Vishti</small>' : ''}${isKariNaal(d.tamilDate.monthIndex, d.tamilDate.day) ? ` <small>· ${esc(lb('கரி நாள்', 'Kari Naal'))}</small>` : ''}`],
     ['✺', lb('சிராத்தம்', 'Sraardham'), sraardha == null ? '—' : esc(lb(...tithiNamesOf(sraardha)))],
     ['✧', lb('அபிஜித்', 'Abhijit'), `${timeOf(hms(abhijitFrom))} – ${timeOf(hms(abhijitTo))}`],
   ];
@@ -462,7 +463,7 @@ function viewMonth() {
     <div class="row no-print"><button class="pill" data-act="month-view" aria-pressed="${page}">${page ? esc(lb('கட்டம்', 'Grid')) : esc(lb('தாள்', 'Page'))}</button><button class="pill" data-act="print-month">🖨 ${esc(lb('அச்சிடு', 'Print month'))}</button></div>
     <div class="weekdays">${weekdays}</div><div class="grid">${cells.join('')}</div>
     ${printTable(y, m, from, to)}
-    <div class="detail small-detail">${sel ? `<h2>${esc(dateLong(sel.epochDay))}</h2><p class="ta-date">${esc(lb(CONTENT.names.months[sel.tamilDate.monthIndex][0] + ' ' + sel.tamilDate.day, CONTENT.names.months[sel.tamilDate.monthIndex][1] + ' ' + sel.tamilDate.day))}</p>
+    <div class="detail small-detail">${sel ? `<h2>${esc(dateLong(sel.epochDay))}</h2><p class="ta-date">${esc(lb(CONTENT.names.months[sel.tamilDate.monthIndex][0], CONTENT.names.months[sel.tamilDate.monthIndex][1])) + ' ' + sel.tamilDate.day}</p>
       ${moonPanel(sel)}
       <p class="small">${esc(lb('சூலம்', 'Soolam'))}: ${esc(lb(...soolam(sel.weekdayIndex).direction))} · ${esc(lb('சிராத்தம்', 'Sraardham'))}: ${sel.panchangam.sraardhaTithi == null ? '—' : esc(lb(...tithiNamesOf(sel.panchangam.sraardhaTithi)))}</p>
       <ul class="chips">${importantDates(sel).map((x) => `<li class="chip${x.holiday ? ' holiday' : ''}">${esc(lbo(x.title))}</li>`).join('') || `<li class="small">${esc(lb('சிறப்பு நாள் இல்லை', 'No observance'))}</li>`}</ul>
@@ -475,7 +476,7 @@ function printTable(y, m, from, to) {
   const rows = daysBetween(from, to).filter((d) => monthOf(d.epochDay) === m + 1).map((d) => {
     const notes = importantDates(d).map((x) => lbo(x.title)).join('; ');
     return `<tr><td>${esc(dateShort(isoOf(d.epochDay)))}</td><td>${esc(lb(...CONTENT.names.weekdays[d.weekdayIndex]))}</td>
-      <td>${esc(lb(CONTENT.names.months[d.tamilDate.monthIndex][0] + ' ' + d.tamilDate.day, CONTENT.names.months[d.tamilDate.monthIndex][1] + ' ' + d.tamilDate.day))}</td>
+      <td>${esc(lb(CONTENT.names.months[d.tamilDate.monthIndex][0], CONTENT.names.months[d.tamilDate.monthIndex][1])) + ' ' + d.tamilDate.day}</td>
       <td>${esc(lb(d.panchangam.tithi.nameTa, d.panchangam.tithi.nameEn))}</td><td>${esc(lb(d.panchangam.nakshatram.nameTa, d.panchangam.nakshatram.nameEn))}</td><td>${esc(notes)}</td></tr>`;
   }).join('');
   return `<section class="print-only"><h2>${esc(lb(MONTHS_TA[m], MONTHS_EN[m]))} ${y}</h2>
@@ -669,8 +670,8 @@ function rasiModal(d, p, sky) {
   const g = gochara(p.rasi, sky);
   const tabs = [
     { ta: 'இன்று', en: 'Today', text: [p.messageTa, p.messageEn], outlook: p.outlook, note: '' },
-    { ta: 'மாதம்', en: 'Month', text: [g.month.ta, g.month.en], outlook: g.month.outlook, note: 'சந்திர ராசியிலிருந்து கோசாரம் · Rule-based gochara from current planetary transits' },
-    { ta: 'ஆண்டு', en: 'Year', text: [g.year.ta, g.year.en], outlook: g.year.outlook, note: 'சந்திர ராசியிலிருந்து கோசாரம் · Rule-based gochara from current planetary transits' },
+    { ta: 'மாதம்', en: 'Month', text: [g.month.ta, g.month.en], outlook: g.month.outlook, note: lb('சந்திர ராசியிலிருந்து கோசாரம்', 'Rule-based gochara from current planetary transits') },
+    { ta: 'ஆண்டு', en: 'Year', text: [g.year.ta, g.year.en], outlook: g.year.outlook, note: lb('சந்திர ராசியிலிருந்து கோசாரம்', 'Rule-based gochara from current planetary transits') },
   ][state.rasiTab];
   const tabButtons = [0, 1, 2].map((t) => {
     const label = lb(...[['இன்று', 'Today'], ['மாதம்', 'Month'], ['ஆண்டு', 'Year']][t]);
@@ -692,7 +693,7 @@ const outlookWords = (o) => ({ GOOD: ['நன்மை', 'Good'], NEUTRAL: ['ச
 // ---- location
 function locationSection() {
   const s = state.settings;
-  const presets = PLACES.map((p) => `<button class="place-card${!s.place.custom && s.place.preset === p.key ? ' on' : ''}" data-act="place-preset" data-key="${p.key}"><b>${esc(lb(p.nameTa, p.nameEn))}</b><small>${esc(p.zoneId)}</small></button>`).join('');
+  const presets = PLACES.map((p) => `<button class="place-card${!s.place.custom && s.place.preset === p.key ? ' on' : ''}" data-act="place-preset" data-key="${p.key}"><b>${esc(p.nameEn)}</b><small>${esc(p.zoneId)}</small></button>`).join('');
   const recent = s.recentPlaces.map((p, i) => `<button class="pill" data-act="place-recent" data-i="${i}">${esc(p.nameEn)}</button>`).join('');
   const pinned = s.pinnedPlaces.map((p) => `<li class="event pin-row"><span><b>${esc(p.label)}</b><br><small>${esc(lb('ஆஃப்லைன் ஆண்டுகள்', 'Offline years'))}: ${packYears.map((y) => `<button class="pill small-pill" data-act="pack-save" data-year="${y}" data-id="${esc(p.id)}">${y}</button>`).join(' ')}</small></span>
       <span class="pin-actions"><button class="pill" data-act="pin-open" data-id="${esc(p.id)}">${esc(lb('திற', 'Open'))}</button><button class="pill" data-act="pin-remove" data-id="${esc(p.id)}">✕</button></span></li>`).join('');
@@ -700,7 +701,7 @@ function locationSection() {
   const results = state.search.results.map((r, i) => `<li><button class="result" data-act="place-result" data-i="${i}"><b>${esc(r.name)}</b><small>${esc([r.admin1, r.country].filter(Boolean).join(', '))}</small></button></li>`).join('');
   return `<section class="group" id="location"><h3>${esc(lb('இடம்', 'Location'))}</h3>
     <p class="small">${esc(lb('எல்லாக் கணக்குகளும் இங்கே தேர்ந்தெடுக்கும் இடத்திற்கு.', 'Every calculation uses the place you choose here.'))}</p>
-    <div class="current-place"><span>${esc(lb('தற்போதைய இடம்', 'Current place'))}</span><b>${esc(placeLabel(state.settings.language === 'en' ? { ...state.place, nameTa: state.place.nameEn } : state.place))}</b><small>${esc(state.place.zoneId)}</small></div>
+    <div class="current-place"><span>${esc(lb('தற்போதைய இடம்', 'Current place'))}</span><b>${esc(placeLabel({ ...state.place, nameTa: state.place.nameEn }))}</b><small>${esc(state.place.zoneId)}</small></div>
     <h3 class="sub-h">${esc(lb('இடங்கள்', 'Places'))}</h3>
     <div class="place-grid">${presets}</div>
     <div class="row"><button class="pill" data-act="place-auto">📍 ${esc(lb('என் இடம்', 'Use my location'))}</button></div>
@@ -734,7 +735,7 @@ function compareHtml() {
     [lb('நட்சத்திரம்', 'Nakshatram'), lb(a.panchangam.nakshatram.nameTa, a.panchangam.nakshatram.nameEn), lb(b.panchangam.nakshatram.nameTa, b.panchangam.nakshatram.nameEn)],
     [lb('ராகு காலம்', 'Rahu Kalam'), rahu(a), rahu(b)],
   ];
-  const opts = PLACES.filter((p) => p.key !== here).map((p) => `<option value="${p.key}"${p.key === other.key ? ' selected' : ''}>${esc(lb(p.nameTa, p.nameEn))}</option>`).join('');
+  const opts = PLACES.filter((p) => p.key !== here).map((p) => `<option value="${p.key}"${p.key === other.key ? ' selected' : ''}>${esc(p.nameEn)}</option>`).join('');
   return `<section class="group compare">
     <h3>${esc(lb('ஒப்பீடு', 'Compare places'))}</h3>
     <div class="row wrap">
@@ -783,11 +784,10 @@ function viewSettings() {
   const tabs = TABS.filter(([id]) => !ALWAYS_SHOWN.has(id)).map(([id, ta, en]) => `<label class="toggle"><input type="checkbox" data-section="${id}" ${s.hiddenSections.includes(id) ? '' : 'checked'}> ${esc(lb(ta, en))}</label>`).join('');
   const m = s.music;
   const musicSel = (k, label, opts) => `<label class="field">${esc(label)} <select data-music="${k}">${opts.map(([v, t]) => `<option value="${v}"${m[k] === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
-  return `<h1 class="page">${esc(lb('அமைப்புகள்', 'Settings'))}</h1>
-    <p class="page-sub">${esc(lb('மாற்றங்கள் உடனே நடைமுறைக்கு வந்து சேமிக்கப்படும்.', 'Changes apply straight away and are saved on this device.'))}</p>
-    ${locationSection()}
-    ${themeSection()}
-    <div class="settings-grid">
+  const panels = [
+    ['location', 'இடம்', 'Location', locationSection()],
+    ['theme', 'தீம் & தோற்றம்', 'Theme & skin', themeSection()],
+    ['display', 'காட்சி', 'Display', `
     <section class="group"><h3>${esc(lb('காட்சி', 'Display'))}</h3>
       ${check('weather', lb('வானிலை', 'Weather'))}${check('animations', lb('அனிமேஷன்', 'Animations'))}${check('weatherAnimations', lb('வானிலை அனிமேஷன்', 'Weather animations'))}
       ${select('language', lb('மொழி', 'Language'), LANGUAGES)}
@@ -801,6 +801,8 @@ function viewSettings() {
       ${check('clock24h', lb('24 மணி நேரம்', '24-hour clock'))}${check('tamilOnly', lb('தமிழ் மட்டும்', 'Tamil only'))}
       ${select('units', lb('அளவுகள்', 'Units'), [['AUTO', lb('தானியங்கி', 'Auto')], ['METRIC', '°C · km/h'], ['IMPERIAL', '°F · mph']])}
     </section>
+`],
+    ['calendar', 'நாட்காட்டி', 'Calendar', `
     <section class="group"><h3>${esc(lb('நாட்காட்டி', 'Calendar'))}</h3>
       <h3>${esc(lb('பிறப்பு விவரம்', 'Birth details'))}</h3>
       <p class="small">${esc(lb('தாரா பலன் மற்றும் உங்கள் சந்திராஷ்டமத்திற்கு. இந்த சாதனத்தில் மட்டும் சேமிக்கப்படும்.', 'For Thara Balam and your Chandrashtamam on Today. Stored on this device only.'))}</p>
@@ -812,7 +814,11 @@ function viewSettings() {
       ${check('tamilNaduHolidays', lb('தமிழ்நாடு அரசு விடுமுறைகள்', 'Tamil Nadu govt. holidays'))}
       <p class="small">${esc(lb('மதங்கள் (இந்து தவிர்த்து)', 'Faiths (other than Hindu)'))}</p>${faiths}
     </section>
+`],
+    ['sections', 'பார்க்கும் பகுதிகள்', 'Sections shown', `
     <section class="group"><h3>${esc(lb('பார்க்கும் பகுதிகள்', 'Sections shown'))}</h3>${tabs}</section>
+`],
+    ['sloka', 'ஆம்பியன்ட் & ஸ்லோகம்', 'Ambient & sloka', `
     <section class="group"><h3>${esc(lb('ஆம்பியன்ட் & ஸ்லோகம்', 'Ambient & sloka'))}</h3>
       ${check('ambient', lb('ஓய்வு நேர கடிகாரம்', 'Ambient clock when idle'))}
       ${select('ambientMinutes', lb('எத்தனை நிமிடங்களுக்குப் பின்', 'After how many minutes'), [[1, '1'], [2, '2'], [5, '5'], [10, '10']])}
@@ -824,13 +830,25 @@ function viewSettings() {
       ${musicSel('bell', lb('மணி', 'Bell'), [['OFF', lb('இல்லை', 'Off')], ['SOFT', lb('மெல்லிய', 'Soft')], ['NORMAL', lb('சாதாரண', 'Normal')], ['PROMINENT', lb('தெளிவான', 'Prominent')]])}
       ${musicSel('pitch', lb('சுருதி', 'Pitch'), [['C', 'C'], ['D', 'D'], ['E', 'E'], ['F', 'F'], ['G', 'G']])}
     </section>
+`],
+    ['reminders', 'நினைவூட்டல்கள்', 'Reminders', `
     <section class="group"><h3>${esc(lb('நினைவூட்டல்கள்', 'Reminders'))}</h3>
       ${check('rahuReminder', lb('ராகு காலத்திற்கு 10 நிமிடம் முன்', '10 minutes before Rahu Kalam'))}
       ${check('nallaReminder', lb('நல்ல நேரம் தொடங்கும்போது', 'When Nalla Neram begins'))}
       ${reminderNote()}
     </section>
+`],
+    ['data', 'தரவு', 'Data', `
     <section class="group"><h3>${esc(lb('தரவு', 'Data'))}</h3><button class="pill" data-act="reset-settings">${esc(lb('இயல்புநிலைக்கு மீட்டமை', 'Reset to defaults'))}</button></section>
-    </div>`;
+`],
+  ];
+  const current = panels.find(([id]) => id === state.settingsPanel) || panels[0];
+  const pills = panels.map(([id, ta, en]) => `<button class="pill${current[0] === id ? ' on' : ''}" role="tab" aria-selected="${current[0] === id}" data-act="settings-panel" data-p="${id}">${pairTag(ta, en)}</button>`).join('');
+  return `<h1 class="page">${esc(lb('அமைப்புகள்', 'Settings'))}</h1>
+    <p class="page-sub">${esc(lb('மாற்றங்கள் உடனே நடைமுறைக்கு வந்து சேமிக்கப்படும்.', 'Changes apply straight away and are saved on this device.'))}</p>
+    <div class="panel-tabs" role="tablist">${pills}</div>
+    <div class="settings-panel">${current[3]}</div>
+    `;
 }
 
 // ---- about
@@ -1079,7 +1097,7 @@ function ambientTick() {
   $('ambient').innerHTML = `<div class="sky">${stars}${lamps}</div><div class="amb-inner">
     <div class="amb-clock">${clock}</div>
     <div class="amb-date">${esc(dateLong(d.epochDay))}</div>
-    <div class="amb-line">${esc(lb(CONTENT.names.months[d.tamilDate.monthIndex][0] + ' ' + d.tamilDate.day, CONTENT.names.months[d.tamilDate.monthIndex][1] + ' ' + d.tamilDate.day))}</div>
+    <div class="amb-line">${esc(lb(CONTENT.names.months[d.tamilDate.monthIndex][0], CONTENT.names.months[d.tamilDate.monthIndex][1])) + ' ' + d.tamilDate.day}</div>
     <div class="amb-line">${esc(lb('திதி', 'Tithi'))}: ${esc(lb(d.panchangam.tithi.nameTa, d.panchangam.tithi.nameEn))}</div>
     <div class="amb-line">${nallaNow
       ? `${esc(lb('நல்ல நேரம்', 'Nalla Neram'))} · ${esc(lb('முடிவு', 'ends'))} ${timeOf(nallaNow.end)}`
@@ -1218,6 +1236,7 @@ function onClick(e) {
   else if (a === 'pin-open') { const pin = state.settings.pinnedPlaces.find((p) => p.id === el.dataset.id); if (pin) setPlace(pin.place.custom ? { custom: pin.place.custom } : PLACES.find((x) => x.key === pin.place.preset), false); }
   else if (a === 'pack-save') { const pin = state.settings.pinnedPlaces.find((p) => p.id === el.dataset.id); if (pin) savePack(pin, Number(el.dataset.year), el); }
   else if (a === 'dates-panel') { state.datesPanel = el.dataset.p; rerender(); }
+  else if (a === 'settings-panel') { state.settingsPanel = el.dataset.p; rerender(); }
   else if (a === 'wm-clear') { clearWatermark(); state.watermarkCustom = null; applySettingChange('watermark', 'TEMPLE'); }
   else if (a === 'theme') { applySettingChange('theme', el.dataset.id); }
   else if (a === 'skin') { applySettingChange('skin', el.dataset.id); }
@@ -1366,7 +1385,7 @@ async function boot() {
   $('ambient').addEventListener('click', () => showAmbient(false));
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && state.rasi !== null) closeRasi(); });
   $('disclaimer-ok').addEventListener('click', () => { state.settings.disclaimerSeen = true; saveSettings(state.settings); $('disclaimer').hidden = true; });
-  $('place-chip').addEventListener('click', () => { state.tab = 'settings'; rerender(); document.getElementById('location')?.scrollIntoView(); });
+  $('place-chip').addEventListener('click', () => { state.tab = 'settings'; state.settingsPanel = 'location'; rerender(); });
   for (const ev of ['pointerdown', 'keydown', 'touchstart']) document.addEventListener(ev, () => { state.lastInput = Date.now(); }, { passive: true });
   setInterval(() => {
     const s = state.settings;
