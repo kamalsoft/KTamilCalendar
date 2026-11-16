@@ -276,17 +276,17 @@ function viewToday() {
       </section>
       <section class="tier tier-3">
         <h2 class="tier-title">${esc(lb('நாள் அட்டவணை', 'Day schedule'))}</h2>
+        <section class="detail"><h3>${esc(lb('நாள் நேரம்', 'Day timeline'))}</h3>${timelineHtml(d, nowSec)}</section>
         <div class="today-split">
-          <section class="detail"><h3>${esc(lb('நாள் நேரம்', 'Day timeline'))}</h3>${timelineHtml(d, nowSec)}</section>
           <section class="detail">
             <h3>${esc(lb('லக்னம்', 'Lagnam'))}</h3>
             <ul class="sched sched-1">${lagna.map((s) => `<li class="sched-row"><span>${esc(lb(...CONTENT.names.rasis[s.rasi]))}</span><time>${timeOf(s.start.slice(11, 19))}</time></li>`).join('')}</ul>
           </section>
+          <section class="detail">
+            <h3>${esc(lb('ஹோரை', 'Hora'))}</h3>
+            <ul class="sched sched-2">${hora(d.weekdayIndex, secOf(d.sunrise), secOf(d.sunset), secOf(d.nextSunrise)).map((h) => `<li class="sched-row${h.benefic ? ' good' : ''}"><span>${esc(lb(...h.lord))}</span><time>${timeOf(hms(h.start))}</time></li>`).join('')}</ul>
+          </section>
         </div>
-        <section class="detail">
-          <h3>${esc(lb('ஹோரை', 'Hora'))}</h3>
-          <ul class="sched">${hora(d.weekdayIndex, secOf(d.sunrise), secOf(d.sunset), secOf(d.nextSunrise)).map((h) => `<li class="sched-row${h.benefic ? ' good' : ''}"><span>${esc(lb(...h.lord))}</span><time>${timeOf(hms(h.start))}</time></li>`).join('')}</ul>
-        </section>
       </section>
       <section class="tier tier-4">
         <h2 class="tier-title">${esc(lb('விதிகள்', 'Rules'))}</h2>
