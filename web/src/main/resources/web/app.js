@@ -485,24 +485,53 @@ function viewFestivals() {
     if (last && last.titleEn === e.titleEn && last.kind === e.kind && last.end === dayBefore(e.date)) last.end = e.date;
     else runs.push({ ...e, end: e.date });
   }
-  const rows = runs.map((r) => `<li class="event${r.isLocalHoliday ? ' holiday' : ''}"><time>${esc(dateShort(r.date))}${r.end !== r.date ? `<br>– ${esc(dateShort(r.end))}` : ''}</time><span>${esc(lb(r.titleTa, r.titleEn))}${r.religion && r.religion !== 'HINDU' ? ` <small>· ${esc(lb(...CONTENT.enums.Religion.find((x) => x[0] === r.religion).slice(1, 3)))}</small>` : ''}</span></li>`);
+  const cardFor = (r) => {
+    const religion = r.religion && r.religion !== 'HINDU' ? ` · ${lb(...CONTENT.enums.Religion.find((x) => x[0] === r.religion).slice(1, 3))}` : '';
+    return `<article class="fcard ${r.isLocalHoliday ? 'hol' : kindCls(r.kind)}">${dateBadge(parseIso(r.date), r.end !== r.date ? parseIso(r.end) : null)}
+      <div class="fcard-body"><b>${esc(lb(r.titleTa, r.titleEn))}</b><small>${esc(kindLabel(r.kind))}${esc(religion)}</small></div></article>`;
+  };
+  const body = groupByMonth(runs, (r) => parseIso(r.date)).map((g) => monthSection(g, cardFor)).join('');
   return `<h1 class="page">${esc(lb('விழாக்கள் & விடுமுறைகள்', 'Festivals & holidays'))}</h1>
     <div class="search"><input id="find" type="search" placeholder="${esc(lb('விழாவின் பெயர் தேடுக', 'Find a festival, e.g. Pongal'))}" value="${esc(state.findQuery)}" autocomplete="off"></div>
     <div id="find-results">${findResults(state.findQuery)}</div>
     <div class="row wrap">${filters}</div>
-    <ul class="events">${rows.join('') || `<li class="small">${esc(lb('இல்லை', 'Nothing in this period'))}</li>`}</ul>`;
+    <div class="stat-row"><div><b>${runs.length}</b><small>${esc(lb('நிகழ்வுகள்', 'entries'))}</small></div></div>
+    ${body || `<p class="small">${esc(lb('இல்லை', 'Nothing in this period'))}</p>`}`;
 }
 const kindLabel = (k) => ({ FESTIVAL: ['விழா', 'Festival'], VIRATHAM: ['விரதம்', 'Viratham'], GOVT_HOLIDAY: ['விடுமுறை', 'Holiday'], RELIGIOUS: ['மதம்', 'Religious'], SCHOOL: ['பள்ளி', 'School'] })[k].join(' · ');
 const dayBefore = (iso) => isoOf(parseIso(iso) - 1);
 const dateShort = (iso) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+// Card helpers for the Festivals, Important and Muhurtham pages.
+const weekdayShortOf = (epoch) => CONTENT.names.weekdays[dayOfWeek(epoch)][1].slice(0, 3);
+const dateBadge = (epoch, end = null) => `<div class="date-badge"><b>${dayOfMonth(epoch)}${end ? `–${dayOfMonth(end)}` : ''}</b><small>${esc(weekdayShortOf(epoch))}</small></div>`;
+const monthTitle = (epoch) => `${esc(MONTHS_TA[monthOf(epoch) - 1])} ${yearOf(epoch)} · ${MONTHS_EN[monthOf(epoch) - 1]}`;
+/** Rows (in date order) grouped into consecutive runs of the same month. */
+const groupByMonth = (rows, epochOf) => {
+  const groups = [];
+  for (const r of rows) {
+    const e = epochOf(r);
+    const key = `${yearOf(e)}-${monthOf(e)}`;
+    const g = groups[groups.length - 1];
+    if (g && g.key === key) g.items.push(r);
+    else groups.push({ key, epoch: e, items: [r] });
+  }
+  return groups;
+};
+const monthSection = (g, render) => `<section class="month-group"><h2 class="month-h">${monthTitle(g.epoch)}<small>${g.items.length}</small></h2><div class="cards-grid">${g.items.map(render).join('')}</div></section>`;
+const kindCls = (k) => ({ FESTIVAL: 'fest', VIRATHAM: 'fest', GOVT_HOLIDAY: 'hol', RELIGIOUS: 'rel', SCHOOL: 'sch' })[k] || '';
 
 // ---- important dates (next 60 days)
 function viewImportant() {
   const start = todayEpoch();
   const items = daysFrom(start, 60).map((d) => ({ d, list: importantDates(d) })).filter((x) => x.list.length);
+  const total = items.reduce((n, x) => n + x.list.length, 0);
+  const groups = groupByMonth(items, (x) => x.d.epochDay);
+  const card = ({ d, list }) => `<article class="fcard${list.some((x) => x.holiday) ? ' hol' : ' fest'}">${dateBadge(d.epochDay)}
+    <div class="fcard-body">${list.map((x) => `<b class="${x.holiday ? 'alert-text' : ''}">${esc(lbo(x.title))}</b>`).join('')}</div></article>`;
   return `<h1 class="page">${esc(lb('முக்கிய நாட்கள்', 'Important dates'))}</h1>
-    <ul class="events">${items.map(({ d, list }) => `<li class="event"><time>${esc(dateShort(isoOf(d.epochDay)))}</time>
-      <span>${list.map((x) => `<b class="${x.holiday ? 'alert-text' : ''}">${esc(lbo(x.title))}</b>`).join('<br>')}</span></li>`).join('') || `<li class="small">${esc(lb('இல்லை', 'Nothing in this period'))}</li>`}</ul>`;
+    <p class="page-sub">${esc(lb('அடுத்த 60 நாட்கள் · பண்டிகைகள், விரதங்கள், விடுமுறைகள்', 'Next 60 days · festivals, observances and holidays'))}</p>
+    <div class="stat-row"><div><b>${items.length}</b><small>${esc(lb('நாட்கள்', 'days'))}</small></div><div><b>${total}</b><small>${esc(lb('நிகழ்வுகள்', 'items'))}</small></div></div>
+    ${groups.map((g) => monthSection(g, card)).join('') || `<p class="small">${esc(lb('இல்லை', 'Nothing in this period'))}</p>`}`;
 }
 
 // ---- subha muhurtham: days in a chosen range (default: next 120 days), with the best window
@@ -510,24 +539,29 @@ function viewMuhurtham() {
   const today = todayEpoch();
   const from = state.mhFrom ?? today;
   const to = Math.min(state.mhTo ?? today + 120, from + 366);
-  const rows = [];
+  const items = [];
   for (const d of daysInRange(from, to)) {
     const mh = d.events.find((e) => e.kind === 'MUHURTHAM');
-    if (!mh) continue;
-    const best = d.timings.nallaNeram.find((w) => secOf(w.start) < 12 * 3600) || d.timings.nallaNeram[0];
-    rows.push(`<li class="event"><time>${esc(dateShort(isoOf(d.epochDay)))}</time>
-      <span><b>${esc(lb(mh.titleTa, mh.titleEn))}</b><br><small>${esc(lb(...CONTENT.names.nakshatras[d.panchangam.nakshatram.index]))} · ${esc(lb(d.panchangam.tithi.nameTa, d.panchangam.tithi.nameEn))}</small>
-      ${best ? `<br><small>${esc(lb('சிறந்த நேரம்', 'Best window'))}: ${timeOf(best.start)} – ${timeOf(best.end)}</small>` : ''}</span></li>`);
+    if (mh) items.push({ d, mh });
   }
+  const card = ({ d, mh }) => {
+    const best = d.timings.nallaNeram.find((w) => secOf(w.start) < 12 * 3600) || d.timings.nallaNeram[0];
+    return `<article class="fcard mh">${dateBadge(d.epochDay)}
+      <div class="fcard-body"><b>${esc(lb(mh.titleTa, mh.titleEn))}</b>
+        <small>${esc(lb(...CONTENT.names.nakshatras[d.panchangam.nakshatram.index]))} · ${esc(lb(d.panchangam.tithi.nameTa, d.panchangam.tithi.nameEn))}</small>
+        ${best ? `<span class="best-window">${esc(lb('சிறந்த நேரம்', 'Best window'))} ${timeOf(best.start)} – ${timeOf(best.end)}</span>` : ''}</div></article>`;
+  };
+  const groups = groupByMonth(items, (x) => x.d.epochDay);
   return `<h1 class="page">${esc(lb('சுப முகூர்த்த நாட்கள்', 'Subha Muhurtham'))}</h1>
+    <p class="page-sub">${esc(lb('ஆடி, புரட்டாசி, மார்கழி மாதங்கள் தவிர்க்கப்படும்; செவ்வாய், சனி இல்லை.', 'Aadi, Purattasi and Margazhi are skipped; no Tuesdays or Saturdays.'))}</p>
     <section class="group">
       <div class="row wrap">
         <label class="field">${esc(lb('இருந்து', 'From'))} <input type="date" data-mh="from" value="${isoOf(from)}"></label>
         <label class="field">${esc(lb('வரை', 'To'))} <input type="date" data-mh="to" value="${isoOf(to)}"></label>
       </div>
-      <p class="small">${esc(lb('ஆடி, புரட்டாசி, மார்கழி மாதங்கள் தவிர்க்கப்படும்; செவ்வாய், சனி இல்லை.', 'Aadi, Purattasi and Margazhi are skipped; no Tuesdays or Saturdays.'))}</p>
     </section>
-    <ul class="events">${rows.join('') || `<li class="small">${esc(lb('இந்த காலத்தில் முகூர்த்த நாட்கள் இல்லை', 'No muhurtham days in this period'))}</li>`}</ul>`;
+    <div class="stat-row"><div><b>${items.length}</b><small>${esc(lb('முகூர்த்த நாட்கள்', 'muhurtham days'))}</small></div></div>
+    ${groups.map((g) => monthSection(g, card)).join('') || `<p class="small">${esc(lb('இந்த காலத்தில் முகூர்த்த நாட்கள் இல்லை', 'No muhurtham days in this period'))}</p>`}`;
 }
 
 // ---- rasi palan, chart and gochara
