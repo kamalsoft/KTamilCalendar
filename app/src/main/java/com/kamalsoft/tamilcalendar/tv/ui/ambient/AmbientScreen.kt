@@ -93,10 +93,17 @@ fun AmbientScreen(day: TamilDayData?, weather: WeatherState, location: GeoLocati
                 next?.let { Glance("நல்ல நேரம் · Nalla Neram", Fmt.range(it)) }
                 Glance("ராகு காலம் · Rahu Kalam", Fmt.range(day.timings.rahuKalam), alert = true)
             }
-            if (c != null) {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
-                    Image(painterResource(c.condition.iconRes(c.isDay)), contentDescription = null, modifier = Modifier.size(34.dp))
-                    Text("  ${c.temperature.roundToInt()}° · ${c.condition.en} · ${location.nameEn}", fontSize = 18.sp, color = Color.White.copy(alpha = 0.85f))
+        }
+        if (c != null) {
+            Row(
+                Modifier.align(Alignment.BottomEnd).padding(if (compact) 16.dp else 40.dp)
+                    .background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(18.dp)).padding(horizontal = 18.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Image(painterResource(c.condition.iconRes(c.isDay)), contentDescription = null, modifier = Modifier.size(56.dp))
+                Column(Modifier.padding(start = 14.dp)) {
+                    Text("${c.temperature.roundToInt()}°", fontSize = 40.sp, fontWeight = FontWeight.Light, color = Color.White)
+                    Text("${c.condition.en} · ${location.nameEn}", fontSize = 16.sp, color = Color.White.copy(alpha = 0.85f))
                 }
             }
         }
@@ -132,6 +139,8 @@ private fun DrawScope.templeScene(t: Float, hour: Float) {
     val night = hour < 5f || hour >= 19.5f
     val silhouette = if (night) Color(0xFF05060F) else Color(0xFF2A1810)
     val far = silhouette.copy(alpha = 0.55f)
+    if (night) stars(t)
+    celestial(hour)
 
     // Distant hills.
     val hills = Path().apply {
@@ -169,6 +178,28 @@ private fun DrawScope.templeScene(t: Float, hour: Float) {
         val x = w * (0.06f + (i % 12) * 0.08f) + sin(t * 0.8f + i) * w * 0.01f + pan * 1.5f
         val y = h * 0.77f - p * h * 0.45f
         drawCircle(Color(0xFFFFC46B).copy(alpha = (1f - p) * 0.6f), h * 0.0035f, Offset(x, y))
+    }
+}
+
+/** The sun by day, the moon by night: it rises on the left, crosses the sky and sets on the right. */
+private fun DrawScope.celestial(hour: Float) {
+    val day = hour in 6f..18f
+    val f = if (day) (hour - 6f) / 12f else (if (hour >= 18f) hour - 18f else hour + 6f) / 12f
+    val x = size.width * (0.08f + 0.84f * f)
+    val y = size.height * (0.46f - 0.30f * sin(PI.toFloat() * f))
+    val r = size.height * 0.06f
+    val glow = if (day) Color(0xFFFFE08A) else Color(0xFFE8ECFF)
+    drawCircle(Brush.radialGradient(listOf(glow.copy(alpha = 0.45f), Color.Transparent), Offset(x, y), r * 4), r * 4, Offset(x, y))
+    drawCircle(glow, r, Offset(x, y))
+}
+
+/** Fixed star positions that twinkle at their own pace. */
+private fun DrawScope.stars(t: Float) {
+    for (i in 0 until 70) {
+        val x = size.width * ((i * 7919) % 1000) / 1000f
+        val y = size.height * 0.55f * ((i * 104729) % 1000) / 1000f
+        val alpha = 0.25f + 0.6f * (0.5f + 0.5f * sin(t * (1.2f + i % 5) + i))
+        drawCircle(Color.White.copy(alpha = alpha), size.height * 0.003f, Offset(x, y))
     }
 }
 

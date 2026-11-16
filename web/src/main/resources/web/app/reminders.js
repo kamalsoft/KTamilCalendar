@@ -19,8 +19,8 @@ export function scheduleReminders(day, zone, timings, settings, notify) {
     return zonedMs(day, h * 3600 + m * 60 + s + offsetSec, zone);
   };
   const plan = [];
-  if (settings.rahuReminder) plan.push({ when: at(timings.rahuKalam.start, -600), title: 'ராகு காலம் · Rahu Kalam', body: `Starts at ${timings.rahuKalam.start.slice(0, 5)} · 10 minutes to go` });
-  if (settings.nallaReminder) timings.nallaNeram.forEach((w) => plan.push({ when: at(w.start), title: 'நல்ல நேரம் · Nalla Neram', body: `Begins now (${w.start.slice(0, 5)}–${w.end.slice(0, 5)})` }));
+  if (settings.rahuReminder) plan.push({ when: at(timings.rahuKalam.start, -600), title: settings.language === 'en' ? 'Rahu Kalam' : 'ராகு காலம் · Rahu Kalam', body: `Starts at ${timings.rahuKalam.start.slice(0, 5)} · 10 minutes to go` });
+  if (settings.nallaReminder) timings.nallaNeram.forEach((w) => plan.push({ when: at(w.start), title: settings.language === 'en' ? 'Nalla Neram' : 'நல்ல நேரம் · Nalla Neram', body: `Begins now (${w.start.slice(0, 5)}–${w.end.slice(0, 5)})` }));
   for (const p of plan) {
     const delay = p.when - now;
     if (delay <= 0 || delay > MS_DAY) continue;

@@ -65,6 +65,10 @@ const pair = (ta, en) => {
   if (lang === 'ta-en' || !lang) return [ta, en];
   return [translated(lang, ta) ?? en, en];
 };
+const pairTag = (ta, en) => {
+  const [big, small] = pair(ta, en);
+  return `${esc(big)}${small ? `<small>${esc(small)}</small>` : ''}`;
+};
 const lb = (ta, en) => {
   const [big, small] = pair(ta, en);
   if (big === small || !small) return big;
@@ -134,11 +138,12 @@ function daysFrom(start, count) {
 function renderTabs() {
   const hidden = new Set(state.settings.hiddenSections);
   $('tabs').innerHTML = TABS.filter(([id]) => ALWAYS_SHOWN.has(id) || !hidden.has(id)).map(([id, ta, en]) =>
-    `<button class="tab${state.tab === id ? ' on' : ''}" data-act="tab" data-tab="${id}">${esc(pair(ta, en)[0])}${state.settings.tamilOnly || pair(ta, en)[1] === '' ? '' : `<small>${esc(pair(ta, en)[1])}</small>`}</button>`).join('');
+    `<button class="tab${state.tab === id ? ' on' : ''}" data-act="tab" data-tab="${id}">${pairTag(ta, en)}</button>`).join('');
   $('place-chip').textContent = state.place.nameEn + (state.place.countryCode ? '' : '');
 }
 
 function render() {
+  localizeChrome();
   renderTabs();
   applyTheme();
   const view = { today: viewToday, month: viewMonth, festivals: viewFestivals, important: viewImportant, muhurtham: viewMuhurtham, rasi: viewRasi, learn: viewLearn, location: viewLocation, theme: viewTheme, settings: viewSettings, about: viewAbout }[state.tab];
@@ -273,7 +278,7 @@ function viewToday() {
   // Three panels, one shown at a time, so the page stays short.
   const panels = [['panchangam', 'பஞ்சாங்கம்', 'Panchangam'], ['sloka', 'ஸ்லோகம்', 'Sloka'], ['weather', 'வானிலை', 'Weather']];
   const tabRow = `<div class="panel-tabs" role="tablist">${panels.map(([id, ta, en]) =>
-    `<button class="pill${state.todayPanel === id ? ' on' : ''}" role="tab" aria-selected="${state.todayPanel === id}" data-act="today-panel" data-p="${id}">${esc(ta)}${state.settings.tamilOnly ? '' : `<small>${esc(en)}</small>`}</button>`).join('')}</div>`;
+    `<button class="pill${state.todayPanel === id ? ' on' : ''}" role="tab" aria-selected="${state.todayPanel === id}" data-act="today-panel" data-p="${id}">${pairTag(ta, en)}</button>`).join('')}</div>`;
   let body;
   if (state.todayPanel === 'sloka') body = slokaCard(slokaFor(d));
   else if (state.todayPanel === 'weather') body = state.settings.weather ? weatherCard : `<p class="small">${esc(lb('வானிலை அமைப்புகளில் முடக்கப்பட்டுள்ளது', 'Weather is turned off in Settings'))}</p>`;
@@ -321,7 +326,6 @@ function viewToday() {
       ${body}
     </div>`;
 }
-const pakshaName = (p) => (p === 'SHUKLA' ? ['வளர்பிறை', 'Shukla Paksha'] : ['தேய்பிறை', 'Krishna Paksha']);
 
 function slokaCard(s) {
   return `<section class="sloka">
@@ -329,7 +333,7 @@ function slokaCard(s) {
       <span class="sloka-om" aria-hidden="true">ॐ</span>
       <div><h3>${esc(lb('ஸ்லோகம்', 'Sloka of the day'))}</h3><p class="sloka-title">${esc(lb(s.titleTa, s.titleEn))}</p></div>
     </div>
-    <blockquote class="sloka-text">${esc(s.textTa).replace(/\\n|\n/g, '<br>')}</blockquote>
+    ${state.settings.language === 'en' ? '' : `<blockquote class="sloka-text">${esc(s.textTa).replace(/\\n|\n/g, '<br>')}</blockquote>`}
     <p class="sloka-meaning">${esc(s.meaningEn)}</p>
     <div class="sloka-actions">
       <button class="pill" data-act="sloka-read">🔊 ${esc(lb('படி', 'Read'))}</button>
@@ -415,9 +419,9 @@ function viewMonth() {
   const from = first - dayOfWeek(first);
   const to = from + weeks * 7 - 1;
   const days = new Map(daysBetween(from, to).map((d) => [d.epochDay, d]));
-  const weekdays = CONTENT.names.weekdays.map((w, i) => `<div class="${i === 0 ? 'sun' : ''}">${WEEKDAYS_TA_SHORT[i]}<small>${w[1].slice(0, 3)}</small></div>`).join('');
+  const weekdays = CONTENT.names.weekdays.map((w, i) => `<div class="${i === 0 ? 'sun' : ''}">${pairTag(WEEKDAYS_TA_SHORT[i], w[1].slice(0, 3))}</div>`).join('');
   const tamilMonths = [...new Set([...days.values()].filter((d) => monthOf(d.epochDay) === m + 1)
-    .map((d) => `${CONTENT.names.months[d.tamilDate.monthIndex][0]} (${CONTENT.names.months[d.tamilDate.monthIndex][1]})`))].join(' – ');
+    .map((d) => lb(CONTENT.names.months[d.tamilDate.monthIndex][0], CONTENT.names.months[d.tamilDate.monthIndex][1])))].join(' – ');
   const today = todayEpoch();
   const cells = [];
   for (let e = from; e <= to; e++) {
@@ -433,11 +437,11 @@ function viewMonth() {
     const maxDates = weeks <= 5 ? 2 : 1;
     const more = events.length - maxDates;
     const titles = events.slice(0, maxDates).map((x, i) => {
-      const text = i === maxDates - 1 && more > 0 ? `${x.title.ta} +${more}` : x.title.ta;
+      const text = i === maxDates - 1 && more > 0 ? `${lbo(x.title)} +${more}` : lbo(x.title);
       const kind = x.holiday ? ' alert' : x.religion && x.religion !== 'HINDU' ? ' muted' : '';
       return `<span class="ev${kind}">${esc(text)}</span>`;
     }).join('');
-    const tamil = d && d.tamilDate.day === 1 ? `<span class="tm">${esc(CONTENT.names.months[d.tamilDate.monthIndex][0])}</span>` : d ? `<span class="t">${d.tamilDate.day}</span>` : '';
+    const tamil = d && d.tamilDate.day === 1 ? `<span class="tm">${esc(lb(CONTENT.names.months[d.tamilDate.monthIndex][0], CONTENT.names.months[d.tamilDate.monthIndex][1]))}</span>` : d ? `<span class="t">${d.tamilDate.day}</span>` : '';
     const icons = d ? dayIcons(d) : '';
     const moon = d ? `<span class="moon" title="${esc(moonPhase(d.panchangam.tithi.index)[2])}">${moonPhase(d.panchangam.tithi.index)[0]}</span>` : '';
     cells.push(`<button class="${cls.join(' ')}" data-act="select-day" data-d="${e}"><span class="top"><span class="g">${dayOfMonth(e)}</span><span class="ico-row">${moon}${icons}</span>${tamil}</span><span class="evs">${titles}</span></button>`);
@@ -448,7 +452,7 @@ function viewMonth() {
   const flip = state.flipDir ? ` flip-${state.flipDir > 0 ? 'next' : 'prev'}` : '';
   state.flipDir = 0;
   return `<div class="month-wrap${page ? ' page' : ''}${flip}"><div class="bar"><button class="nav" data-act="month" data-m="-1" aria-label="Previous month">‹</button>
-    <h1>${esc(pair(MONTHS_TA[m], MONTHS_EN[m])[0])} ${y} · ${MONTHS_EN[m]}</h1><button class="nav" data-act="month" data-m="1" aria-label="Next month">›</button></div>
+    <h1>${esc(lb(MONTHS_TA[m], MONTHS_EN[m]))} ${y}</h1><button class="nav" data-act="month" data-m="1" aria-label="Next month">›</button></div>
     <p class="month-sub">${esc(tamilMonths)}</p>
     <button class="today" data-act="month-today">${lb('இன்று', 'Today')}</button>
     <div class="row no-print"><button class="pill" data-act="month-view" aria-pressed="${page}">${page ? esc(lb('கட்டம்', 'Grid')) : esc(lb('தாள்', 'Page'))}</button><button class="pill" data-act="print-month">🖨 ${esc(lb('அச்சிடு', 'Print month'))}</button></div>
@@ -470,7 +474,7 @@ function printTable(y, m, from, to) {
       <td>${esc(lb(CONTENT.names.months[d.tamilDate.monthIndex][0] + ' ' + d.tamilDate.day, CONTENT.names.months[d.tamilDate.monthIndex][1] + ' ' + d.tamilDate.day))}</td>
       <td>${esc(lb(d.panchangam.tithi.nameTa, d.panchangam.tithi.nameEn))}</td><td>${esc(lb(d.panchangam.nakshatram.nameTa, d.panchangam.nakshatram.nameEn))}</td><td>${esc(notes)}</td></tr>`;
   }).join('');
-  return `<section class="print-only"><h2>${esc(MONTHS_EN[m])} ${y} · ${esc(MONTHS_TA[m])}</h2>
+  return `<section class="print-only"><h2>${esc(lb(MONTHS_TA[m], MONTHS_EN[m]))} ${y}</h2>
     <p>${esc(state.place.nameEn)} · Panchangam</p>
     <table><thead><tr><th>Date</th><th>Day</th><th>Tamil date</th><th>Tithi</th><th>Nakshatram</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table></section>`;
 }
@@ -540,13 +544,13 @@ function viewFestivals() {
     <div class="stat-row"><div><b>${runs.length}</b><small>${esc(lb('நிகழ்வுகள்', 'entries'))}</small></div></div>
     ${body || `<p class="small">${esc(lb('இல்லை', 'Nothing in this period'))}</p>`}`;
 }
-const kindLabel = (k) => ({ FESTIVAL: ['விழா', 'Festival'], VIRATHAM: ['விரதம்', 'Viratham'], GOVT_HOLIDAY: ['விடுமுறை', 'Holiday'], RELIGIOUS: ['மதம்', 'Religious'], SCHOOL: ['பள்ளி', 'School'] })[k].join(' · ');
+const kindLabel = (k) => lb(...{ FESTIVAL: ['விழா', 'Festival'], VIRATHAM: ['விரதம்', 'Viratham'], GOVT_HOLIDAY: ['விடுமுறை', 'Holiday'], RELIGIOUS: ['மதம்', 'Religious'], SCHOOL: ['பள்ளி', 'School'] }[k]);
 const dayBefore = (iso) => isoOf(parseIso(iso) - 1);
 const dateShort = (iso) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 // Card helpers for the Festivals, Important and Muhurtham pages.
 const weekdayShortOf = (epoch) => CONTENT.names.weekdays[dayOfWeek(epoch)][1].slice(0, 3);
 const dateBadge = (epoch, end = null) => `<div class="date-badge"><b>${dayOfMonth(epoch)}${end ? `–${dayOfMonth(end)}` : ''}</b><small>${esc(weekdayShortOf(epoch))}</small></div>`;
-const monthTitle = (epoch) => `${esc(MONTHS_TA[monthOf(epoch) - 1])} ${yearOf(epoch)} · ${MONTHS_EN[monthOf(epoch) - 1]}`;
+const monthTitle = (epoch) => `${esc(lb(MONTHS_TA[monthOf(epoch) - 1], MONTHS_EN[monthOf(epoch) - 1]))} ${yearOf(epoch)}`;
 /** Rows (in date order) grouped into consecutive runs of the same month. */
 const groupByMonth = (rows, epochOf) => {
   const groups = [];
@@ -628,9 +632,8 @@ function viewRasi() {
     const p = byRasi.get(rasi);
     const planets = Object.keys(GRAHA_NAME).filter((g) => sky[g] === rasi);
     return `<button class="rasi-tile o-${p.outlook.toLowerCase()}${rasi === moonRasi ? ' is-moon' : ''}" style="grid-row:${row + 1};grid-column:${col + 1}" data-act="rasi-open" data-r="${r}">
-      <span class="rt-name">${esc(CONTENT.names.rasis[rasi][0])}</span>
-      ${state.settings.tamilOnly ? '' : `<small>${esc(CONTENT.names.rasis[rasi][1])}</small>`}
-      <span class="rt-outlook">${esc(outlookWords(p.outlook)[0])}</span>
+      <span class="rt-name">${pairTag(CONTENT.names.rasis[rasi][0], CONTENT.names.rasis[rasi][1])}</span>
+      <span class="rt-outlook">${esc(lb(...outlookWords(p.outlook)))}</span>
       <span class="rt-planets">${planets.map((g) => `<em>${esc(lb(...GRAHA_NAME[g]))}</em>`).join('')}</span></button>`;
   }).join('');
   // The centre panel: today's positions as labelled rows.
@@ -686,7 +689,7 @@ function viewLocation() {
   const results = state.search.results.map((r, i) => `<li><button class="result" data-act="place-result" data-i="${i}"><b>${esc(r.name)}</b><small>${esc([r.admin1, r.country].filter(Boolean).join(', '))}</small></button></li>`).join('');
   return `<h1 class="page">${esc(lb('இடம்', 'Location'))}</h1>
     <p class="page-sub">${esc(lb('எல்லாக் கணக்குகளும் இங்கே தேர்ந்தெடுக்கும் இடத்திற்கு.', 'Every calculation uses the place you choose here.'))}</p>
-    <div class="current-place"><span>${esc(lb('தற்போதைய இடம்', 'Current place'))}</span><b>${esc(placeLabel(state.place))}</b><small>${esc(state.place.zoneId)}</small></div>
+    <div class="current-place"><span>${esc(lb('தற்போதைய இடம்', 'Current place'))}</span><b>${esc(placeLabel(state.settings.language === 'en' ? { ...state.place, nameTa: state.place.nameEn } : state.place))}</b><small>${esc(state.place.zoneId)}</small></div>
     <h3 class="sub-h">${esc(lb('இடங்கள்', 'Places'))}</h3>
     <div class="place-grid">${presets}</div>
     <div class="row"><button class="pill" data-act="place-auto">📍 ${esc(lb('என் இடம்', 'Use my location'))}</button></div>
@@ -991,7 +994,7 @@ function maybeReadSloka() {
   const key = `${state.day}|${state.placeKey}`;
   if (state.spokenKey === key) return;
   state.spokenKey = key;
-  speak(slokaFor(dayData(state.day)));
+  speak(slokaFor(dayData(state.day)), state.settings.language);
 }
 
 function toggleMusic() {
@@ -1183,7 +1186,7 @@ function onClick(e) {
   else if (a === 'rasi-tab') { state.rasiTab = Number(el.dataset.t); rerender(); }
   else if (a === 'rasi-close') { closeRasi(); }
   else if (a === 'rasi-read') { toggleRasiSpeech(); }
-  else if (a === 'sloka-read') { const d = dayData(state.day); speak(slokaFor(d)); }
+  else if (a === 'sloka-read') { const d = dayData(state.day); speak(slokaFor(d), state.settings.language); }
   else if (a === 'sloka-music') toggleMusic();
   else if (a === 'place-preset') setPlace(PLACES.find((p) => p.key === el.dataset.key));
   else if (a === 'place-recent') setPlace({ custom: state.settings.recentPlaces[Number(el.dataset.i)] });
@@ -1213,15 +1216,27 @@ function toggleRasiSpeech() {
   const d = dayData(state.day) || dayData(todayEpoch());
   const p = rasiPalan(d.panchangam.moonRasi)[state.rasi];
   const g = gochara(state.rasi, skyPositions(d.epochDay, state.place.zoneId));
-  const text = [[p.messageTa], [g.month.ta], [g.year.ta]][state.rasiTab][0];
-  speakText(text);
+  const [ta, en] = [[p.messageTa, p.messageEn], [g.month.ta, g.month.en], [g.year.ta, g.year.en]][state.rasiTab];
+  speakText(state.settings.language === 'en' ? en : ta, state.settings.language === 'en' ? 'en-IN' : 'ta-IN');
 }
 
-function speakText(text) {
+/** Labels in the page chrome that sit outside the rendered views (brand, update banner, disclaimer). */
+function localizeChrome() {
+  const [big, small] = pair('பஞ்சாங்கம்', 'Panchangam');
+  $('brand').innerHTML = `<span class="ta">${esc(big)}</span>${small ? `<span class="en">${esc(small)}</span>` : ''}`;
+  $('place-chip').setAttribute('aria-label', lb('இடம்', 'Location'));
+  $('update-text').textContent = lb('புதிய பதிப்பு', 'New version available');
+  $('update-go').textContent = lb('மீண்டும் ஏற்று', 'Reload');
+  $('disclaimer-title').textContent = lb('மறுப்பு அறிவிப்பு', 'Disclaimer');
+  $('disclaimer-ok').textContent = lb('தொடரவும்', 'Continue');
+  document.title = lb('பஞ்சாங்கம்', 'Panchangam');
+}
+
+function speakText(text, lang = 'ta-IN') {
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'ta-IN';
+  u.lang = lang;
   window.speechSynthesis.speak(u);
 }
 

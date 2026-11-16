@@ -17,11 +17,11 @@ export function slokaFor(day) {
 
 let speaking = false;
 /** Read the verse aloud in Tamil if the device has a Tamil voice; otherwise the English meaning. */
-export function speak(sloka) {
+export function speak(sloka, language = 'ta-en') {
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
   const voices = window.speechSynthesis.getVoices();
-  const tamil = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith('ta'));
+  const tamil = language !== 'en' && voices.find((v) => v.lang && v.lang.toLowerCase().startsWith('ta'));
   const u = new SpeechSynthesisUtterance(tamil ? sloka.textTa : sloka.meaningEn);
   if (tamil) u.voice = tamil;
   u.lang = tamil ? 'ta-IN' : 'en-IN';

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Panchangam · பஞ்சாங்கம்</title>
+  <title>Panchangam</title>
   <meta name="description" content="Panchangam: Tamil panchangam for your place. Tithi, nakshatram, yogam, Rahu Kalam, Rasi Palan, Muhurtham, weather and festivals.">
   <meta name="theme-color" content="#1C1C1E">
   <meta name="color-scheme" content="dark light">
@@ -22,11 +22,10 @@
 </head>
 <body>
   <header class="top">
-    <div class="brand">
-      <span class="ta">பஞ்சாங்கம்</span>
-      <span class="en">Panchangam</span>
+    <div class="brand" id="brand">
+      <span class="ta">Panchangam</span>
     </div>
-    <button id="place-chip" class="place-chip" aria-label="Location · இடம்"></button>
+    <button id="place-chip" class="place-chip" aria-label="Location"></button>
   </header>
 
   <nav id="tabs" class="tabs" aria-label="Sections"></nav>
@@ -38,17 +37,17 @@
   <div id="ambient" class="ambient" hidden aria-label="Ambient clock"></div>
 
   <div id="update" class="update" role="status" hidden>
-    <span>New version available · புதிய பதிப்பு</span>
-    <button id="update-go" class="pill on">Reload · மீண்டும் ஏற்று</button>
+    <span id="update-text">New version available</span>
+    <button id="update-go" class="pill on">Reload</button>
   </div>
 
   <div id="disclaimer" class="disclaimer" role="dialog" aria-modal="true" hidden>
     <div class="disclaimer-card">
-      <h2>மறுப்பு அறிவிப்பு · Disclaimer</h2>
+      <h2 id="disclaimer-title">Disclaimer</h2>
       <p>Panchangam values are computed from Sun and Moon positions and checked against the Swiss Ephemeris. Printed calendars in your area may differ by a few minutes or a day. Festival and holiday dates follow official lists where available; Islamic dates depend on local moon sighting.</p>
       <p><b>Accuracy.</b> The astronomy is checked against the Swiss Ephemeris, but the traditional rules (Muhurtham, Lagna, Thara, Chandrashtamam, Sraardham) are calculated, not issued by a religious authority. Before a marriage, ceremony, Sraardham or any muhurtham, confirm the date and time with a qualified temple priest.</p>
       <p class="small">Your settings and places stay on this device.</p>
-      <button id="disclaimer-ok" class="pill on">Continue · தொடரவும்</button>
+      <button id="disclaimer-ok" class="pill on">Continue</button>
     </div>
   </div>
 
