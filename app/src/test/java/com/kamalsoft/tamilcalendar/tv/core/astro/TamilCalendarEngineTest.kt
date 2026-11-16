@@ -3,6 +3,7 @@ package com.kamalsoft.tamilcalendar.tv.core.astro
 import com.kamalsoft.tamilcalendar.tv.domain.model.DayTag
 import com.kamalsoft.tamilcalendar.tv.domain.model.TamilDayData
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.BeforeClass
 import org.junit.Test
@@ -120,6 +121,12 @@ class TamilCalendarEngineTest {
             assertTrue(d.tamilDate.day in 1..32)
             assertEquals((d.panchangam.moonRasi + 5) % 12, d.chandrashtamam.rasi)
         }
+    }
+
+    /** Validator gate 1: a Kari Naal day never carries the Subha Muhurtham tag. */
+    @Test fun noMuhurthamOnKariNaal() {
+        days.values.filter { com.kamalsoft.tamilcalendar.tv.domain.model.DayRules.isKariNaal(it.tamilDate.monthIndex, it.tamilDate.day) }
+            .forEach { assertFalse("${it.date} is a Kari Naal day", it.tags.contains(DayTag.SUBHA_MUHURTHAM)) }
     }
 
     /** A good window (Nalla Neram or a Gowri window) never overlaps Rahu Kalam, Yamagandam or Kuligai. */

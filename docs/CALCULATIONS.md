@@ -157,6 +157,7 @@ Each tag checks a tithi or star at a fixed instant. `observed` treats a tithi th
 
 A day is a candidate when all of these hold:
 
+0. The day is not a Kari Naal day (validator gate 1, §14.4).
 1. The Tamil month is not Aadi (3), Purattasi (5) or Margazhi (8).
 2. The Moon's month is not an adhika (extra) month.
 3. The weekday is not Tuesday or Saturday.

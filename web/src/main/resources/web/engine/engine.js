@@ -4,6 +4,7 @@ import * as A from './astro.js';
 import { epochDay, isoOf, dayOfWeek, wallClock, zonedMs, hms, dayOfMonth, monthOf, yearOf, MS_DAY } from './civil.js';
 import { CONTENT } from './content.js';
 import { timingConvention } from './locations.js';
+import { isKariNaal } from './rules.js';
 import { easter } from './holidays.js';
 
 const NAK_SPAN = 360 / 27;
@@ -251,6 +252,8 @@ export class TamilCalendarEngine {
 
   isMuhurthamCandidate(c, tithi, star) {
     if (AVOIDED_MUHURTHAM_MONTHS.has(c.tamilMonth)) return false;
+    // Validator gate 1: no Subakariyam on a Kari Naal day.
+    if (isKariNaal(c.tamilMonth, c.tamilDay)) return false;
     if (c.lunarMonth(AT.SUNRISE).adhika) return false;
     const w = dayOfWeek(c.day);
     if (w === 2 || w === 6) return false;

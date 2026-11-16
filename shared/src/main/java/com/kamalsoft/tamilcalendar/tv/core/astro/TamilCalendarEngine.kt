@@ -2,6 +2,7 @@ package com.kamalsoft.tamilcalendar.tv.core.astro
 
 import com.kamalsoft.tamilcalendar.tv.domain.model.CalendarEvent
 import com.kamalsoft.tamilcalendar.tv.domain.model.Chandrashtamam
+import com.kamalsoft.tamilcalendar.tv.domain.model.DayRules
 import com.kamalsoft.tamilcalendar.tv.domain.model.DayTag
 import com.kamalsoft.tamilcalendar.tv.domain.model.Deity
 import com.kamalsoft.tamilcalendar.tv.domain.model.DayTimings
@@ -367,6 +368,8 @@ class TamilCalendarEngine(
 
     private fun isMuhurthamCandidate(c: DayCore, tithi: Int, star: Int): Boolean {
         if (c.tamilMonth in AVOIDED_MUHURTHAM_MONTHS) return false
+        // Validator gate 1: no Subakariyam on a Kari Naal day.
+        if (DayRules.isKariNaal(c.tamilMonth, c.tamilDay)) return false
         if (c.lunarMonth(At.SUNRISE).adhika) return false
         val w = c.date.dayOfWeek.value % 7
         if (w == 2 || w == 6) return false // Tuesday, Saturday
@@ -554,7 +557,7 @@ class TamilCalendarEngine(
 
     companion object {
         /** Engine output version; bump to force the offline DB to regenerate. */
-        const val VERSION = 7
+        const val VERSION = 8
 
         private const val NAK_SPAN = 360.0 / 27.0
         private const val LAGNA_STEP_DAYS = 10.0 / 1440.0
