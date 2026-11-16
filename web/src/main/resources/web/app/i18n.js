@@ -15,6 +15,7 @@ const FILES = { 'te-en': 'te', 'ml-en': 'ml', 'kn-en': 'kn', 'hi-en': 'hi' };
 const loaded = {};
 
 // Translations uploaded on the translator page are kept on this device, by language code (te, ml, kn, hi).
+// An upload replaces that language's values entirely.
 export const UPLOAD_KEY = 'ktc.translations.v1';
 export function uploadedTranslations() {
   try { return JSON.parse(localStorage.getItem(UPLOAD_KEY) || '{}'); } catch (e) { return {}; }
@@ -25,7 +26,9 @@ export function uploadedTranslations() {
 export async function loadTranslations(lang) {
   if (!FILES[lang] || loaded[lang]) return;
   const bundled = await fetch(`i18n/${FILES[lang]}.json`).then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
-  loaded[lang] = { ...bundled, ...(uploadedTranslations()[FILES[lang]] || {}) };
+  // An uploaded file replaces the language completely, so an emptied field shows English.
+  const uploaded = uploadedTranslations()[FILES[lang]];
+  loaded[lang] = uploaded ?? bundled;
 }
 
 // The label in the chosen language, or undefined when the language has no translation for it.

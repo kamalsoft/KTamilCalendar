@@ -2,7 +2,7 @@
 import { PLACES, placeLabel, localHolidayRegions, timingConvention, usesImperialUnits } from './engine/locations.js';
 import { ICON, TAG_ORDER, RELIGION_ORDER } from './engine/icons.js';
 import { tithiNamesOf } from './engine/engine.js';
-import { ayanamOfSun, ayanamFacts, ayanamYearEffective, ayanamChanges, sunRasiOn, AYANAM_NAMES } from './engine/ayanam.js';
+import { ayanamOfSun, ayanamFacts, ayanamYearEffective, ayanamChanges, sunDegreeOn, AYANAM_NAMES } from './engine/ayanam.js';
 import { soolam, abhijit, karanaName, isVishti, isKariNaal, hora, tharaOf, tharaPasses, personalChandrashtamam, moonPhase, moonPhaseInfo } from './engine/rules.js';
 import { monthDays, importantDates, applying } from './engine/calendar.js';
 import { rasiPalan, skyPositions, grahasIn, gochara } from './engine/rasi.js';
@@ -1458,15 +1458,25 @@ function viewLearn() {
       <div class="moon-anim" aria-hidden="true">${mi.emoji}</div>
       <b>${esc(lb(mi.ta, mi.en))}</b><small>${Math.round(mi.lit * 100)}% ${esc(lb('ஒளி', 'lit'))}</small></article>`;
   }).join('');
-  const sunMonths = Array.from({ length: 12 }, (_, m) => {
-    const rasi = sunRasiOn(epochDay(year, m + 1, 15), zone);
-    const k = ayanamOfSun(rasi * 30 + 15);
-    const cur = m + 1 === monthOf(today) ? ' now' : '';
-    return `<div class="sun-m ${k === 'UTTARAYANAM' ? 'sun-north' : 'sun-south'}${cur}">
-      <b>${esc(lb(MONTHS_TA[m], MONTHS_EN[m]))}</b>
-      <span class="sun-arrow" aria-hidden="true">${k === 'UTTARAYANAM' ? '↑' : '↓'}</span>
-      <small>${esc(lb(...CONTENT.names.rasis[rasi]))}</small></div>`;
+  // The Sun on the zodiac: north of the equator (270° to 90°, through Mesham) is Uttarayanam, the rest Dakshinayanam.
+  const pt = (deg, r) => [120 + r * Math.sin(deg * Math.PI / 180), 120 - r * Math.cos(deg * Math.PI / 180)];
+  const arc = (from, to, cls) => {
+    const [x1, y1] = pt(from, 84); const [x2, y2] = pt(to, 84);
+    return `<path class="${cls}" d="M${x1.toFixed(1)} ${y1.toFixed(1)} A84 84 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}"/>`;
+  };
+  const ticks = Array.from({ length: 12 }, (_, k) => {
+    const [x1, y1] = pt(k * 30, 70); const [x2, y2] = pt(k * 30, 96);
+    return `<line class="wheel-tick" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`;
   }).join('');
+  const [sx, sy] = pt(sunDegreeOn(today, zone), 84);
+  const wheel = `<svg class="wheel" viewBox="-50 0 340 240" role="img" aria-label="${esc(lb('சூரியனின் நிலை', 'The Sun on the zodiac'))}">
+    ${arc(270, 360, 'wheel-north')}${arc(0, 90, 'wheel-north')}${arc(90, 270, 'wheel-south')}${ticks}
+    <text class="wheel-label" x="${(pt(270, 84)[0] - 22).toFixed(1)}" y="${(pt(270, 84)[1] + 4).toFixed(1)}" text-anchor="end">${esc(lb(...CONTENT.names.rasis[9]))}</text>
+    <text class="wheel-label" x="${(pt(90, 84)[0] + 22).toFixed(1)}" y="${(pt(90, 84)[1] + 4).toFixed(1)}" text-anchor="start">${esc(lb(...CONTENT.names.rasis[3]))}</text>
+    <text class="wheel-label" x="120" y="12" text-anchor="middle">${esc(lb(...CONTENT.names.rasis[0]))}</text>
+    <circle class="wheel-glow" cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="14"/>
+    <circle class="wheel-sun" cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="8"/>
+  </svg>`;
   const monthMaps = Array.from({ length: 12 }, (_, m) => {
     const cells = days.filter(([e]) => monthOf(e) === m + 1).map(([e, k]) => {
       const cur = e === today ? ' today' : '';
@@ -1501,10 +1511,7 @@ function viewLearn() {
           <p>${esc(lb('சூரியன் தெற்கு நோக்கி நகரும்.', 'The Sun moves south.'))}</p></article>
       </div>
       <p class="now-ayanam">${esc(lb('இப்போது', 'Now'))}: ${esc(lb(...AYANAM_NAMES[now.kind]))} · ${esc(lb('நாள்', 'day'))} ${now.daysIn + 1}${now.nextDay !== null ? ` · ${esc(lb(...AYANAM_NAMES[now.nextKind]))}: ${esc(dateShort(isoOf(now.nextDay)))}` : ''}</p>
-      <div class="sun-year">
-        <div class="sun-track" aria-hidden="true"><span class="sun-go">☀</span></div>
-        <div class="sun-months">${sunMonths}</div>
-      </div>
+      <div class="wheel-wrap">${wheel}</div>
     </section>
 
     <section class="learn-sec">

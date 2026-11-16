@@ -25,43 +25,39 @@
   <main class="layout">
     <section class="detail">
       <h1 class="page">Translations · மொழிபெயர்ப்பு</h1>
-      <p class="small">One file holds every language. Each line has the Tamil label, its English, and an empty place for Telugu, Malayalam, Kannada and Hindi.</p>
+      <p class="small">Each file has the Tamil label and its English. The language files also have a column for that language, filled with the current values. Fill the column in, then upload the file here.</p>
     </section>
 
     <section class="detail">
-      <h2>1. Download the file</h2>
-      <p><a class="pill on" id="template-link" href="i18n/template.json" download="panchangam-translations.json">Download the template</a>
-      <span class="small" id="count"></span></p>
+      <h2>1. Download a file</h2>
+      <p class="small">Each download includes the current values, so you can see what is already translated.</p>
+      <div class="file-list">
+        <button class="pill on" data-file="none">Tamil → English <small>tamil-to-english.json</small></button>
+        <button class="pill" data-file="te">Telugu → English <small>telugu-to-english.json</small></button>
+        <button class="pill" data-file="ml">Malayalam → English <small>malayalam-to-english.json</small></button>
+        <button class="pill" data-file="kn">Kannada → English <small>kannada-to-english.json</small></button>
+        <button class="pill" data-file="hi">Hindi → English <small>hindi-to-english.json</small></button>
+      </div>
+      <p class="small"><a href="i18n/template.json" download="panchangam-translations.json">Download the combined file for all languages</a></p>
     </section>
 
     <section class="detail">
       <h2>2. Fill in the empty places</h2>
       <ul class="formula">
-        <li>Type the translation in the <b>te</b>, <b>ml</b>, <b>kn</b> or <b>hi</b> field of each line.</li>
-        <li>Leave a field empty to keep English for that label.</li>
-        <li>Keep numbers, times and the symbols (·, °, %) as they are.</li>
+        <li>Type the translation in the column for your language. Keep numbers, times and the symbols (·, °, %) as they are.</li>
+        <li>Leave a field empty to show English for that label.</li>
         <li>Keep panchangam terms in the form your community uses. If unsure, write the Tamil or English word in brackets.</li>
       </ul>
     </section>
 
     <section class="detail">
       <h2>3. Upload the filled file</h2>
-      <p class="small">The file is checked here and kept on this device. The app uses it for the languages you filled in.</p>
+      <p class="small">An upload <b>replaces</b> the values of that language on this device. Empty fields show English. The Tamil → English file has no language column, so it is only for reference.</p>
       <label class="field">Filled file <input type="file" id="upload" accept=".json,application/json"></label>
       <p class="small error" id="error" hidden></p>
-      <div id="summary"></div>
-      <p><button class="pill" id="clear" type="button">Remove uploaded translations</button></p>
-    </section>
-
-    <section class="detail">
-      <h2>Language files</h2>
-      <p class="small">One file per language: each line has the Tamil label, its English, and the value in that language.</p>
-      <p>
-        <button class="pill" data-lang="te">Telugu → English</button>
-        <button class="pill" data-lang="ml">Malayalam → English</button>
-        <button class="pill" data-lang="kn">Kannada → English</button>
-        <button class="pill" data-lang="hi">Hindi → English</button>
-      </p>
+      <p class="small" id="result"></p>
+      <div id="status"></div>
+      <p><button class="pill" id="clear" type="button">Remove all uploaded translations</button></p>
     </section>
 
     <section class="detail">
@@ -71,23 +67,43 @@
   </main>
 
   <script type="module">
-    import { UPLOAD_KEY } from './app/i18n.js';
+    import { UPLOAD_KEY, uploadedTranslations } from './app/i18n.js';
     const LANGS = { te: 'Telugu', ml: 'Malayalam', kn: 'Kannada', hi: 'Hindi' };
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
-    async function template() {
-      return fetch('i18n/template.json').then((r) => (r.ok ? r.json() : { entries: [] })).catch(() => ({ entries: [] }));
+    const template = () => fetch('i18n/template.json').then((r) => (r.ok ? r.json() : { entries: [] })).catch(() => ({ entries: [] }));
+    const saveUploads = (all) => { try { localStorage.setItem(UPLOAD_KEY, JSON.stringify(all)); return true; } catch (e) { return false; } };
+
+    // The value of a label in a language: the uploaded one if that language was uploaded, else the built-in one.
+    function valueOf(entry, code, uploads) {
+      return uploads[code] ? (uploads[code][entry.ta] || '') : (entry[code] || '');
     }
 
-    function summary(entries) {
-      const total = entries.length;
-      $('count').textContent = `${total} labels`;
+    async function download(code) {
+      const t = await template();
+      const uploads = uploadedTranslations();
+      const entries = (t.entries || []).map((e) => (code === 'none' ? { ta: e.ta, en: e.en } : { ta: e.ta, en: e.en, [code]: valueOf(e, code, uploads) }));
+      const name = code === 'none' ? 'tamil-to-english' : `${LANGS[code].toLowerCase()}-to-english`;
+      const payload = { format: 'panchangam-translations-v1', code: code === 'none' ? null : code, language: code === 'none' ? 'Tamil' : LANGS[code], entries };
+      const blob = new Blob([JSON.stringify(payload, null, 1) + '\n'], { type: 'application/json' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${name}.json`; a.click();
+    }
+    document.querySelectorAll('[data-file]').forEach((b) => b.addEventListener('click', () => download(b.dataset.file)));
+
+    function status(total) {
+      const uploads = uploadedTranslations();
       const rows = Object.entries(LANGS).map(([code, name]) => {
-        const done = entries.filter((e) => (e[code] || '').trim()).length;
-        return `<tr><td>${esc(name)}</td><td>${done} / ${total}</td></tr>`;
+        const count = uploads[code] ? Object.keys(uploads[code]).length : null;
+        return `<tr><td>${esc(name)}</td><td>${count === null ? 'built in' : `uploaded: ${count} of ${total}`}</td></tr>`;
       }).join('');
-      $('summary').innerHTML = `<table class="simple-table"><thead><tr><th>Language</th><th>Filled</th></tr></thead><tbody>${rows}</tbody></table>`;
+      $('status').innerHTML = `<table class="simple-table"><thead><tr><th>Language</th><th>Values in use</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    function fail(message) {
+      $('error').textContent = message;
+      $('error').hidden = false;
+      $('result').textContent = '';
     }
 
     $('upload').addEventListener('change', async (e) => {
@@ -96,44 +112,30 @@
       $('error').hidden = true;
       let data;
       try { data = JSON.parse(await file.text()); } catch (err) { return fail('This file is not valid JSON.'); }
-      if (!data || !Array.isArray(data.entries)) return fail('This file has no "entries" list. Use the template from this page.');
-      const bad = data.entries.filter((x) => typeof x.ta !== 'string' || !x.ta);
-      if (bad.length) return fail(`${bad.length} entries have no Tamil key ("ta"). Keep the "ta" field as it is in the template.`);
-      const keep = {};
-      for (const code of Object.keys(LANGS)) {
+      if (!data || !Array.isArray(data.entries)) return fail('This file has no "entries" list. Use one of the files from this page.');
+      if (data.entries.some((x) => typeof x.ta !== 'string' || !x.ta)) return fail('Some entries have no Tamil key ("ta"). Keep that field as it is.');
+      const codes = Object.keys(LANGS).filter((code) => data.entries.some((x) => Object.prototype.hasOwnProperty.call(x, code)));
+      if (!codes.length) return fail('This is the Tamil → English file, which has no language column. Upload a language file instead.');
+      const all = uploadedTranslations();
+      const report = [];
+      for (const code of codes) {
         const map = {};
         for (const x of data.entries) if (typeof x[code] === 'string' && x[code].trim()) map[x.ta] = x[code].trim();
-        keep[code] = map;
+        all[code] = map; // replaces this language entirely
+        report.push(`${LANGS[code]}: ${Object.keys(map).length} values`);
       }
-      try { localStorage.setItem(UPLOAD_KEY, JSON.stringify(keep)); }
-      catch (err) { return fail('The file is too large to keep on this device.'); }
-      summary(data.entries);
+      if (!saveUploads(all)) return fail('The file is too large to keep on this device.');
+      $('result').textContent = `Replaced ${report.join(', ')}. Open the app to see the new values.`;
+      status(data.entries.length);
     });
-
-    function fail(message) {
-      $('error').textContent = message;
-      $('error').hidden = false;
-    }
-
-    // One download per language: Tamil, English and that language's value, from the template as it stands.
-    document.querySelectorAll('[data-lang]').forEach((b) => b.addEventListener('click', async () => {
-      const code = b.dataset.lang;
-      const t = await template();
-      const rows = (t.entries || []).map((e) => ({ ta: e.ta, en: e.en, [code]: e[code] || '' }));
-      const blob = new Blob([JSON.stringify({ format: 'panchangam-translations-v1', language: LANGS[code], entries: rows }, null, 1) + '\n'], { type: 'application/json' });
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${LANGS[code].toLowerCase()}-to-english.json`; a.click();
-    }));
 
     $('clear').addEventListener('click', () => {
       try { localStorage.removeItem(UPLOAD_KEY); } catch (err) { /* nothing stored */ }
-      $('summary').innerHTML = '';
-      $('upload').value = '';
+      $('result').textContent = 'Uploaded translations removed. The built-in values are used again.';
+      template().then((t) => status((t.entries || []).length));
     });
 
-    (async () => {
-      const t = await template();
-      summary(t.entries || []);
-    })();
+    template().then((t) => status((t.entries || []).length));
   </script>
 </body>
 </html>

@@ -107,3 +107,6 @@ export function ayanamYearEffective(year, zone, latitude, longitude) {
   }
   return out;
 }
+
+/** Sidereal longitude of the Sun (0–360°) at local noon of an epoch day. */
+export const sunDegreeOn = (epochDay, zone) => A.sunSidereal(noonJd(epochDay, zone));
