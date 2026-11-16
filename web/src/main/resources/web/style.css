@@ -591,3 +591,6 @@ a.pill { display: inline-block; text-decoration: none; }
 .simple-table th { color: var(--muted); font-size: 12px; font-weight: 600; }
 .simple-table .ay-u-row td:first-child { color: var(--accent); font-weight: 700; }
 .simple-table .ay-d-row td:first-child { color: var(--muted); font-weight: 700; }
+
+/* ---- About: formulas and worked examples. */
+.formula { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--muted); }

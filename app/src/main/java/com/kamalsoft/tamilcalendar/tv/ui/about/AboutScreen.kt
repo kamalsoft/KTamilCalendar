@@ -46,6 +46,35 @@ private fun sections(location: GeoLocation) = listOf(
         ),
     ),
     Section(
+        "சூத்திரங்கள் · Formulas",
+        listOf(
+            "Tithi = floor(Moon − Sun elongation ÷ 12°) + 1: 1–15 Shukla, 16–30 Krishna.",
+            "Nakshatram = floor(Moon's sidereal longitude ÷ 13°20′) + 1, of 27.",
+            "Yogam = floor(((Sun + Moon) mod 360°) ÷ 13°20′) + 1, of 27.",
+            "Karanam = floor(elongation ÷ 6°) + 1, of 60 half-tithis.",
+            "Sidereal longitude = tropical longitude − Lahiri ayanamsa (about 24° in 2026).",
+            "Sunrise and sunset: the Sun's upper edge meets the horizon, 0.833° below it (refraction 34′ + semi-diameter 16′).",
+            "Ayanam: Uttarayanam when the sidereal Sun is from 270° to 90° (Makaram to Mithunam), else Dakshinayanam.",
+            "Tamil month starts on the day the Sun enters a sidereal sign; after sunset, the next day.",
+            "Tamil day = (civil date − month start) + 1.",
+        ),
+    ),
+    Section(
+        "எடுத்துக்காட்டுகள் · Worked examples",
+        listOf(
+            "Moon 100° ahead of Sun → 100 ÷ 12 = 8.33 → index 8 → the 9th Shukla tithi (Navami).",
+            "Moon at 50° sidereal → 50 ÷ 13.33 = 3.75 → index 3 → Rohini, the 4th nakshatram.",
+            "Elongation 90° → (1 − cos 90°) ÷ 2 = 0.5 → the Moon is 50% lit.",
+            "Sun at 280° sidereal → inside 270° to 90° → Uttarayanam.",
+            "Sunrise 06:00, sunset 18:00 → 12 h day → each of the 8 parts is 1 h 30 min.",
+            "Sunday Rahu Kalam is part 8 → 16:30 to 18:00.",
+            "Abhijit: noon 12:00 ± (12 h ÷ 30 = 24 min) → 11:36 to 12:24.",
+            "Aparahna Kala (sraardham): 4th fifth of the day → 13:12 to 15:36.",
+            "Hora: 12 h ÷ 12 = 60 min each. The first Sunday hora is the Sun, 06:00 to 07:00, then Venus.",
+            "Thara: day star and birth star 10 apart → count 11 → 11 mod 9 = 2 → Sampath (a good Thara).",
+        ),
+    ),
+    Section(
         "சிறப்பு நாட்கள் · Religious dates",
         listOf(
             "Hindu, Jain, Sikh, Buddhist: panchangam rules. Christian: Easter computus. Jewish: Hebrew calendar arithmetic.",

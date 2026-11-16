@@ -809,7 +809,34 @@ function viewAbout() {
       </ol>
     </section>
     <section class="detail">
-      <h3>${esc(lb('தொடர்புடைய தளம் · Related', 'Related site'))}</h3>
+      <h3>${esc(lb('சூத்திரங்கள்', 'Formulas'))}</h3>
+      <ul class="formula">
+        <li>Tithi = floor(Moon − Sun elongation ÷ 12°) + 1: 1–15 Shukla, 16–30 Krishna.</li>
+        <li>Nakshatram = floor(Moon's sidereal longitude ÷ 13°20′) + 1, of 27.</li>
+        <li>Yogam = floor(((Sun + Moon) mod 360°) ÷ 13°20′) + 1, of 27.</li>
+        <li>Karanam = floor(elongation ÷ 6°) + 1, of 60 half-tithis.</li>
+        <li>Sidereal longitude = tropical longitude − Lahiri ayanamsa (about 24° in 2026).</li>
+        <li>Sunrise and sunset: the Sun's upper edge meets the horizon, 0.833° below it (refraction 34′ + semi-diameter 16′).</li>
+        <li>Ayanam: Uttarayanam when the sidereal Sun is from 270° to 90° (Makaram to Mithunam), else Dakshinayanam.</li>
+        <li>Tamil month starts on the day the Sun enters a sidereal sign; after sunset, the next day.</li>
+        <li>Tamil day = (civil date − month start) + 1.</li>
+      </ul>
+      <h3>${esc(lb('எடுத்துக்காட்டுகள்', 'Worked examples'))}</h3>
+      <ul class="formula">
+        <li>Moon 100° ahead of Sun → 100 ÷ 12 = 8.33 → index 8 → the 9th Shukla tithi (Navami).</li>
+        <li>Moon at 50° sidereal → 50 ÷ 13.33 = 3.75 → index 3 → Rohini, the 4th nakshatram.</li>
+        <li>Elongation 90° → (1 − cos 90°) ÷ 2 = 0.5 → the Moon is 50% lit.</li>
+        <li>Sun at 280° sidereal → inside 270° to 90° → Uttarayanam.</li>
+        <li>Sunrise 06:00, sunset 18:00 → 12 h day → each of the 8 parts is 1 h 30 min.</li>
+        <li>Sunday Rahu Kalam is part 8 → 16:30 to 18:00.</li>
+        <li>Abhijit: noon 12:00 ± (12 h ÷ 30 = 24 min) → 11:36 to 12:24.</li>
+        <li>Aparahna Kala (sraardham): 4th fifth of the day → 13:12 to 15:36.</li>
+        <li>Hora: 12 h ÷ 12 = 60 min each. The first Sunday hora is the Sun, 06:00 to 07:00, then Venus.</li>
+        <li>Thara: day star and birth star 10 apart → count 11 → 11 mod 9 = 2 → Sampath (a good Thara).</li>
+      </ul>
+    </section>
+    <section class="detail">
+      <h3>${esc(lb('தொடர்புடைய தளம்', 'Related site'))}</h3>
       <p>${esc(lb('திருப்புகழ் பாடல்களை இங்கே படிக்கலாம்.', 'Read Thiruppugazh hymns and their meanings here.'))}</p>
       <p><a class="pill on" href="${RELATED_URL}" target="_blank" rel="noopener">Thiruppugazh · thiruppugazh-ui.vercel.app ↗</a></p>
     </section>
