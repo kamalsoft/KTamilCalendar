@@ -1351,7 +1351,7 @@ function viewLearn() {
           <p>${esc(lb('கடக சங்கராந்தியில் (சுமார் ஜூலை 16) தொடங்கி, மகர சங்கராந்தி (சுமார் ஜனவரி 14) வரை. பகல் நீளம் குறையும்.', 'Starts at Karka Sankranti (about 16 July) and lasts until Makara Sankranti (about 14 January). Days grow shorter.'))}</p></article>
       </div>
       <p class="now-ayanam">${esc(lb(...AYANAM_NAMES[now.kind]))} · ${esc(lb('நாள்', 'day'))} ${now.daysIn + 1}${now.nextDay !== null ? ` · ${esc(lb(...AYANAM_NAMES[now.nextKind]))}: ${esc(dateShort(isoOf(now.nextDay)))}` : ''}</p>
-      <h3 class="sub-h">${esc(lb(`${year} ஆண்டின் மாற்றங்கள்`, `Changes in ${year}`))}</h3>
+      <h3 class="sub-h">${esc(lb('ஆண்டின் மாற்றங்கள்', 'Changes this year'))}</h3>
       <ul class="change-list">${changeList}</ul>
     </section>
 
