@@ -2,7 +2,7 @@
 import { PLACES, placeLabel, localHolidayRegions, timingConvention, usesImperialUnits } from './engine/locations.js';
 import { ICON, TAG_ORDER, RELIGION_ORDER } from './engine/icons.js';
 import { tithiNamesOf } from './engine/engine.js';
-import { ayanamFacts, ayanamYear, ayanamChanges, AYANAM_NAMES } from './engine/ayanam.js';
+import { ayanamOfSun, ayanamFacts, ayanamYear, ayanamChanges, sunRasiOn, AYANAM_NAMES } from './engine/ayanam.js';
 import { soolam, abhijit, karanaName, isVishti, isKariNaal, hora, tharaOf, tharaPasses, personalChandrashtamam, moonPhase, moonPhaseInfo } from './engine/rules.js';
 import { monthDays, importantDates, applying } from './engine/calendar.js';
 import { rasiPalan, skyPositions, grahasIn, gochara } from './engine/rasi.js';
@@ -1330,7 +1330,20 @@ function viewLearn() {
     <section class="learn-sec">
       <h2>${esc(lb('உத்தராயணம் & தட்சிணாயனம்', 'Uttarayanam and Dakshinayanam'))}</h2>
       <p>${esc(lb('சூரியன் ஆண்டு முழுவதும் ஒரு பாதையில் நகர்வது போல் தெரியும். அது வடக்கு நோக்கி நகரும் ஆறு மாதம் உத்தராயணம்; தெற்கு நோக்கி நகரும் ஆறு மாதம் தட்சிணாயனம்.', 'From Earth the Sun seems to travel a path over the year. The six months it moves north are Uttarayanam; the six months it moves south are Dakshinayanam.'))}</p>
-      <div class="sun-track" aria-hidden="true"><span class="sun-go">☀</span></div>
+      <div class="sun-year">
+        <div class="sun-track" aria-hidden="true"><span class="sun-go">☀</span></div>
+        <div class="sun-months">${Array.from({ length: 12 }, (_, m) => {
+          const rasi = sunRasiOn(epochDay(year, m + 1, 15), zone);
+          const k = ayanamOfSun(rasi * 30 + 15);
+          const cur = m + 1 === monthOf(today) ? ' now' : '';
+          return `<div class="sun-m ${k === 'UTTARAYANAM' ? 'sun-north' : 'sun-south'}${cur}">
+            <b>${esc(lb(MONTHS_TA[m], MONTHS_EN[m]))}</b>
+            <span class="sun-arrow" aria-hidden="true">${k === 'UTTARAYANAM' ? '↑' : '↓'}</span>
+            <small>${esc(lb(...CONTENT.names.rasis[rasi]))}</small>
+            <em>${esc(lb(...AYANAM_NAMES[k]))}</em></div>`;
+        }).join('')}</div>
+        <p class="small">${esc(lb('ஒவ்வொரு மாதத்தின் 15-ஆம் தேதியில் சூரியன் இருக்கும் ராசி. ↑ வடக்கு நோக்கி (உத்தராயணம்), ↓ தெற்கு நோக்கி (தட்சிணாயனம்).', 'The Sun\'s sign on the 15th of each month. ↑ northward (Uttarayanam), ↓ southward (Dakshinayanam).'))}</p>
+      </div>
       <div class="ay-cards">
         <article class="ay-card ay-u-card"><h3>☀ ${esc(lb(...AYANAM_NAMES.UTTARAYANAM))}</h3>
           <p>${esc(lb('மகர சங்கராந்தியில் (சுமார் ஜனவரி 14) தொடங்கி, கடக சங்கராந்தி (சுமார் ஜூலை 16) வரை. பகல் நீளம் கூடும்.', 'Starts at Makara Sankranti (about 14 January) and lasts until Karka Sankranti (about 16 July). Days grow longer.'))}</p></article>

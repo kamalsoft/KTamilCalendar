@@ -87,3 +87,6 @@ export function ayanamChanges(year, zone, latitude, longitude) {
   }
   return out;
 }
+
+/** Sidereal Rasi (0 Mesham .. 11 Meenam) of the Sun at local noon of an epoch day. */
+export const sunRasiOn = (epochDay, zone) => Math.floor(A.sunSidereal(noonJd(epochDay, zone)) / 30) % 12;

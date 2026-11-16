@@ -560,3 +560,21 @@ a.pill { display: inline-block; text-decoration: none; }
 .change-list { list-style: none; padding-left: 0; }
 .change-card { background: var(--surface); border-radius: 14px; padding: 12px; border-left: 4px solid var(--surface-hi); display: flex; flex-direction: column; gap: 4px; }
 .change-card p { margin: 0; font-size: 14px; }
+
+/* ---- Sun movement through the year: the Sun's sign each month, with the direction of travel. */
+.sun-year { display: flex; flex-direction: column; gap: 8px; }
+.sun-year .sun-track { position: relative; height: 56px; border-bottom: 2px dashed var(--surface-hi); }
+.sun-year .sun-go { font-size: 34px; animation: sun-year-go 12s linear infinite; }
+@keyframes sun-year-go { 0% { left: 0%; top: 50%; } 25% { top: 0%; } 50% { left: 92%; top: 50%; } 75% { top: 100%; } 100% { left: 0%; top: 50%; } }
+.sun-months { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+@media (min-width: 800px) { .sun-months { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.sun-m { background: var(--surface); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; border-top: 4px solid var(--surface-hi); }
+.sun-m.sun-north { border-top-color: var(--accent); }
+.sun-m.sun-south { border-top-color: var(--muted); }
+.sun-m.now { box-shadow: 0 0 0 2px var(--text); }
+.sun-m b { font-size: 12px; }
+.sun-m small { font-size: 11px; color: var(--muted); }
+.sun-m em { font-style: normal; font-size: 10px; color: var(--dim); }
+.sun-arrow { font-size: 20px; line-height: 1; font-weight: 700; }
+.sun-north .sun-arrow { color: var(--accent); }
+.sun-south .sun-arrow { color: var(--muted); }
