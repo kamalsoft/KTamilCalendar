@@ -65,6 +65,34 @@ const KARI_NAAL = [
 
 export const isKariNaal = (monthIndex, day) => KARI_NAAL[monthIndex].includes(day);
 
+// Moon phase from the tithi: eight phases, each 45 degrees of Moon-Sun angle (12 degrees per tithi).
+// Names: [emoji, Tamil, English].
+const MOON_PHASES = [
+  ['🌑', 'அமாவாசை', 'New Moon'], ['🌒', 'வளர்பிறை பிறை', 'Waxing crescent'], ['🌓', 'முதல் காலாண்டு', 'First quarter'],
+  ['🌔', 'வளர்பிறை நிலவு', 'Waxing gibbous'], ['🌕', 'பௌர்ணமி', 'Full Moon'], ['🌖', 'தேய்பிறை நிலவு', 'Waning gibbous'],
+  ['🌗', 'கடைசி காலாண்டு', 'Last quarter'], ['🌘', 'தேய்பிறை பிறை', 'Waning crescent'],
+];
+export const moonPhase = (tithi) => MOON_PHASES[Math.round((tithi * 12) / 45) % 8];
+
+// What each phase looks like and why, in plain words (Tamil, English), for the moon panel and the Learn page.
+const MOON_EXPLAIN = [
+  ['சந்திரன் சூரியனுக்கு நேராக இருப்பதால் ஒளிப்பகுதி நம் பக்கம் இல்லை. வானில் நிலவைப் பார்க்க முடியாது.', 'The Moon is between us and the Sun. Its lit side faces away, so we see almost nothing.'],
+  ['சூரியனிலிருந்து விலகும்போது வலது பக்கம் ஒரு மெல்லிய பிறை தெரியும்.', 'As the Moon moves away from the Sun, a thin sliver on the right side is lit.'],
+  ['பாதி ஒளி வலது பக்கம். சந்திரன் சூரியனிலிருந்து கால் வட்டம் நகர்ந்துள்ளது.', 'Half the face is lit on the right. The Moon has moved a quarter of the way round from the Sun.'],
+  ['பாதிக்கு மேல் ஒளி. முழு நிலவை நோக்கி வளர்கிறது.', 'More than half is lit and growing towards a full Moon.'],
+  ['சந்திரனும் சூரியனும் எதிரெதிரே. முழு முகமும் ஒளிர்கிறது.', 'The Moon is opposite the Sun, so the whole face is lit.'],
+  ['இன்னும் பாதிக்கு மேல் ஒளி. முழு நிலவுக்குப் பிறகு குறைகிறது.', 'Still more than half is lit, but it shrinks after the full Moon.'],
+  ['பாதி ஒளி, இப்போது இடது பக்கம். அமாவாசையை நோக்கிச் செல்கிறது.', 'Half lit again, now on the left, on the way back to a new Moon.'],
+  ['அமாவாசைக்கு முன் ஒரு மெல்லிய பிறை மட்டும் தெரியும்.', 'Only a thin sliver is left before the new Moon.'],
+];
+/** Moon phase facts for a tithi: emoji, names, what it looks like, and how much of the face is lit (0..1). */
+export const moonPhaseInfo = (tithi) => {
+  const i = Math.round((tithi * 12) / 45) % 8;
+  const [emoji, ta, en] = MOON_PHASES[i];
+  const lit = (1 - Math.cos(((tithi + 0.5) * 12 * Math.PI) / 180)) / 2;
+  return { emoji, ta, en, expTa: MOON_EXPLAIN[i][0], expEn: MOON_EXPLAIN[i][1], lit, waxing: tithi < 15 };
+};
+
 // Thara Balam (validator section F): count inclusively from the birth star to the day's star; take mod 9 (0 -> 9).
 export const tharaOf = (dayStar, janmaStar) => {
   const count = (((dayStar - janmaStar) % 27) + 27) % 27 + 1;

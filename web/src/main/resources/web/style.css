@@ -508,3 +508,55 @@ a.pill { display: inline-block; text-decoration: none; }
 .about-hero { display: flex; align-items: center; gap: 16px; background: var(--card-bg); border-radius: var(--card-radius); box-shadow: var(--card-shadow); padding: 18px; border-left: 4px solid var(--accent); }
 .about-hero h2 { margin: 0 0 4px; font-size: 22px; }
 .about-hero p { margin: 0 0 4px; }
+
+/* ---- Moon phase: shown on each month cell and in the day view. */
+.cell .moon { font-size: 14px; line-height: 1; }
+
+/* ---- Moon panel (Month, selected day) */
+.moon-panel { display: flex; gap: 14px; align-items: center; background: var(--surface-hi); border-radius: 14px; padding: 12px; }
+.moon-big { font-size: 64px; line-height: 1; flex: none; animation: moon-float 4s ease-in-out infinite; }
+.moon-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.moon-text p { margin: 0; font-size: 14px; }
+.lit-bar { height: 8px; background: var(--surface); border-radius: 999px; overflow: hidden; }
+.lit-bar i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+@keyframes moon-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+/* ---- Learn page */
+.learn-sec { background: var(--card-bg); border-radius: var(--card-radius); box-shadow: var(--card-shadow); padding: 16px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+.learn-sec h2 { margin: 0; font-size: 18px; color: var(--accent); }
+.learn-sec p { margin: 0; font-size: 14px; line-height: 1.5; }
+.learn-phases { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 900px) { .learn-phases { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.learn-phase { background: var(--surface); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; border: 2px solid transparent; }
+.learn-phase.now { border-color: var(--accent); }
+.learn-phase small { font-size: 12px; color: var(--muted); }
+.moon-anim { font-size: 46px; line-height: 1; animation: moon-pulse 3.2s ease-in-out infinite; animation-delay: var(--delay, 0s); }
+@keyframes moon-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+.sun-track { position: relative; height: 90px; border-bottom: 2px dashed var(--surface-hi); margin: 6px 0; }
+.sun-go { position: absolute; font-size: 40px; left: 0; top: 0; animation: sun-arc 8s ease-in-out infinite; }
+@keyframes sun-arc { 0% { left: 0%; top: 70%; } 50% { left: 46%; top: 0%; } 100% { left: 92%; top: 70%; } }
+.ay-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+@media (min-width: 700px) { .ay-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.ay-card { background: var(--surface); border-radius: 14px; padding: 12px; border-left: 4px solid var(--surface-hi); }
+.ay-card h3 { margin: 0 0 6px; font-size: 15px; }
+.ay-u-card { border-left-color: var(--accent); }
+.ay-d-card { border-left-color: var(--muted); }
+.now-ayanam { font-weight: 700; color: var(--accent); }
+.change-list { margin: 0; padding-left: 18px; font-size: 14px; display: grid; gap: 4px; }
+.year-map { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+@media (min-width: 700px) { .year-map { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.ay-month b { font-size: 13px; }
+.ay-days { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+.ay-cell { display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: var(--surface-hi); }
+.ay-cell.ay-u { background: var(--accent); }
+.ay-cell.ay-d { background: color-mix(in srgb, var(--muted) 45%, var(--surface)); }
+.ay-cell.today { outline: 2px solid var(--text); outline-offset: 1px; }
+.gloss-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+@media (min-width: 700px) { .gloss-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.gloss-item { display: flex; gap: 12px; align-items: flex-start; background: var(--surface); border-radius: 14px; padding: 12px; }
+.gloss-item > span { font-size: 28px; line-height: 1; }
+.gloss-item b { font-size: 15px; }
+.gloss-item p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+.change-list { list-style: none; padding-left: 0; }
+.change-card { background: var(--surface); border-radius: 14px; padding: 12px; border-left: 4px solid var(--surface-hi); display: flex; flex-direction: column; gap: 4px; }
+.change-card p { margin: 0; font-size: 14px; }
