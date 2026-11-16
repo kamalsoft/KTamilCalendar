@@ -43,4 +43,16 @@ class DayRulesTest {
         assertEquals(LocalTime.of(11, 36), from)
         assertEquals(LocalTime.of(12, 24), to)
     }
+
+    /** Hora: 24 horas, the first belongs to the weekday lord, then the Chaldean order; 12 are daytime. */
+    @Test fun horaFollowsWeekdayLordAndChaldeanOrder() {
+        val h = DayRules.hora(DayOfWeek.MONDAY, LocalTime.of(6, 0), LocalTime.of(18, 0), LocalTime.of(6, 0))
+        assertEquals(24, h.size)
+        assertEquals(12, h.count { it.daytime })
+        assertEquals(DayRules.Planet.MOON, h[0].lord)
+        assertEquals(DayRules.Planet.SATURN, h[1].lord)
+        assertEquals(DayRules.Planet.MOON, h[7].lord)
+        assertEquals(LocalTime.of(18, 0), h[12].start)
+        assertEquals(LocalTime.of(6, 0), h[23].end)
+    }
 }

@@ -2,6 +2,7 @@ package com.kamalsoft.tamilcalendar.tv.domain.model
 
 import java.time.DayOfWeek
 import java.time.LocalTime
+import kotlin.math.roundToLong
 
 enum class Direction(val ta: String, val en: String) {
     EAST("கிழக்கு", "East"),
@@ -72,4 +73,43 @@ object DayRules {
     )
 
     fun isKariNaal(monthIndex: Int, day: Int): Boolean = KARI_NAAL[monthIndex]?.contains(day) == true
+
+    /** Planetary lords of the Chaldean sequence, for the Hora. Benefic: Jupiter, Venus, Mercury, Moon. */
+    enum class Planet(val ta: String, val en: String, val benefic: Boolean) {
+        SUN("சூரியன்", "Sun", false), VENUS("சுக்கிரன்", "Venus", true), MERCURY("புதன்", "Mercury", true),
+        MOON("சந்திரன்", "Moon", true), SATURN("சனி", "Saturn", false), JUPITER("குரு", "Jupiter", true), MARS("செவ்வாய்", "Mars", false),
+    }
+
+    data class Hora(val lord: Planet, val start: LocalTime, val end: LocalTime, val daytime: Boolean)
+
+    /**
+     * The 24 horas of a Tamil day (validator Step 3B.6): 12 equal parts of the daytime from sunrise, then 12 equal parts
+     * of the night from sunset to the next sunrise. The first hora of a weekday belongs to that weekday's lord, then the
+     * sequence Sun, Venus, Mercury, Moon, Saturn, Jupiter, Mars repeats.
+     */
+    fun hora(day: DayOfWeek, sunrise: LocalTime, sunset: LocalTime, nextSunrise: LocalTime): List<Hora> {
+        val seq = listOf(Planet.SUN, Planet.VENUS, Planet.MERCURY, Planet.MOON, Planet.SATURN, Planet.JUPITER, Planet.MARS)
+        val lord = when (day) {
+            DayOfWeek.SUNDAY -> Planet.SUN
+            DayOfWeek.MONDAY -> Planet.MOON
+            DayOfWeek.TUESDAY -> Planet.MARS
+            DayOfWeek.WEDNESDAY -> Planet.MERCURY
+            DayOfWeek.THURSDAY -> Planet.JUPITER
+            DayOfWeek.FRIDAY -> Planet.VENUS
+            DayOfWeek.SATURDAY -> Planet.SATURN
+        }
+        val first = seq.indexOf(lord)
+        val rise = sunrise.toSecondOfDay().toDouble()
+        val set = sunset.toSecondOfDay().toDouble()
+        val nextRise = nextSunrise.toSecondOfDay().let { if (it <= set) it + 86400.0 else it.toDouble() }
+        val dayPart = (set - rise) / 12
+        val nightPart = (nextRise - set) / 12
+        fun at(sec: Double) = LocalTime.ofSecondOfDay(sec.roundToLong() % 86400)
+        return (0 until 24).map { k ->
+            val daytime = k < 12
+            val (from, to) = if (daytime) rise + k * dayPart to rise + (k + 1) * dayPart
+                else set + (k - 12) * nightPart to set + (k - 11) * nightPart
+            Hora(seq[(first + k) % 7], at(from), at(to), daytime)
+        }
+    }
 }

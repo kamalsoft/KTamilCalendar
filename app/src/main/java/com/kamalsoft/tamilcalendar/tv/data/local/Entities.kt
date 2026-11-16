@@ -36,6 +36,8 @@ data class DayEntity(
     val karanam: Int = 0,
     /** Sraardha tithi index, -1 when none. */
     val sraardhaTithi: Int = -1,
+    /** Seconds since midnight of the next Tamil day's sunrise. */
+    val nextSunriseSec: Int = 0,
 )
 
 @Entity(tableName = "timing_window", indices = [Index("epochDay")])

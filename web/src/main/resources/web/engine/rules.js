@@ -64,3 +64,27 @@ const KARI_NAAL = [
 ];
 
 export const isKariNaal = (monthIndex, day) => KARI_NAAL[monthIndex].includes(day);
+
+// Hora (validator Step 3B.6): 24 horas, 12 of daytime from sunrise and 12 of night from sunset. The first hora of a
+// weekday belongs to that weekday's lord, then Sun, Venus, Mercury, Moon, Saturn, Jupiter, Mars repeats.
+// Times are seconds since midnight; the night wraps past midnight.
+export const PLANETS = {
+  SUN: ['சூரியன்', 'Sun', false], VENUS: ['சுக்கிரன்', 'Venus', true], MERCURY: ['புதன்', 'Mercury', true],
+  MOON: ['சந்திரன்', 'Moon', true], SATURN: ['சனி', 'Saturn', false], JUPITER: ['குரு', 'Jupiter', true], MARS: ['செவ்வாய்', 'Mars', false],
+};
+const CHALDEAN = ['SUN', 'VENUS', 'MERCURY', 'MOON', 'SATURN', 'JUPITER', 'MARS'];
+const WEEKDAY_LORD = ['SUN', 'MOON', 'MARS', 'MERCURY', 'JUPITER', 'VENUS', 'SATURN']; // index 0 = Sunday
+
+export const hora = (weekday, sunriseSec, sunsetSec, nextSunriseSec) => {
+  const first = CHALDEAN.indexOf(WEEKDAY_LORD[weekday]);
+  const nextRise = nextSunriseSec <= sunsetSec ? nextSunriseSec + 86400 : nextSunriseSec;
+  const dayPart = (sunsetSec - sunriseSec) / 12;
+  const nightPart = (nextRise - sunsetSec) / 12;
+  return Array.from({ length: 24 }, (_, k) => {
+    const daytime = k < 12;
+    const from = daytime ? sunriseSec + k * dayPart : sunsetSec + (k - 12) * nightPart;
+    const to = daytime ? sunriseSec + (k + 1) * dayPart : sunsetSec + (k - 11) * nightPart;
+    const lord = CHALDEAN[(first + k) % 7];
+    return { lord: PLANETS[lord], benefic: PLANETS[lord][2], start: Math.round(from) % 86400, end: Math.round(to) % 86400, daytime };
+  });
+};

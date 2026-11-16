@@ -109,17 +109,16 @@ Unless stated otherwise:
 - Result: a list of `(rasi, start time)`. Usually 11–14 signs per day, each lasting about 1–3 hours.
 - Accuracy: 4 392 sign changes in a year, mean error 0.21 min, worst 0.25 min against Swiss Ephemeris houses.
 
-## 10. Sraardha tithi (`sraardhaTithiOf`)
+## 10. Sraardha tithi (`sraardhaTithiOf`, `aparahnaCounts`)
 
 - Aparahna Kala is the 4th fifth of the local daytime: `U = (sunset − sunrise) / 5`, window `[sunrise + 3U, sunrise + 4U]`.
 - The window is sampled at 16 evenly spaced instants. The tithi `floor(elongation / 12)` at each sample is counted.
-- The tithi that covers **more than half** of the samples is the Sraardha tithi. Amavasai (29) is never used. If no tithi
-  has a majority, there is none.
-- Source: the astronomer-validator skill, Step 3C. It replaces the earlier fixed 13:30–16:00 window, which the skill
-  rejects because it hard-codes clock times.
-- Verified against Swiss Ephemeris for 365 days, 0 mismatches, using the same sampling.
-- Not yet implemented: Darsha (Amavasai) day selection with Madhyahna, Mahalaya-specific days, and the rule that a day
-  on which Sraardha falls is never postponed for other inauspicious factors.
+- **Majority:** the tithi with more than half of the samples (9 or more) is the Sraardha tithi.
+- **Tie rule (validator Step 3C.3):** a tithi with exactly half (8 of 16) is the Sraardha tithi only if it also has exactly
+  half on the previous day. The second day takes it, so the first day gets none.
+- Amavasai (29) is never used. Otherwise there is no Sraardha tithi.
+- Verified against Swiss Ephemeris for 365 days (Naperville), 0 mismatches, using the same sampling and the tie rule.
+- Not yet implemented: the Darsha (Amavasai) day selection with Madhyahna (§13a), and the Mahalaya-specific days.
 
 ---
 
@@ -168,8 +167,9 @@ A day is a candidate when all of these hold:
    (the validator's rule). Saptami and Dashami are not included until the open question is answered.
 5. The yogam is not malefic (validator section D, audited): 0-based {0, 5, 8, 9, 12, 14, 16, 18, 26}, i.e. 1-based
    1 Vishkambam, 6 Atiganda, 9 Shula, 10 Ganda, 13 Vyaghata, 15 Vajra, 17 Vyatipata, 19 Parigha, 27 Vaidhriti.
-   Sukarma (7) is auspicious. The app rejects the whole day for these yogas (the conservative reading). Partial-ghati
-   rules are not implemented.
+   Sukarma (7) is auspicious. Whole-day rejection: the day is rejected if a malefic yogam occurs at any time between sunrise
+   and sunset. The engine samples the daylight every 30 minutes, which cannot miss a yogam (each lasts about a day).
+   Partial-ghati rules are not implemented.
 6. The star index is one of {3, 4, 9, 11, 12, 14, 16, 18, 20, 21, 22, 25, 26}: Rohini, Mirugasirisham, Magam,
    Uthiram, Hastham, Swathi, Anusham, Moolam, Uthiradam, Thiruvonam (Shravana), Avittam (Dhanishta), Uthirattathi
    (Uttara Bhadrapada), Revati. This is the validator's auspicious list.
@@ -181,21 +181,32 @@ Lagna window.
 
 ---
 
-## 13a. Validator rules added (documented; not all implemented)
+## 13a. Validator rules: status in the app
 
-| Rule | Status in the app |
+Each rule is taken from the astronomer-validator skill (`.claude/skills/tamil-panchangam-astronomical-validator/SKILL.md`).
+"Implemented" means the engine computes it and the tests or parity checks cover it.
+
+| Rule | Status |
 |---|---|
-| Krishna Paksha Muhurtham: first half of the waning fortnight (Krishna Prathama to Panchami, tithi 1–5); Saptami and Dashami only if confirmed | Not yet. The app uses Krishna tithis 2, 3 and 5 (Krishna index {1, 2, 4}); the skill's rule differs. Open decision (`docs/BACKLOG.md`). |
-| Hora: 12 equal parts of day and night, Chaldean order from the weekday lord | Not computed |
-| Lagna Shuddhi: 8th house free of malefics; benefics in Kendra and Trikona | Not computed (needs planetary houses) |
-| Marana Yogam: weekday and Nakshatra pair lookup | Not computed (table needed) |
-| Thara Balam and personal Chandrashtamam | Not computed (needs birth star and Rasi) |
-| Tuesday and Saturday: flagged, not blacked out | The app excludes them outright. Differs from the skill. |
-| Nakshatram quality: Dhruva, Mridu, Adhomukha | Not used |
-| Malefic Yogas (1-based): Vishkambha 1, Ganda 6, Atiganda 7, Shula 9, Vyaghata 13, Vajra 15, Vyatipata 17, Parigha 19, Vaidhriti 27 | Not used |
-| Kari Naal gate on Muhurtham | Implemented (engine version 8) |
+| Krishna Paksha Muhurtham: Prathama to Panchami only (Krishna tithi 1–5). Saptami and Dashami not included (open question) | Implemented (engine 9) |
+| Malefic yogas (1-based 1, 6, 9, 10, 13, 15, 17, 19, 27) block Subha Muhurtham if they occur at any time between sunrise and sunset. Sampled every 30 min. Sukarma (7) is auspicious | Implemented (engine 10–11) |
+| Subha Muhurtham excludes Kari Naal days (gate 1) | Implemented (engine 8) |
+| Tuesday and Saturday excluded from the Subha Muhurtham tag (marriage rule) | Implemented. The day view does not yet flag them with their permitted uses. |
+| Hora: 12 equal parts of daytime and 12 of night, Chaldean order from the weekday lord | Implemented (engine 11): APK Hora card, web Today chips |
+| Sraardha tithi tie rule (second day gets an exact-half tithi) | Implemented (engine 11) |
+| Magha and Moola permitted for marriage; Adhomukha applies to construction only | Adhomukha filters not used by the app (no construction filters) |
+| Nakshatram quality (Dhruva, Mridu, Adhomukha) | Not displayed |
+| Lagna Shuddhi (8th house, benefics in Kendra and Trikona, Lagna lord strength) | Not implemented. Needs positions of all planets (Mars, Mercury and Venus are not computed yet). |
+| Marana Yogam (weekday and Nakshatra pair) | Not implemented. Needs the classical lookup table. |
+| Thara Balam and personal Chandrashtamam | Not implemented. Needs the birth star and birth Rasi as settings. |
+| Darsha (Amavasai) day selection with Madhyahna | Not implemented |
+| Mahalaya rules (Ghata Chaturdashi restriction and the designated days) | Not implemented |
+| Partial-ghati (Tyajya) rules for malefic yogas | Not implemented. The app uses whole-day rejection. |
+| Kari Naal table in the day view | Implemented (Karanam card) |
 
-**Worked checks.** Sun $120^\circ$ with Moon $300^\circ$ gives $\Delta\lambda = 180^\circ$ (Pournami). Sun $100^\circ$ with Moon $310^\circ$ gives $\Delta\lambda = 210^\circ$ and block 18, Krishna Tritiya, so the verdict is `PASS (conditional)` on Chandra Balam and Lagna Shuddhi. The earlier Navami example ($\Delta\lambda = 105^\circ$) is Shukla Navami, not Krishna Ashtami.
+**Worked checks.** Sun $120^\circ$ with Moon $300^\circ$ gives $\Delta\lambda = 180^\circ$ (Pournami). Sun $100^\circ$ with Moon
+$310^\circ$ gives $\Delta\lambda = 210^\circ$ and block 18, Krishna Tritiya, so the verdict is `PASS (conditional)` on Chandra
+Balam and Lagna Shuddhi. The earlier Navami example ($\Delta\lambda = 105^\circ$) is Shukla Navami, not Krishna Ashtami.
 
 ## 14. Day-level rules (`DayRules.kt`, `rules.js`)
 
@@ -241,6 +252,16 @@ Lagna window.
 
 ---
 
+### 14.5 Hora (planetary hours) — `DayRules.hora`, `rules.js` `hora`
+- Inputs: weekday, sunrise, sunset and the next sunrise.
+- Day horas: 12 equal parts of `(sunset − sunrise)`, starting at sunrise. Night horas: 12 equal parts of
+  `(next sunrise − sunset)`, starting at sunset. The next sunrise is stored with each day, so the night length is exact.
+- Lords: the first hora of a weekday belongs to that weekday's lord (Sunday Sun, Monday Moon, Tuesday Mars, Wednesday
+  Mercury, Thursday Jupiter, Friday Venus, Saturday Saturn). The sequence Sun, Venus, Mercury, Moon, Saturn, Jupiter, Mars
+  then repeats.
+- Benefic horas: Jupiter, Venus, Mercury, Moon. Malefic: Sun, Mars, Saturn.
+- Shown on the APK Daily screen (Hora card, all 24 in the detail panel) and as chips on the web Today tab.
+
 ## 15. Festivals and holidays
 
 - **Computed festivals** (`TamilCalendarEngine.computeFestivals`): each rule has a Tamil and English title, a kind
@@ -263,10 +284,10 @@ Lagna window.
 
 ## 17. Versions and caches
 
-- `TamilCalendarEngine.VERSION` (currently 5) is part of the cached-day key. Bumping it recomputes cached days.
-- The APK's Room database (`CalendarDatabase`, currently version 5) stores the computed day. Changing the stored fields
+- `TamilCalendarEngine.VERSION` (currently 11) is part of the cached-day key. Bumping it recomputes cached days.
+- The APK's Room database (`CalendarDatabase`, currently version 6) stores the computed day, including the next sunrise. Changing the stored fields
   bumps the database version, which wipes and rebuilds the cache.
-- Web offline years are kept in Cache Storage under `ktc-packs-v3`. Changing the day shape means bumping that name.
+- Web offline years are kept in Cache Storage under `ktc-packs-v4`. Saved years from before engine 11 are dropped (cache `ktc-packs-v4`) and should be saved again. Changing the day shape means bumping that name.
 
 ## 18. How it is verified
 

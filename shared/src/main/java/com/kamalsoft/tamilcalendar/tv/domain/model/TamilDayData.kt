@@ -10,6 +10,8 @@ data class TamilDayData(
     val tamilDate: TamilDate,
     val sunrise: LocalTime,
     val sunset: LocalTime,
+    /** Sunrise of the next Tamil day; the night horas run from [sunset] to this time. */
+    val nextSunrise: LocalTime = LocalTime.MIDNIGHT,
     val panchangam: Panchangam,
     val timings: DayTimings,
     val chandrashtamam: Chandrashtamam,

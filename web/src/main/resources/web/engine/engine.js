@@ -73,7 +73,7 @@ export class TamilCalendarEngine {
       sunRasi: A.floorDiv(A.sunSidereal(c.sunriseJd), 30),
       lagnam: this.lagnaSegments(c.sunriseJd, next.sunriseJd),
       karanam: A.floorDiv(A.elongation(c.sunriseJd), 6),
-      sraardhaTithi: this.sraardhaTithiOf(c.sunriseJd, c.sunsetJd),
+      sraardhaTithi: this.sraardhaTithiOf(this.aparahnaCounts(c.sunriseJd, c.sunsetJd), this.aparahnaCounts(prev.sunriseJd, prev.sunsetJd)),
     };
 
     const timings = this.timingsFor(c.day, sunrise, sunset);
@@ -109,6 +109,7 @@ export class TamilCalendarEngine {
       weekdayIndex: weekday,
       sunrise,
       sunset,
+      nextSunrise: this.localTime(next.sunriseJd),
       tamilDate: this.tamilDate(c),
       panchangam,
       timings,
@@ -153,14 +154,21 @@ export class TamilCalendarEngine {
   }
 
   /** Sraardha tithi: the tithi that covers the whole window 13:30–16:00 local, Amavasai excluded (see Kotlin). */
-  sraardhaTithiOf(sunriseJd, sunsetJd) {
-    // Aparahna Kala: the 4th fifth of the daytime. The tithi covering more than half of it is the Sraardha tithi.
+  /** Aparahna Kala (4th fifth of the daytime): the tithi counts over 16 samples. */
+  aparahnaCounts(sunriseJd, sunsetJd) {
     const unit = (sunsetJd - sunriseJd) / 5;
-    const samples = 16;
     const counts = new Array(30).fill(0);
-    for (let i = 0; i < samples; i++) counts[A.floorDiv(A.elongation(sunriseJd + (3 + (i + 0.5) / samples) * unit), 12)]++;
+    for (let i = 0; i < 16; i++) counts[A.floorDiv(A.elongation(sunriseJd + (3 + (i + 0.5) / 16) * unit), 12)]++;
+    return counts;
+  }
+
+  /** Validator Step 3C with the tie rule (same as Kotlin): more than half, or exactly half on two consecutive days (the second day). */
+  sraardhaTithiOf(counts, prevCounts) {
     const best = counts.indexOf(Math.max(...counts));
-    return counts[best] * 2 > samples && best !== 29 ? best : null;
+    if (best === 29) return null;
+    if (counts[best] * 2 > 16) return best;
+    if (counts[best] * 2 === 16 && prevCounts[best] * 2 === 16) return best;
+    return null;
   }
 
   /** The rising signs from sunrise to the next sunrise (same scan as Kotlin's lagnaSegments). */
@@ -261,9 +269,14 @@ export class TamilCalendarEngine {
     const w = dayOfWeek(c.day);
     if (w === 2 || w === 6) return false;
     const tithiOk = tithi < 15 ? SHUKLA_MUHURTHAM_TITHIS.has(tithi) : KRISHNA_MUHURTHAM_TITHIS.has(tithi - 15);
-    // Validator section D: a malefic yoga is strictly avoided.
-    const yoga = A.floorDiv(A.yogaSum(c.sunriseJd), NAK_SPAN) % 27;
-    return tithiOk && MUHURTHAM_STARS.has(star) && !MALEFIC_YOGA_INDICES.has(yoga);
+    // Validator section D: whole-day rejection if a malefic yoga occurs at any time between sunrise and sunset.
+    const daylightSamples = Math.floor((c.sunsetJd - c.sunriseJd) * 48) + 1;
+    let malefic = false;
+    for (let i = 0; i <= daylightSamples; i++) {
+      const jd = c.sunriseJd + ((c.sunsetJd - c.sunriseJd) * i) / daylightSamples;
+      if (MALEFIC_YOGA_INDICES.has(A.floorDiv(A.yogaSum(jd), NAK_SPAN) % 27)) malefic = true;
+    }
+    return tithiOk && MUHURTHAM_STARS.has(star) && !malefic;
   }
 
   // ------------------------------------------------------------ festivals & holidays

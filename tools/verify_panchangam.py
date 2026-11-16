@@ -81,14 +81,22 @@ print(f"lagna     n={len(lagna_err):4d}  mean|Δ|={statistics.mean(a):5.2f} min 
 
 # Sraardha tithi (astronomer validator, Step 3C): sample Aparahna Kala, the 4th fifth of the local daytime,
 # and take the tithi covering more than half of it (Amavasai excluded); else none (-1). Same sampling as the engine.
-def sraardha_expected(date):
+def aparahna_counts(date):
     sr, ss = rise_set(date)
     unit = (ss - sr) / 5
     counts = [0] * 30
     for i in range(16):
         counts[int(elong(sr + (3 + (i + 0.5) / 16) * unit) // 12)] += 1
+    return counts
+def sraardha_expected(date):
+    # Tie rule: exactly half on two consecutive days gives the tithi to the second day.
+    counts = aparahna_counts(date)
+    prev = aparahna_counts(date - dt.timedelta(days=1))
     best = max(range(30), key=lambda k: counts[k])
-    return best if counts[best] * 2 > 16 and best != 29 else -1
+    if best == 29: return -1
+    if counts[best] * 2 > 16: return best
+    if counts[best] * 2 == 16 and prev[best] * 2 == 16: return best
+    return -1
 sr_bad = []
 for r in rows:
     date = dt.date.fromisoformat(r["date"])

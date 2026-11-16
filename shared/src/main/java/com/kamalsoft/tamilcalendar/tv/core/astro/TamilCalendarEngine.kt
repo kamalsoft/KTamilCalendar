@@ -184,7 +184,7 @@ class TamilCalendarEngine(
             sunRasi = Astro.floorDiv(Astro.sunSidereal(c.sunriseJd), 30.0),
             lagnam = lagnaSegments(c.sunriseJd, next.sunriseJd),
             karanam = Astro.floorDiv(Astro.elongation(c.sunriseJd), 6.0),
-            sraardhaTithi = sraardhaTithiOf(c.sunriseJd, c.sunsetJd),
+            sraardhaTithi = sraardhaTithiOf(aparahnaCounts(c.sunriseJd, c.sunsetJd), aparahnaCounts(prev.sunriseJd, prev.sunsetJd)),
         )
 
         val timings = timingsFor(c.date, sunrise, sunset)
@@ -221,6 +221,7 @@ class TamilCalendarEngine(
             date = c.date,
             tamilDate = tamilDate(c),
             sunrise = sunrise,
+            nextSunrise = localTime(next.sunriseJd),
             sunset = sunset,
             panchangam = panchangam,
             timings = timings,
@@ -272,15 +273,27 @@ class TamilCalendarEngine(
      * [sunrise + 3U, sunrise + 4U] with U = daytime / 5. The tithi covering more than half of it is the Sraardha
      * tithi. Amavasai is not used, and no tithi with a majority gives null.
      */
-    private fun sraardhaTithiOf(sunriseJd: Double, sunsetJd: Double): Int? {
+    private fun aparahnaCounts(sunriseJd: Double, sunsetJd: Double): IntArray {
         val unit = (sunsetJd - sunriseJd) / 5
-        val samples = 16
         val counts = IntArray(30)
-        for (i in 0 until samples) {
-            counts[Astro.floorDiv(Astro.elongation(sunriseJd + (3 + (i + 0.5) / samples) * unit), 12.0)]++
+        for (i in 0 until 16) {
+            counts[Astro.floorDiv(Astro.elongation(sunriseJd + (3 + (i + 0.5) / 16) * unit), 12.0)]++
         }
+        return counts
+    }
+
+    /**
+     * Validator Step 3C, with the tie rule: a tithi with more than half of the 16 samples is the Sraardha tithi. If it
+     * has exactly half on two consecutive days, the second day (this day) takes it. Amavasai is never used.
+     */
+    private fun sraardhaTithiOf(counts: IntArray, prevCounts: IntArray): Int? {
         val best = counts.indices.maxBy { counts[it] }
-        return if (counts[best] * 2 > samples && best != 29) best else null
+        if (best == 29) return null
+        return when {
+            counts[best] * 2 > 16 -> best
+            counts[best] * 2 == 16 && prevCounts[best] * 2 == 16 -> best
+            else -> null
+        }
     }
 
     /**
@@ -374,9 +387,14 @@ class TamilCalendarEngine(
         val w = c.date.dayOfWeek.value % 7
         if (w == 2 || w == 6) return false // Tuesday, Saturday
         val tithiOk = if (tithi < 15) tithi in SHUKLA_MUHURTHAM_TITHIS else (tithi - 15) in KRISHNA_MUHURTHAM_TITHIS
-        // Validator section D: a malefic yoga is strictly avoided.
-        val yoga = Astro.floorDiv(Astro.yogaSum(c.sunriseJd), NAK_SPAN) % 27
-        return tithiOk && star in MUHURTHAM_STARS && yoga !in MALEFIC_YOGA_INDICES
+        // Validator section D: whole-day rejection if a malefic yoga occurs at any time between sunrise and sunset.
+        // Yoga changes about once a day, so sampling every 30 minutes of daylight cannot miss one.
+        val daylightSamples = 1 + (c.sunsetJd - c.sunriseJd) * 48
+        val malefic = (0..daylightSamples.toInt()).any { i ->
+            val jd = c.sunriseJd + (c.sunsetJd - c.sunriseJd) * i / daylightSamples
+            Astro.floorDiv(Astro.yogaSum(jd), NAK_SPAN) % 27 in MALEFIC_YOGA_INDICES
+        }
+        return tithiOk && star in MUHURTHAM_STARS && !malefic
     }
 
     // ---------------------------------------------------------------- festivals & holidays
@@ -559,7 +577,7 @@ class TamilCalendarEngine(
 
     companion object {
         /** Engine output version; bump to force the offline DB to regenerate. */
-        const val VERSION = 10
+        const val VERSION = 11
 
         private const val NAK_SPAN = 360.0 / 27.0
         private const val LAGNA_STEP_DAYS = 10.0 / 1440.0

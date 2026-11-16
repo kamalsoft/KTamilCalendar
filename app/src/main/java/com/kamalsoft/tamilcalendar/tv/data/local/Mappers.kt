@@ -63,6 +63,7 @@ class CalendarMapper(
         lagnam = d.panchangam.lagnam.joinToString(",") { "${it.rasi}@${it.start.toEpoch()}" },
         karanam = d.panchangam.karanam,
         sraardhaTithi = d.panchangam.sraardhaTithi ?: -1,
+        nextSunriseSec = d.nextSunrise.toSecondOfDay(),
     )
 
     fun toTimingEntities(d: TamilDayData): List<TimingEntity> = d.timings.all().map {
@@ -106,6 +107,7 @@ class CalendarMapper(
             tamilDate = TamilDate(e.tamilMonth, e.tamilDay, e.yearCycleIndex, e.thiruvalluvarAandu),
             sunrise = e.sunriseSec.toTime(),
             sunset = e.sunsetSec.toTime(),
+            nextSunrise = e.nextSunriseSec.toTime(),
             panchangam = Panchangam(
                 tithi = PanchangaElement(e.tithi, tithiNames.first, tithiNames.second, e.tithiEnd.toLocal()),
                 nakshatram = TamilNames.nakshatras[e.nakshatram].let {

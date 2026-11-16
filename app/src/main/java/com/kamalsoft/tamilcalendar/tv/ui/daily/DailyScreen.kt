@@ -475,6 +475,19 @@ private fun ColumnScope.PanchangamColumn(
             listOf("கரி நாள் · Kari Naal" to if (kariNaal) "Yes: no Subakariyam today" else "No"),
         ),
     )
+    val horas = DayRules.hora(day.date.dayOfWeek, day.sunrise, day.sunset, day.nextSunrise)
+    InfoCard(
+        order = 10,
+        label = "ஹோரை · Hora", value = horas.first().lord.ta, sub = "${horas.first().lord.en} · first hora at sunrise",
+        accent = TvColors.Gold, show = show,
+        detail = DetailContent(
+            "ஹோரை · Hora", "Day horas from sunrise, night horas from sunset. Benefic: Jupiter, Venus, Mercury, Moon.",
+            horas.map { h ->
+                "${h.lord.ta} · ${h.lord.en}${if (h.lord.benefic) "" else " (malefic)"}" to
+                    "${Fmt.timeEn(h.start)} – ${Fmt.timeEn(h.end)}"
+            },
+        ),
+    )
     val sraardha = p.sraardhaTithi
     InfoCard(
         order = 9,

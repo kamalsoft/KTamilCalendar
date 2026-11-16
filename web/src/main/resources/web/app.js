@@ -2,7 +2,7 @@
 import { PLACES, placeLabel, localHolidayRegions, timingConvention, usesImperialUnits } from './engine/locations.js';
 import { ICON, TAG_ORDER, RELIGION_ORDER } from './engine/icons.js';
 import { tithiNamesOf } from './engine/engine.js';
-import { soolam, abhijit, karanaName, isVishti, isKariNaal } from './engine/rules.js';
+import { soolam, abhijit, karanaName, isVishti, isKariNaal, hora } from './engine/rules.js';
 import { monthDays, importantDates, applying } from './engine/calendar.js';
 import { rasiPalan, skyPositions, grahasIn, gochara } from './engine/rasi.js';
 import { CONTENT } from './engine/content.js';
@@ -253,7 +253,9 @@ function viewToday() {
       <div class="today-split">
         <section class="detail"><h3>${esc(lb('நாள் நேரம்', 'Day timeline'))}</h3>${timelineHtml(d, nowSec)}
           <h3>${esc(lb('லக்னம் · நாள் முழுவதும்', 'Lagnam through the day'))}</h3>
-          <ul class="chips">${lagna.map((s) => `<li class="chip">${esc(lb(...CONTENT.names.rasis[s.rasi]))} · ${timeOf(s.start.slice(11, 19))}</li>`).join('')}</ul></section>
+          <ul class="chips">${lagna.map((s) => `<li class="chip">${esc(lb(...CONTENT.names.rasis[s.rasi]))} · ${timeOf(s.start.slice(11, 19))}</li>`).join('')}</ul>
+          <h3>${esc(lb('ஹோரை', 'Hora'))}</h3>
+          <ul class="chips">${hora(d.weekdayIndex, secOf(d.sunrise), secOf(d.sunset), secOf(d.nextSunrise)).map((h) => `<li class="chip${h.benefic ? ' good' : ''}">${esc(lb(...h.lord))} · ${timeOf(hms(h.start))}</li>`).join('')}</ul></section>
         <section class="detail"><div class="tiles">${facts}</div></section>
       </div>
       <p class="warn chandra">${esc(lb('சந்திராஷ்டமம்', 'Chandrashtamam'))} — ${esc(lb(...CONTENT.names.rasis[chandra.rasi]))}
@@ -725,8 +727,8 @@ function viewAbout() {
 // ---------------------------------------------------------------- offline year packs
 // A pack is one year of days for one place and timing convention, kept in Cache Storage. The app reads it
 // instead of recomputing; without a pack everything is still computed on the device.
-// v3: packs saved before the Karanam and Sraardha fields existed are dropped; save the offline years again.
-const PACK_CACHE = 'ktc-packs-v3';
+// v4: packs saved before the next-sunrise field (Hora) existed are dropped; save the offline years again.
+const PACK_CACHE = 'ktc-packs-v4';
 const packUrl = (placeId, convention, year) => `pack/${encodeURIComponent(placeId)}/${convention}/${year}.json`;
 const packYears = [2026, 2027, 2028];
 
