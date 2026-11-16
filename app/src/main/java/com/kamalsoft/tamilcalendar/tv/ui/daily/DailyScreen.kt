@@ -479,6 +479,18 @@ private fun ColumnScope.PanchangamColumn(
             listOf("கரி நாள் · Kari Naal" to if (kariNaal) "Yes: no Subakariyam today" else "No"),
         ),
     )
+    val sraardha = p.sraardhaTithi
+    InfoCard(
+        order = 9,
+        label = "சிராத்தம் · Sraardham",
+        value = sraardha?.let { Panchangam.tithiNames(it).first } ?: "—",
+        sub = sraardha?.let { "${Panchangam.tithiNames(it).second} · 1:30–4:00 PM" } ?: "No tithi covers 1:30–4:00 PM",
+        accent = TvColors.Gold, show = show,
+        detail = DetailContent(
+            "சிராத்தம் · Sraardham tithi", "The tithi that covers the whole window 1:30–4:00 PM",
+            listOf("சாளரம் · Window" to "1:30 PM – 4:00 PM"),
+        ),
+    )
     val horas = DayRules.hora(day.date.dayOfWeek, day.sunrise, day.sunset, day.nextSunrise)
     InfoCard(
         order = 10,
@@ -521,18 +533,6 @@ private fun ColumnScope.PanchangamColumn(
             ),
         )
     }
-    val sraardha = p.sraardhaTithi
-    InfoCard(
-        order = 9,
-        label = "சிராத்தம் · Sraardham",
-        value = sraardha?.let { Panchangam.tithiNames(it).first } ?: "—",
-        sub = sraardha?.let { "${Panchangam.tithiNames(it).second} · 1:30–4:00 PM" } ?: "No tithi covers 1:30–4:00 PM",
-        accent = TvColors.Gold, show = show,
-        detail = DetailContent(
-            "சிராத்தம் · Sraardham tithi", "The tithi that covers the whole window 1:30–4:00 PM",
-            listOf("சாளரம் · Window" to "1:30 PM – 4:00 PM"),
-        ),
-    )
 }
 
 @Composable
