@@ -567,7 +567,8 @@ function viewMuhurtham() {
 // ---- rasi palan, chart and gochara
 /** Tile position of each rasi on the 4×4 chart (row, column), as in the APK's RasiPalanScreen. */
 const RASI_POS = { 11: [0, 0], 0: [0, 1], 1: [0, 2], 2: [0, 3], 10: [1, 0], 3: [1, 3], 9: [2, 0], 4: [2, 3], 8: [3, 0], 7: [3, 1], 6: [3, 2], 5: [3, 3] };
-const OUTLOOK_TINT = { GOOD: 'var(--accent)', NEUTRAL: 'var(--muted)', CAUTION: 'var(--amber)', CHANDRASHTAMAM: 'var(--alert)' };
+/** Full planet names for the chart (Tamil, English). */
+const GRAHA_NAME = { sun: ['சூரியன்', 'Sun'], moon: ['சந்திரன்', 'Moon'], jupiter: ['குரு', 'Jupiter'], saturn: ['சனி', 'Saturn'], rahu: ['ராகு', 'Rahu'], ketu: ['கேது', 'Ketu'] };
 
 function viewRasi() {
   const d = dayData(state.day) || dayData(todayEpoch());
@@ -577,23 +578,32 @@ function viewRasi() {
   const nav = `<div class="bar"><button class="nav" data-act="day" data-d="-1" aria-label="Previous day">‹</button>
     <h1>${esc(lb('ராசி பலன்', 'Rasi Palan'))} · ${esc(dateLong(d.epochDay))}</h1><button class="nav" data-act="day" data-d="1" aria-label="Next day">›</button></div>
     <p class="small center">${esc(lb('ஒரு ராசியைத் தட்டுக', 'Tap a rasi for today, month and year'))}</p>`;
-  const tiles = Object.entries(RASI_POS).map(([r, [row, col]]) => {
-    const p = byRasi.get(Number(r));
-    const planets = grahasIn(sky, Number(r)).join(' ');
-    return `<button class="rasi-tile" style="grid-row:${row + 1};grid-column:${col + 1};--tint:${OUTLOOK_TINT[p.outlook]}" data-act="rasi-open" data-r="${r}">
-      <b>${esc(CONTENT.names.rasis[r][0])}</b>${state.settings.tamilOnly ? '' : `<small>${esc(CONTENT.names.rasis[r][1])}</small>`}
-      <i>${esc(outlookWords(p.outlook)[0])}</i><span class="planets">${esc(planets)}</span></button>`;
-  }).join('');
-  const moon = palan.find((p) => p.moonHouse === 1);
+  const moonRasi = d.panchangam.moonRasi;
   const ashtama = palan.find((p) => p.outlook === 'CHANDRASHTAMAM');
-  // Same lines as the APK's centre panel: Tamil names, the English labels only where the APK shows them.
+  const rasiName = (r) => esc(lb(...CONTENT.names.rasis[r]));
+  const tiles = Object.entries(RASI_POS).map(([r, [row, col]]) => {
+    const rasi = Number(r);
+    const p = byRasi.get(rasi);
+    const planets = Object.keys(GRAHA_NAME).filter((g) => sky[g] === rasi);
+    return `<button class="rasi-tile o-${p.outlook.toLowerCase()}${rasi === moonRasi ? ' is-moon' : ''}" style="grid-row:${row + 1};grid-column:${col + 1}" data-act="rasi-open" data-r="${r}">
+      <span class="rt-name">${esc(CONTENT.names.rasis[rasi][0])}</span>
+      ${state.settings.tamilOnly ? '' : `<small>${esc(CONTENT.names.rasis[rasi][1])}</small>`}
+      <span class="rt-outlook">${esc(outlookWords(p.outlook)[0])}</span>
+      <span class="rt-planets">${planets.map((g) => `<em>${esc(lb(...GRAHA_NAME[g]))}</em>`).join('')}</span></button>`;
+  }).join('');
+  // The centre panel: today's positions as labelled rows.
+  const row = (label, value, cls = '') => `<div class="${cls}"><dt>${esc(label)}</dt><dd>${value}</dd></div>`;
   const centre = `<section class="rasi-centre" style="grid-row:2 / span 2;grid-column:2 / span 2">
-    <h3>ராசி சக்கரம்</h3>
-    <small>Rasi chart · today's transits</small>
-    ${moon ? `<p>சந்திரன் · Moon: ${esc(CONTENT.names.rasis[moon.rasi][0])}</p>` : ''}
-    <p>குரு ${esc(CONTENT.names.rasis[sky.jupiter][0])} · சனி ${esc(CONTENT.names.rasis[sky.saturn][0])}</p>
-    <p>ராகு ${esc(CONTENT.names.rasis[sky.rahu][0])} · கேது ${esc(CONTENT.names.rasis[sky.ketu][0])}</p>
-    ${ashtama ? `<p class="bad">சந்திராஷ்டமம்: ${esc(CONTENT.names.rasis[ashtama.rasi][0])}</p>` : ''}
+    <h3>${esc(lb('ராசி சக்கரம்', 'Rasi chart'))}</h3>
+    <small>${esc(lb('இன்றைய கிரக நிலை', "Today's planetary positions"))}</small>
+    <dl class="rc-rows">
+      ${row(lb('சந்திரன்', 'Moon'), rasiName(moonRasi))}
+      ${row(lb('குரு', 'Jupiter'), rasiName(sky.jupiter))}
+      ${row(lb('சனி', 'Saturn'), rasiName(sky.saturn))}
+      ${row(lb('ராகு', 'Rahu'), rasiName(sky.rahu))}
+      ${row(lb('கேது', 'Ketu'), rasiName(sky.ketu))}
+      ${ashtama ? row(lb('சந்திராஷ்டமம்', 'Chandrashtamam'), rasiName(ashtama.rasi), 'rc-alert') : ''}
+    </dl>
   </section>`;
   return `${nav}<div class="rasi-grid">${tiles}${centre}</div>${state.rasi !== null ? rasiModal(d, byRasi.get(state.rasi), sky) : ''}`;
 }
@@ -626,15 +636,17 @@ const outlookWords = (o) => ({ GOOD: ['நன்மை', 'Good'], NEUTRAL: ['ச
 // ---- location
 function viewLocation() {
   const s = state.settings;
-  const presets = PLACES.map((p) => `<button class="pill${!s.place.custom && s.place.preset === p.key ? ' on' : ''}" data-act="place-preset" data-key="${p.key}">${esc(lb(p.nameTa, p.nameEn))}</button>`).join('');
+  const presets = PLACES.map((p) => `<button class="place-card${!s.place.custom && s.place.preset === p.key ? ' on' : ''}" data-act="place-preset" data-key="${p.key}"><b>${esc(lb(p.nameTa, p.nameEn))}</b><small>${esc(p.zoneId)}</small></button>`).join('');
   const recent = s.recentPlaces.map((p, i) => `<button class="pill" data-act="place-recent" data-i="${i}">${esc(p.nameEn)}</button>`).join('');
   const pinned = s.pinnedPlaces.map((p) => `<li class="event pin-row"><span><b>${esc(p.label)}</b><br><small>${esc(lb('ஆஃப்லைன் ஆண்டுகள்', 'Offline years'))}: ${packYears.map((y) => `<button class="pill small-pill" data-act="pack-save" data-year="${y}" data-id="${esc(p.id)}">${y}</button>`).join(' ')}</small></span>
       <span class="pin-actions"><button class="pill" data-act="pin-open" data-id="${esc(p.id)}">${esc(lb('திற', 'Open'))}</button><button class="pill" data-act="pin-remove" data-id="${esc(p.id)}">✕</button></span></li>`).join('');
   const pinHere = s.pinnedPlaces.some((p) => p.id === placeKeyOf(s)) ? '' : `<button class="pill" data-act="pin-current">📌 ${esc(lb('இந்த இடத்தைப் பின் செய்', 'Pin this place'))}</button>`;
   const results = state.search.results.map((r, i) => `<li><button class="result" data-act="place-result" data-i="${i}"><b>${esc(r.name)}</b><small>${esc([r.admin1, r.country].filter(Boolean).join(', '))}</small></button></li>`).join('');
   return `<h1 class="page">${esc(lb('இடம்', 'Location'))}</h1>
-    <p class="small">${esc(placeLabel(state.place))} · ${esc(state.place.zoneId)}</p>
-    <div class="row wrap">${presets}</div>
+    <p class="page-sub">${esc(lb('எல்லாக் கணக்குகளும் இங்கே தேர்ந்தெடுக்கும் இடத்திற்கு.', 'Every calculation uses the place you choose here.'))}</p>
+    <div class="current-place"><span>${esc(lb('தற்போதைய இடம்', 'Current place'))}</span><b>${esc(placeLabel(state.place))}</b><small>${esc(state.place.zoneId)}</small></div>
+    <h3 class="sub-h">${esc(lb('இடங்கள்', 'Places'))}</h3>
+    <div class="place-grid">${presets}</div>
     <div class="row"><button class="pill" data-act="place-auto">📍 ${esc(lb('என் இடம்', 'Use my location'))}</button></div>
     <form id="search-form" class="search"><input id="search" type="search" placeholder="${esc(lb('நகரம் தேடுக', 'Search a city'))}" value="${esc(state.search.query)}" autocomplete="off"><button class="pill" type="submit">${esc(lb('தேடு', 'Search'))}</button></form>
     ${state.search.busy ? `<p class="small">${esc(lb('தேடுகிறது…', 'Searching…'))}</p>` : ''}
@@ -699,6 +711,7 @@ function viewTheme() {
     <span class="skin-sample skin-${id.toLowerCase()}"><i></i><i></i></span>
     <b>${esc(lb(ta, en))}</b><small>${esc(desc)}</small></button>`).join('');
   return `<h1 class="page">${esc(lb('தீம் & தோற்றம்', 'Theme & skin'))}</h1>
+    <p class="page-sub">${esc(lb('வண்ணங்களும் அட்டைகளின் தோற்றமும். தேர்வு நினைவில் வைக்கப்படும்.', 'Colours and card style. Your choice is remembered.'))}</p>
     <section class="group"><h3>${esc(lb('வண்ணத் தீம்', 'Colour theme'))}</h3><div class="theme-grid">${cards}</div></section>
     <section class="group"><h3>${esc(lb('தோற்றம் (skin)', 'Skin · card style'))}</h3><div class="skin-grid">${skins}</div></section>`;
 }
@@ -713,16 +726,18 @@ function viewSettings() {
   const m = s.music;
   const musicSel = (k, label, opts) => `<label class="field">${esc(label)} <select data-music="${k}">${opts.map(([v, t]) => `<option value="${v}"${m[k] === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
   return `<h1 class="page">${esc(lb('அமைப்புகள்', 'Settings'))}</h1>
+    <p class="page-sub">${esc(lb('மாற்றங்கள் உடனே நடைமுறைக்கு வந்து சேமிக்கப்படும்.', 'Changes apply straight away and are saved on this device.'))}</p>
+    <div class="settings-grid">
     <section class="group"><h3>${esc(lb('காட்சி', 'Display'))}</h3>
       ${check('weather', lb('வானிலை', 'Weather'))}${check('animations', lb('அனிமேஷன்', 'Animations'))}${check('weatherAnimations', lb('வானிலை அனிமேஷன்', 'Weather animations'))}
       ${check('clock24h', lb('24 மணி நேரம்', '24-hour clock'))}${check('tamilOnly', lb('தமிழ் மட்டும்', 'Tamil only'))}
       ${select('units', lb('அளவுகள்', 'Units'), [['AUTO', lb('தானியங்கி', 'Auto')], ['METRIC', '°C · km/h'], ['IMPERIAL', '°F · mph']])}
     </section>
     <section class="group"><h3>${esc(lb('நாட்காட்டி', 'Calendar'))}</h3>
-      <h3>${esc(lb('பிறப்பு விவரம் · Birth details', 'Birth details'))}</h3>
+      <h3>${esc(lb('பிறப்பு விவரம்', 'Birth details'))}</h3>
       <p class="small">${esc(lb('தாரா பலன் மற்றும் உங்கள் சந்திராஷ்டமத்திற்கு. இந்த சாதனத்தில் மட்டும் சேமிக்கப்படும்.', 'For Thara Balam and your Chandrashtamam on Today. Stored on this device only.'))}</p>
-      ${select('janmaStar', lb('பிறந்த நட்சத்திரம் · Birth star', 'Birth star'), [['-1', '—']].concat(CONTENT.names.nakshatras.map((n, i) => [String(i), lb(...n)])))}
-      ${select('janmaRasi', lb('பிறந்த ராசி · Birth Rasi', 'Birth Rasi'), [['-1', '—']].concat(CONTENT.names.rasis.map((r, i) => [String(i), lb(...r)])))}
+      ${select('janmaStar', lb('பிறந்த நட்சத்திரம்', 'Birth star'), [['-1', '—']].concat(CONTENT.names.nakshatras.map((n, i) => [String(i), lb(...n)])))}
+      ${select('janmaRasi', lb('பிறந்த ராசி', 'Birth Rasi'), [['-1', '—']].concat(CONTENT.names.rasis.map((r, i) => [String(i), lb(...r)])))}
       ${select('convention', lb('ராகு காலம் கணக்கு', 'Rahu Kalam convention'), [['AUTO', lb('தானியங்கி', 'Auto')], ['TRADITIONAL_6AM', lb('காலை 6 – மாலை 6', 'Fixed 6 AM – 6 PM')], ['SUNRISE_BASED', lb('சூரிய உதயம்', 'Local sunrise–sunset')]])}
       ${check('usHolidays', lb('அமெரிக்க / இல்லினாய் விடுமுறைகள்', 'US & Illinois holidays'))}
       ${check('schoolCalendars', lb('பள்ளி நாட்காட்டி', 'School calendars'))}
@@ -746,7 +761,8 @@ function viewSettings() {
       ${check('nallaReminder', lb('நல்ல நேரம் தொடங்கும்போது', 'When Nalla Neram begins'))}
       ${reminderNote()}
     </section>
-    <section class="group"><h3>${esc(lb('தரவு', 'Data'))}</h3><button class="pill" data-act="reset-settings">${esc(lb('இயல்புநிலைக்கு மீட்டமை', 'Reset to defaults'))}</button></section>`;
+    <section class="group"><h3>${esc(lb('தரவு', 'Data'))}</h3><button class="pill" data-act="reset-settings">${esc(lb('இயல்புநிலைக்கு மீட்டமை', 'Reset to defaults'))}</button></section>
+    </div>`;
 }
 
 // ---- about
@@ -768,6 +784,12 @@ function viewAbout() {
       ? lb('✓ இப்போது Safari-ல் திறந்துள்ளீர்கள் — கீழே உள்ள படிகளைப் பின்பற்றவும்', "✓ You're in Safari — follow the steps below")
       : lb('⚠ iPhone நிறுவலுக்கு Safari-ல் திறக்கவும். Chrome போன்ற உலாவிகளில் நிறுவ முடியாது.', '⚠ To install on iPhone, open this page in Safari. Chrome and other browsers cannot install it.');
   return `<h1 class="page">${esc(lb('பற்றி', 'About'))}</h1>
+    <section class="about-hero">
+      <img src="logo.svg" alt="" width="56" height="56">
+      <div><h2>${esc(lb('தமிழ் பஞ்சாங்கம்', 'Tamizh Panchangam'))}</h2>
+      <p class="small">${esc(lb('பஞ்சாங்கம், ராசி பலன், முகூர்த்தம் — ஒரு இடத்துக்கான கணக்கீடு.', 'Panchangam, Rasi Palan and Muhurtham, calculated for your place.'))}</p>
+      <small>Version ${esc(APP_VERSION)}</small></div>
+    </section>
     <section class="detail install">
       <h3>${esc(lb('iPhone-ல் நிறுவுக', 'Install on iPhone'))}</h3>
       <p class="small">${esc(status)}</p>
