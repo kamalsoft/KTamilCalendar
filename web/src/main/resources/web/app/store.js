@@ -21,6 +21,9 @@ export const DEFAULTS = {
   animations: true,
   weatherAnimations: true,
   clock24h: false,
+  watermark: 'TEMPLE',                  // TEMPLE | CUSTOM | NONE
+  watermarkOpacity: 10,                 // percent
+  panelTransparency: 25,                // percent of the card colour that is see-through
   tamilOnly: false,
   language: 'en',                       // en | ta-en | te-en | ml-en | kn-en | hi-en
   units: 'AUTO',                        // AUTO | IMPERIAL | METRIC
@@ -42,6 +45,18 @@ export function loadSettings() {
   } catch (e) {
     return structuredClone(DEFAULTS);
   }
+}
+
+// The uploaded watermark is kept apart from the settings: it is a large data URL.
+const WM_KEY = 'ktc.watermark.v1';
+export function loadWatermark() {
+  try { return localStorage.getItem(WM_KEY); } catch (e) { return null; }
+}
+export function saveWatermark(dataUrl) {
+  try { localStorage.setItem(WM_KEY, dataUrl); return true; } catch (e) { return false; }
+}
+export function clearWatermark() {
+  try { localStorage.removeItem(WM_KEY); } catch (e) { /* nothing stored */ }
 }
 
 export function saveSettings(s) {

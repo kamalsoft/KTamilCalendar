@@ -8,7 +8,7 @@ import { monthDays, importantDates, applying } from './engine/calendar.js';
 import { rasiPalan, skyPositions, grahasIn, gochara } from './engine/rasi.js';
 import { CONTENT } from './engine/content.js';
 import { epochDay, isoOf, parseIso, dayOfWeek, dayOfMonth, monthOf, yearOf, fromEpochDay, wallClock, zonedMs, hms, MS_DAY } from './engine/civil.js';
-import { loadSettings, saveSettings } from './app/store.js';
+import { loadSettings, saveSettings, loadWatermark, saveWatermark, clearWatermark } from './app/store.js';
 import { LANGUAGES, loadTranslations, translated } from './app/i18n.js';
 import { fetchWeather, sceneOf, labelOf } from './app/weather.js';
 import { slokaFor, speak, stopSpeaking, TempleMusic } from './app/sloka.js';
@@ -31,6 +31,8 @@ const WEEKDAYS_TA_SHORT = ['ஞா', 'தி', 'செ', 'பு', 'வி', '�
 const state = {
   settings: loadSettings(),
   tab: 'today',
+  watermarkCustom: null, // the uploaded image as a data URL, if any
+  watermarkError: '',
   datesPanel: 'important',  // important | festivals | muhurtham
   day: 0,            // selected epoch day
   flipDir: 0,        // +1 / -1 while the Month page turns, read once by viewMonth
@@ -147,6 +149,7 @@ function render() {
   localizeChrome();
   renderTabs();
   applyTheme();
+  applyWatermark();
   const view = { today: viewToday, month: viewMonth, dates: viewDates, rasi: viewRasi, learn: viewLearn, settings: viewSettings, about: viewAbout }[state.tab];
   $('view').innerHTML = view();
   if (state.tab === 'today') {
@@ -789,6 +792,12 @@ function viewSettings() {
       ${check('weather', lb('வானிலை', 'Weather'))}${check('animations', lb('அனிமேஷன்', 'Animations'))}${check('weatherAnimations', lb('வானிலை அனிமேஷன்', 'Weather animations'))}
       ${select('language', lb('மொழி', 'Language'), LANGUAGES)}
       <p class="small"><a href="translate.html">${esc(lb('மொழிபெயர்க்க உதவுங்கள்', 'Help translate'))}</a></p>
+      ${select('watermark', lb('பின்னணிப் படம்', 'Background picture'), [['TEMPLE', lb('கோவில்', 'Temple')], ['CUSTOM', lb('என் படம்', 'My picture')], ['NONE', lb('இல்லை', 'None')]])}
+      <label class="field">${esc(lb('வெளிர்மை', 'Strength'))} <input type="range" min="0" max="30" step="1" value="${s.watermarkOpacity}" data-setting="watermarkOpacity"></label>
+      <label class="field">${esc(lb('அட்டையின் வெளிப்படைத்தன்மை', 'Panel transparency'))} <input type="range" min="0" max="60" step="5" value="${s.panelTransparency}" data-setting="panelTransparency"></label>
+      <label class="field">${esc(lb('உங்கள் படம்', 'Your picture'))} <input type="file" id="wm-file" accept="image/*"></label>
+      ${state.watermarkError ? `<p class="small error">${esc(state.watermarkError)}</p>` : ''}
+      ${state.watermarkCustom ? `<p class="small"><button class="pill" data-act="wm-clear">${esc(lb('என் படத்தை நீக்கு', 'Remove my picture'))}</button> ${esc(lb('சாதனத்தில் மட்டும் சேமிக்கப்படும்.', 'Stored on this device only.'))}</p>` : ''}
       ${check('clock24h', lb('24 மணி நேரம்', '24-hour clock'))}${check('tamilOnly', lb('தமிழ் மட்டும்', 'Tamil only'))}
       ${select('units', lb('அளவுகள்', 'Units'), [['AUTO', lb('தானியங்கி', 'Auto')], ['METRIC', '°C · km/h'], ['IMPERIAL', '°F · mph']])}
     </section>
@@ -1209,6 +1218,7 @@ function onClick(e) {
   else if (a === 'pin-open') { const pin = state.settings.pinnedPlaces.find((p) => p.id === el.dataset.id); if (pin) setPlace(pin.place.custom ? { custom: pin.place.custom } : PLACES.find((x) => x.key === pin.place.preset), false); }
   else if (a === 'pack-save') { const pin = state.settings.pinnedPlaces.find((p) => p.id === el.dataset.id); if (pin) savePack(pin, Number(el.dataset.year), el); }
   else if (a === 'dates-panel') { state.datesPanel = el.dataset.p; rerender(); }
+  else if (a === 'wm-clear') { clearWatermark(); state.watermarkCustom = null; applySettingChange('watermark', 'TEMPLE'); }
   else if (a === 'theme') { applySettingChange('theme', el.dataset.id); }
   else if (a === 'skin') { applySettingChange('skin', el.dataset.id); }
   else if (a === 'notify-allow') { if ('Notification' in window) Notification.requestPermission().then(() => rerender()); }
@@ -1256,6 +1266,7 @@ function speakText(text, lang = 'ta-IN') {
 function onChange(e) {
   const el = e.target;
   state.lastInput = Date.now();
+  if (el.id === 'wm-file') { if (el.files[0]) loadCustomWatermark(el.files[0]); return; }
   if (el.dataset.mh) {
     if (el.value) state[el.dataset.mh === 'from' ? 'mhFrom' : 'mhTo'] = parseIso(el.value);
     return rerender();
@@ -1264,7 +1275,7 @@ function onChange(e) {
   if (el.dataset.cmp === 'day') { if (el.value) state.cmpDay = parseIso(el.value); return rerender(); }
   if (el.dataset.setting) {
     const key = el.dataset.setting;
-    const value = el.type === 'checkbox' ? el.checked : (['ambientMinutes', 'janmaStar', 'janmaRasi'].includes(key) ? Number(el.value) : el.value);
+    const value = el.type === 'checkbox' ? el.checked : (['ambientMinutes', 'janmaStar', 'janmaRasi', 'watermarkOpacity', 'panelTransparency'].includes(key) ? Number(el.value) : el.value);
     applySettingChange(key, value);
   } else if (el.dataset.section) {
     const hidden = new Set(state.settings.hiddenSections);
@@ -1284,12 +1295,47 @@ function showDisclaimer() {
   $('disclaimer').hidden = false;
 }
 
+/** The background temple, from the chosen source and strength. */
+function applyWatermark() {
+  const s = state.settings;
+  const custom = s.watermark === 'CUSTOM' && state.watermarkCustom;
+  const root = document.documentElement.style;
+  root.setProperty('--wm-image', s.watermark === 'NONE' ? 'none' : `url("${custom || 'watermark.svg'}")`);
+  root.setProperty('--wm-opacity', String((s.watermarkOpacity ?? 10) / 100));
+}
+
+/** Resizes an uploaded picture to at most 1024 px and stores it on this device. */
+function loadCustomWatermark(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 1024 / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL(file.type === 'image/png' ? 'image/png' : 'image/jpeg', 0.9);
+      if (!saveWatermark(dataUrl)) {
+        state.watermarkError = lb('படம் மிகப் பெரியது. வேறு படத்தைத் தேர்க.', 'That picture is too large to keep. Choose another.');
+        return rerender();
+      }
+      state.watermarkCustom = dataUrl;
+      state.watermarkError = '';
+      applySettingChange('watermark', 'CUSTOM');
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 function applyTheme() {
   const t = CONTENT.themes.find((x) => x.id === state.settings.theme) || CONTENT.themes[0];
   const root = document.documentElement.style;
   document.documentElement.dataset.skin = state.settings.skin || 'CLASSIC';
   const map = { background: '--bg', backgroundDeep: '--bg-deep', backgroundMid: '--bg-mid', surface: '--surface', surfaceFocused: '--surface-hi', surfaceSelected: '--surface-sel', accent: '--accent', accentSoft: '--accent-soft', alert: '--alert', alertSoft: '--alert-soft', amber: '--amber', text: '--text', textMuted: '--muted', textDim: '--dim' };
   for (const [k, v] of Object.entries(map)) root.setProperty(v, t.colors[k]);
+  root.setProperty('--surface', `color-mix(in srgb, ${t.colors.surface} ${100 - (state.settings.panelTransparency ?? 25)}%, transparent)`);
   root.setProperty('--bg-grad', `linear-gradient(165deg, ${t.colors.background} 0%, ${t.colors.backgroundMid} 55%, ${t.colors.backgroundDeep} 100%)`);
   document.documentElement.dataset.theme = t.isLight ? 'light' : 'dark';
   document.querySelector('meta[name="theme-color"]').setAttribute('content', t.colors.background);
@@ -1299,6 +1345,7 @@ function applyTheme() {
 async function boot() {
   setEngineFromSettings();
   await loadTranslations(state.settings.language);
+  state.watermarkCustom = loadWatermark();
   const requested = new URLSearchParams(location.search).get('tab');
   if (DATES_PANELS.some(([id]) => id === requested)) { state.tab = 'dates'; state.datesPanel = requested; }
   else if (requested === 'location' || requested === 'theme') state.tab = 'settings';

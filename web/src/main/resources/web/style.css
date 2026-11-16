@@ -11,6 +11,10 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--text); }
 body { background: var(--bg-grad, var(--bg)) fixed; }
+/* Background temple: a faint picture behind the page, sized to the screen. */
+:root { --wm-image: url("watermark.svg"); --wm-opacity: .1; }
+body::before { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none; background: var(--wm-image) center 42% / min(72vmin, 620px) no-repeat; opacity: var(--wm-opacity); }
+.top, #tabs, #view { position: relative; z-index: 1; }
 body {
   font-family: "Noto Sans Tamil", "Noto Sans Telugu", "Noto Sans Malayalam", "Noto Sans Kannada", "Noto Sans Devanagari", system-ui, -apple-system, sans-serif;
   min-height: 100vh;
