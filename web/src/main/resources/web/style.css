@@ -153,19 +153,10 @@ small { color: var(--dim); }
 .small-detail { margin-top: 12px; }
 
 /* ---- sloka */
-.sloka .sloka-title { margin: 0; font-weight: 600; color: var(--accent); }
-.sloka .sloka-text { margin: 6px 0; font-size: 15px; line-height: 1.7; }
-.sloka .sloka-meaning { margin: 0 0 8px; color: var(--muted); font-size: 14px; }
 
 /* ---- weather, with animated scenes */
 .weather { position: relative; overflow: hidden; border-radius: 16px; padding: 16px; background: linear-gradient(160deg, var(--surface), var(--bg-mid)); }
 .weather h3 { margin: 12px 0 6px; font-size: 13px; color: var(--muted); }
-.wx-now b { font-size: 36px; }
-.wx-now span { display: block; font-size: 16px; }
-.wx-list { list-style: none; margin: 0; padding: 0; display: flex; gap: 8px; overflow-x: auto; }
-.wx-list.days { flex-direction: column; gap: 4px; }
-.wx-list li { display: flex; flex-direction: column; align-items: center; min-width: 64px; font-size: 13px; }
-.wx-list.days li { flex-direction: row; justify-content: space-between; min-width: 0; }
 .scene-rain { background: linear-gradient(160deg, #1d2a3a, var(--bg-mid)); }
 .scene-storm { background: linear-gradient(160deg, #1a1a2e, #2b1d3f); }
 .scene-snow { background: linear-gradient(160deg, #39516b, var(--bg-mid)); }
@@ -594,3 +585,36 @@ a.pill { display: inline-block; text-decoration: none; }
 
 /* ---- About: formulas and worked examples. */
 .formula { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--muted); }
+
+/* ---- sloka: a framed verse card */
+.sloka { background: var(--surface); border-radius: 16px; padding: 20px; border-top: 4px solid var(--accent); display: flex; flex-direction: column; gap: 12px; }
+.sloka-head { display: flex; align-items: center; gap: 14px; }
+.sloka-om { font-size: 44px; line-height: 1; color: var(--accent); }
+.sloka h3 { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+.sloka-title { margin: 2px 0 0; font-size: 18px; font-weight: 600; color: var(--accent); }
+.sloka-text { margin: 0; padding: 14px 16px; border-left: 3px solid var(--accent); border-radius: 0 12px 12px 0; background: color-mix(in srgb, var(--accent) 8%, transparent); font-size: 17px; line-height: 1.8; }
+.sloka-meaning { margin: 0; font-size: 15px; line-height: 1.6; color: var(--muted); }
+.sloka-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.sloka-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; font-size: 12px; color: var(--dim); }
+
+/* ---- weather: hero, hourly bars and a 7-day range */
+.wx-hero { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 14px; }
+.wx-temp b { display: block; font-size: 56px; font-weight: 300; line-height: 1; }
+.wx-temp span { display: block; margin-top: 6px; font-size: 16px; }
+.wx-chips { display: flex; gap: 8px; }
+.wx-chips span { display: flex; flex-direction: column; min-width: 84px; padding: 8px 10px; border-radius: 12px; background: rgba(255, 255, 255, .08); font-size: 15px; }
+.wx-chips small { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.wx-hours { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; overflow-x: auto; align-items: flex-end; }
+.wx-hour { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 52px; font-size: 13px; }
+.wx-bar { width: 22px; height: 72px; border-radius: 11px; background: rgba(255, 255, 255, .08); display: flex; align-items: flex-end; overflow: hidden; }
+.wx-bar i { display: block; width: 100%; border-radius: 11px; background: linear-gradient(var(--accent), color-mix(in srgb, var(--accent) 35%, transparent)); }
+.wx-hour em { font-style: normal; font-size: 11px; color: var(--muted); }
+.wx-hour em.rain { color: #6ec6ff; }
+.wx-days { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.wx-day { display: grid; grid-template-columns: 52px minmax(0, 1fr) minmax(0, 1.6fr) 80px; align-items: center; gap: 10px; font-size: 14px; }
+.wx-dcond { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wx-day b { text-align: right; }
+.wx-day b small { font-weight: 400; color: var(--muted); }
+.wx-range { position: relative; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .1); }
+.wx-range i { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: linear-gradient(90deg, #6ec6ff, var(--accent)); }
+@media (max-width: 600px) { .wx-dcond { display: none; } .wx-day { grid-template-columns: 52px minmax(0, 1fr) 80px; } .wx-day .wx-range { grid-column: 2; grid-row: 2; } }

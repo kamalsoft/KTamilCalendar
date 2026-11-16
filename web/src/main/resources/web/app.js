@@ -324,20 +324,29 @@ function viewToday() {
 const pakshaName = (p) => (p === 'SHUKLA' ? ['வளர்பிறை', 'Shukla Paksha'] : ['தேய்பிறை', 'Krishna Paksha']);
 
 function slokaCard(s) {
-  const sp = state.settings;
   return `<section class="sloka">
-    <h3>${esc(lb('ஸ்லோகம்', 'Sloka of the day'))}</h3>
-    <p class="sloka-title">${esc(lb(s.titleTa, s.titleEn))}</p>
-    <p class="sloka-text">${esc(s.textTa).replace(/\\n|\n/g, '<br>')}</p>
+    <div class="sloka-head">
+      <span class="sloka-om" aria-hidden="true">ॐ</span>
+      <div><h3>${esc(lb('ஸ்லோகம்', 'Sloka of the day'))}</h3><p class="sloka-title">${esc(lb(s.titleTa, s.titleEn))}</p></div>
+    </div>
+    <blockquote class="sloka-text">${esc(s.textTa).replace(/\\n|\n/g, '<br>')}</blockquote>
     <p class="sloka-meaning">${esc(s.meaningEn)}</p>
-    <div class="row">
+    <div class="sloka-actions">
       <button class="pill" data-act="sloka-read">🔊 ${esc(lb('படி', 'Read'))}</button>
       <button class="pill${state.music ? ' on' : ''}" data-act="sloka-music">♪ ${esc(lb('இசை', 'Music'))} ${state.music ? 'on' : 'off'}</button>
     </div>
-    <p class="small">${esc(s.source)}</p>
-    <p class="small">${esc(lb('மேலும் படிக்க', 'Read more'))}: <a href="${RELATED_URL}" target="_blank" rel="noopener">thiruppugazh-ui.vercel.app ↗</a></p>
+    <footer class="sloka-foot">
+      <span>${esc(s.source)}</span>
+      <span>${esc(lb('மேலும் படிக்க', 'Read more'))}: <a href="${RELATED_URL}" target="_blank" rel="noopener">thiruppugazh-ui.vercel.app ↗</a></span>
+    </footer>
   </section>`;
 }
+
+/** Today's card (current conditions, next 12 hours, 7 days). Weather text stays in English, as the brief asks. */
+const wxHero = (temp, label, chips) => `<div class="wx-hero">
+    <div class="wx-temp"><b>${temp}</b><span>${label}</span></div>
+    <div class="wx-chips">${chips}</div></div>`;
+const wxChip = (name, value) => `<span><small>${name}</small>${value}</span>`;
 
 /** The forecast for a day within the next 7 (used when the selected day is not today). */
 function forecastHtml(epoch) {
@@ -347,8 +356,8 @@ function forecastHtml(epoch) {
   const day = w.daily.find((x) => x.date === isoOf(epoch));
   if (!day) return `<section class="weather"><p class="small">${esc(lb('இந்த நாளுக்கு முன்னறிவிப்பு இல்லை (7 நாட்கள் மட்டும்)', 'No forecast for this day (7 days only)'))}</p></section>`;
   return `<section class="weather scene-${sceneOf(day.code, true)}">
-    <h3>Forecast · ${esc(dateShort(day.date))}</h3>
-    <div class="wx-now"><b>${Math.round(day.max)}${w.unit} / ${Math.round(day.min)}${w.unit}</b><span>${esc(labelOf(day.code))}</span></div></section>`;
+    ${wxHero(`${Math.round(day.max)}${w.unit}`, esc(labelOf(day.code)), wxChip('Low', `${Math.round(day.min)}${w.unit}`) + wxChip('Forecast', esc(dateShort(day.date))))}
+  </section>`;
 }
 
 function weatherHtml() {
@@ -357,15 +366,28 @@ function weatherHtml() {
   if (!w) return '<section class="weather"><p class="small">Loading weather…</p></section>';
   const scene = sceneOf(w.current.code, w.current.isDay);
   const anim = state.settings.animations && state.settings.weatherAnimations;
-  const season = [[12, 1, 2, 'winter'], [3, 4, 5, 'spring'], [9, 10, 11, 'autumn']].find((s) => s.slice(0, 3).includes(monthOf(todayEpoch())));
+  const season = [[12, 1, 2, 'winter'], [3, 4, 5, 'spring'], [9, 10, 11, 'autumn']].find((x) => x.slice(0, 3).includes(monthOf(todayEpoch())));
   const particles = anim && season ? `<div class="particles ${season[3]}">${Array.from({ length: 12 }, (_, i) => `<i style="left:${(i * 83) % 100}%;animation-delay:${(i * 0.7) % 6}s"></i>`).join('')}</div>` : '';
-  const hours = w.hourly.map((h) => `<li><span>${timeOf(h.time.slice(11, 16) + ':00')}</span><b>${Math.round(h.temp)}${w.unit}</b><small>${h.rain}%</small></li>`).join('');
-  const days = w.daily.map((d) => `<li><span>${dayOfWeekLabel(parseIso(d.date))}</span><b>${Math.round(d.max)}° / ${Math.round(d.min)}°</b><small>${esc(labelOf(d.code))}</small></li>`).join('');
+  const temps = w.hourly.map((h) => h.temp);
+  const lo = Math.min(...temps), hi = Math.max(...temps);
+  const barPct = (t) => 14 + Math.round(((t - lo) / (hi - lo || 1)) * 80);
+  const hours = w.hourly.map((h) => `<li class="wx-hour">
+      <small>${timeOf(h.time.slice(11, 16) + ':00')}</small>
+      <div class="wx-bar"><i style="height:${barPct(h.temp)}%"></i></div>
+      <b>${Math.round(h.temp)}${w.unit}</b>
+      <em class="${h.rain >= 40 ? 'rain' : ''}">${h.rain}%</em></li>`).join('');
+  const wlo = Math.min(...w.daily.map((d) => d.min)), whi = Math.max(...w.daily.map((d) => d.max));
+  const at = (t) => Math.round(((t - wlo) / (whi - wlo || 1)) * 100);
+  const days = w.daily.map((d) => `<li class="wx-day">
+      <span class="wx-dname">${dayOfWeekLabel(parseIso(d.date))}</span>
+      <span class="wx-dcond">${esc(labelOf(d.code))}</span>
+      <div class="wx-range"><i style="left:${at(d.min)}%;width:${Math.max(at(d.max) - at(d.min), 5)}%"></i></div>
+      <b>${Math.round(d.max)}° <small>${Math.round(d.min)}°</small></b></li>`).join('');
+  const chips = wxChip('Humidity', `${w.current.humidity}%`) + wxChip('Wind', `${Math.round(w.current.wind)} ${w.windUnit}`);
   return `<section class="weather scene-${scene}${anim ? ' animated' : ''}">${particles}
-    <div class="wx-now"><b>${Math.round(w.current.temp)}${w.unit}</b><span>${esc(labelOf(w.current.code))}</span>
-    <small>Humidity ${w.current.humidity}% · Wind ${Math.round(w.current.wind)} ${w.windUnit}</small></div>
-    <h3>Next 12 hours</h3><ul class="wx-list">${hours}</ul>
-    <h3>7 days</h3><ul class="wx-list days">${days}</ul></section>`;
+    ${wxHero(`${Math.round(w.current.temp)}${w.unit}`, esc(labelOf(w.current.code)), chips)}
+    <h3>Next 12 hours</h3><ul class="wx-hours">${hours}</ul>
+    <h3>7 days</h3><ul class="wx-days">${days}</ul></section>`;
 }
 const dayOfWeekLabel = (day) => CONTENT.names.weekdays[dayOfWeek(day)][1].slice(0, 3);
 
