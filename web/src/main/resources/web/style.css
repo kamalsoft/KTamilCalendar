@@ -578,3 +578,16 @@ a.pill { display: inline-block; text-decoration: none; }
 .sun-arrow { font-size: 20px; line-height: 1; font-weight: 700; }
 .sun-north .sun-arrow { color: var(--accent); }
 .sun-south .sun-arrow { color: var(--muted); }
+
+/* ---- Moon and Sun page: short cards and a simple table. */
+.mp-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+@media (min-width: 900px) { .mp-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); } }
+.mp { background: var(--surface); border-radius: 12px; padding: 10px 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; border: 2px solid transparent; }
+.mp.now { border-color: var(--accent); }
+.mp b { font-size: 12px; }
+.mp small { font-size: 11px; color: var(--muted); }
+.simple-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.simple-table th, .simple-table td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--surface-hi); }
+.simple-table th { color: var(--muted); font-size: 12px; font-weight: 600; }
+.simple-table .ay-u-row td:first-child { color: var(--accent); font-weight: 700; }
+.simple-table .ay-d-row td:first-child { color: var(--muted); font-weight: 700; }
