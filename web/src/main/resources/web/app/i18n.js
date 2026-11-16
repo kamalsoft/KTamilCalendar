@@ -14,10 +14,18 @@ export const LANGUAGES = [
 const FILES = { 'te-en': 'te', 'ml-en': 'ml', 'kn-en': 'kn', 'hi-en': 'hi' };
 const loaded = {};
 
-// Loads the translation file for a language once. Until it arrives, labels show English.
+// Translations uploaded on the translator page are kept on this device, by language code (te, ml, kn, hi).
+export const UPLOAD_KEY = 'ktc.translations.v1';
+export function uploadedTranslations() {
+  try { return JSON.parse(localStorage.getItem(UPLOAD_KEY) || '{}'); } catch (e) { return {}; }
+}
+
+// Loads the translation file for a language once: the bundled file, then anything uploaded on this device.
+// Until it arrives, labels show English.
 export async function loadTranslations(lang) {
   if (!FILES[lang] || loaded[lang]) return;
-  loaded[lang] = await fetch(`i18n/${FILES[lang]}.json`).then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
+  const bundled = await fetch(`i18n/${FILES[lang]}.json`).then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
+  loaded[lang] = { ...bundled, ...(uploadedTranslations()[FILES[lang]] || {}) };
 }
 
 // The label in the chosen language, or undefined when the language has no translation for it.

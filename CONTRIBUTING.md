@@ -7,12 +7,12 @@ translation. A label without a translation shows English.
 ## How to translate
 
 1. Open the translator page: `translate.html` on the app's site (linked from Settings → Language → "Help translate").
-2. Choose your language. Each row shows the Tamil label, the English meaning and a box for your translation.
-3. Fill in as many boxes as you can. Your work is saved in your browser, so you can come back to it.
-4. Click **Download JSON**. You get a file such as `te.json`.
-5. Send the file in one of two ways:
-   - **Issue:** open an issue at https://github.com/kamalsoft/KTamilCalendar/issues, attach the file, and say which language.
-   - **Pull request:** replace `web/src/main/resources/web/i18n/<code>.json` with your file and open a pull request.
+2. Download the template. It is one file, `panchangam-translations.json`, for every language.
+3. Each entry has the Tamil label (`ta`), its English (`en`), and empty fields `te`, `ml`, `kn` and `hi`. Type the translation in the field for your language. Leave a field empty to keep English.
+4. Upload the filled file on the same page. It is checked and shown with a count per language. The app uses it on this device.
+5. To share it with everyone, send the file in one of two ways:
+   - **Issue:** open an issue at https://github.com/kamalsoft/KTamilCalendar/issues and attach the file.
+   - **Pull request:** split the file into `web/src/main/resources/web/i18n/<code>.json` (keys are the `ta` values, values are the translations) and open a pull request.
 
 ## Guidelines
 
@@ -26,10 +26,10 @@ translation. A label without a translation shows English.
 ```
 python3 web/tools/check_translations.py            # how many labels each language has
 python3 web/tools/check_translations.py --list te  # the labels still missing for Telugu
-python3 web/tools/check_translations.py --export   # refreshes i18n/labels.json for the translator page
+python3 web/tools/check_translations.py --export   # refreshes i18n/template.json, the one file for all languages
 ```
 
-Run `--export` after changing any label in the app, so the translator page lists the current labels.
+Run `--export` after changing any label in the app, so the template lists the current labels.
 
 ## Reviewers
 

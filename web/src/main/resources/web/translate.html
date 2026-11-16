@@ -2,75 +2,117 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Translate · Panchangam</title>
-  <meta name="description" content="Help translate Panchangam into Telugu, Malayalam, Kannada or Hindi.">
-  <style>
-    :root { --bg: #fff; --fg: #1C1C1E; --muted: #5A5A5E; --accent: #8A5A00; --card: #F2F2F7; }
-    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #0F0E17; --fg: #F2F2F7; --muted: #AEAEB2; --accent: #FFD60A; --card: #1C1B26; } }
-    :root[data-theme="dark"] { --bg: #0F0E17; --fg: #F2F2F7; --muted: #AEAEB2; --accent: #FFD60A; --card: #1C1B26; }
-    body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, -apple-system, "Noto Sans Tamil", "Noto Sans Telugu", "Noto Sans Malayalam", "Noto Sans Kannada", "Noto Sans Devanagari", sans-serif; }
-    main { max-width: 900px; margin: 0 auto; padding: 20px 16px 48px; }
-    h1 { color: var(--accent); font-size: 24px; margin: 8px 0; }
-    a { color: var(--accent); }
-    .muted { color: var(--muted); font-size: 14px; }
-    select, button { font: inherit; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--muted); background: var(--card); color: var(--fg); }
-    button { background: var(--accent); color: #111; border: 0; cursor: pointer; }
-    .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 14px 0; }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--card); }
-    .row small { color: var(--muted); display: block; }
-    input { width: 100%; box-sizing: border-box; font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--muted); background: var(--card); color: var(--fg); }
-    @media (max-width: 600px) { .row { grid-template-columns: 1fr; } }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Translations · Panchangam</title>
+  <meta name="description" content="Translate Panchangam into Telugu, Malayalam, Kannada and Hindi with one file.">
+  <meta name="theme-color" content="#1C1C1E">
+  <meta name="color-scheme" content="dark light">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;600;700&family=Noto+Sans+Telugu:wght@400;600;700&family=Noto+Sans+Malayalam:wght@400;600;700&family=Noto+Sans+Kannada:wght@400;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main>
-    <p><a href="index.html">← Panchangam</a></p>
-    <h1>Translate · மொழிபெயர்ப்பு</h1>
-    <p class="muted">Fill in the boxes for your language, then download the file. Your work is kept in this browser until you download.
-    To add it to the app, send the file in a GitHub issue or pull request (see <code>CONTRIBUTING.md</code>). Labels with a
-    translation already show the current text.</p>
-    <div class="bar">
-      <label>Language <select id="lang"><option value="te">తెలుగు · Telugu</option><option value="ml">മലയാളം · Malayalam</option><option value="kn">ಕನ್ನಡ · Kannada</option><option value="hi">हिन्दी · Hindi</option></select></label>
-      <span id="progress" class="muted"></span>
-      <button id="download" type="button">Download JSON</button>
-    </div>
-    <div id="rows"></div>
+  <header class="top">
+    <a class="brand" href="./" style="text-decoration:none">
+      <span class="ta">Panchangam</span>
+    </a>
+    <a class="pill on" href="./">← Back · திரும்ப</a>
+  </header>
+
+  <main class="layout">
+    <section class="detail">
+      <h1 class="page">Translations · மொழிபெயர்ப்பு</h1>
+      <p class="small">One file holds every language. Each line has the Tamil label, its English, and an empty place for Telugu, Malayalam, Kannada and Hindi.</p>
+    </section>
+
+    <section class="detail">
+      <h2>1. Download the file</h2>
+      <p><a class="pill on" id="template-link" href="i18n/template.json" download="panchangam-translations.json">Download the template</a>
+      <span class="small" id="count"></span></p>
+    </section>
+
+    <section class="detail">
+      <h2>2. Fill in the empty places</h2>
+      <ul class="formula">
+        <li>Type the translation in the <b>te</b>, <b>ml</b>, <b>kn</b> or <b>hi</b> field of each line.</li>
+        <li>Leave a field empty to keep English for that label.</li>
+        <li>Keep numbers, times and the symbols (·, °, %) as they are.</li>
+        <li>Keep panchangam terms in the form your community uses. If unsure, write the Tamil or English word in brackets.</li>
+      </ul>
+    </section>
+
+    <section class="detail">
+      <h2>3. Upload the filled file</h2>
+      <p class="small">The file is checked here and kept on this device. The app uses it for the languages you filled in.</p>
+      <label class="field">Filled file <input type="file" id="upload" accept=".json,application/json"></label>
+      <p class="small error" id="error" hidden></p>
+      <div id="summary"></div>
+      <p><button class="pill" id="clear" type="button">Remove uploaded translations</button></p>
+    </section>
+
+    <section class="detail">
+      <h2>Sending it back</h2>
+      <p class="small">To share a finished language with everyone, send the filled file in a GitHub issue or pull request (see <code>CONTRIBUTING.md</code>).</p>
+    </section>
   </main>
+
   <script type="module">
-    const FILES = { te: 'i18n/te.json', ml: 'i18n/ml.json', kn: 'i18n/kn.json', hi: 'i18n/hi.json' };
+    import { UPLOAD_KEY } from './app/i18n.js';
+    const LANGS = { te: 'Telugu', ml: 'Malayalam', kn: 'Kannada', hi: 'Hindi' };
     const $ = (id) => document.getElementById(id);
-    const store = (code) => `ktc.translate.${code}`;
-    let labels = {}, current = {}, code = 'te';
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
-    const draft = (c) => { try { return JSON.parse(localStorage.getItem(store(c)) || '{}'); } catch (e) { return {}; } };
-    const keep = (c, obj) => { try { localStorage.setItem(store(c), JSON.stringify(obj)); } catch (e) { /* not kept */ } };
-
-    function show() {
-      const saved = { ...current, ...draft(code) };
-      $('rows').innerHTML = Object.entries(labels).map(([ta, en]) => `
-        <div class="row"><div>${ta}<small>${en}</small></div>
-        <input data-ta="${ta.replace(/"/g, '&quot;')}" value="${(saved[ta] || '').replace(/"/g, '&quot;')}" placeholder="${en.replace(/"/g, '&quot;')}"></div>`).join('');
-      const done = Object.keys(labels).filter((ta) => saved[ta]).length;
-      $('progress').textContent = `${done} / ${Object.keys(labels).length}`;
+    async function template() {
+      return fetch('i18n/template.json').then((r) => (r.ok ? r.json() : { entries: [] })).catch(() => ({ entries: [] }));
     }
 
-    $('rows').addEventListener('input', (e) => {
-      const d = draft(code); d[e.target.dataset.ta] = e.target.value.trim(); keep(code, d); show();
-    });
-    $('lang').addEventListener('change', async (e) => { code = e.target.value; current = await fetchJson(FILES[code]); show(); });
-    $('download').addEventListener('click', () => {
-      const out = { ...current, ...draft(code) };
-      Object.keys(out).forEach((k) => { if (!out[k] || !labels[k]) delete out[k]; });
-      const blob = new Blob([JSON.stringify(out, null, 1) + '\n'], { type: 'application/json' });
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${code}.json`; a.click();
+    function summary(entries) {
+      const total = entries.length;
+      $('count').textContent = `${total} labels`;
+      const rows = Object.entries(LANGS).map(([code, name]) => {
+        const done = entries.filter((e) => (e[code] || '').trim()).length;
+        return `<tr><td>${esc(name)}</td><td>${done} / ${total}</td></tr>`;
+      }).join('');
+      $('summary').innerHTML = `<table class="simple-table"><thead><tr><th>Language</th><th>Filled</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    $('upload').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      $('error').hidden = true;
+      let data;
+      try { data = JSON.parse(await file.text()); } catch (err) { return fail('This file is not valid JSON.'); }
+      if (!data || !Array.isArray(data.entries)) return fail('This file has no "entries" list. Use the template from this page.');
+      const bad = data.entries.filter((x) => typeof x.ta !== 'string' || !x.ta);
+      if (bad.length) return fail(`${bad.length} entries have no Tamil key ("ta"). Keep the "ta" field as it is in the template.`);
+      const keep = {};
+      for (const code of Object.keys(LANGS)) {
+        const map = {};
+        for (const x of data.entries) if (typeof x[code] === 'string' && x[code].trim()) map[x.ta] = x[code].trim();
+        keep[code] = map;
+      }
+      try { localStorage.setItem(UPLOAD_KEY, JSON.stringify(keep)); }
+      catch (err) { return fail('The file is too large to keep on this device.'); }
+      summary(data.entries);
     });
 
-    const fetchJson = (path) => fetch(path).then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
+    function fail(message) {
+      $('error').textContent = message;
+      $('error').hidden = false;
+    }
+
+    $('clear').addEventListener('click', () => {
+      try { localStorage.removeItem(UPLOAD_KEY); } catch (err) { /* nothing stored */ }
+      $('summary').innerHTML = '';
+      $('upload').value = '';
+    });
+
     (async () => {
-      labels = await fetchJson('i18n/labels.json');
-      current = await fetchJson(FILES[code]);
-      show();
+      const t = await template();
+      summary(t.entries || []);
     })();
   </script>
 </body>
