@@ -149,6 +149,51 @@ enum class AppTheme(val ta: String, val en: String, val palette: Palette) {
             isLight = true,
         ),
     ),
+    /** Sandalwood paste: warm dark brown with soft sandal gold. */
+    SANDALWOOD(
+        "சந்தனம்", "Sandalwood",
+        Palette(
+            background = Color(0xFF2B1D14), backgroundDeep = Color(0xFF150D08), backgroundMid = Color(0xFF3A281B),
+            surface = Color(0xFF3B2A1E), surfaceFocused = Color(0xFF5A4030), surfaceSelected = Color(0xFF4A3426),
+            accent = Color(0xFFE8C07A), accentSoft = Color(0xFFF2D59E),
+            alert = Color(0xFFFF7A59), alertSoft = Color(0xFFFF9C80), amber = Color(0xFFF2A65A),
+            text = Color(0xFFFFF8F0), textMuted = Color(0xFFE3CFBE), textDim = Color(0xFFB39A86),
+        ),
+    ),
+    /** Mint garden: deep green-teal with a fresh mint accent. */
+    MINT_GARDEN(
+        "புதினா தோட்டம்", "Mint Garden",
+        Palette(
+            background = Color(0xFF0B2420), backgroundDeep = Color(0xFF041412), backgroundMid = Color(0xFF13362F),
+            surface = Color(0xFF153A33), surfaceFocused = Color(0xFF22584C), surfaceSelected = Color(0xFF1B4A40),
+            accent = Color(0xFF7EE0B5), accentSoft = Color(0xFFA8F0CE),
+            alert = Color(0xFFFF7A7A), alertSoft = Color(0xFFFF9E9E), amber = Color(0xFFF7C26B),
+            text = Color(0xFFF3FFF9), textMuted = Color(0xFFC0E6D6), textDim = Color(0xFF88B3A1),
+        ),
+    ),
+    /** Rose dusk: plum-rose evening with a soft pink accent. */
+    ROSE_DUSK(
+        "ரோஜா அந்தி", "Rose Dusk",
+        Palette(
+            background = Color(0xFF2A1420), backgroundDeep = Color(0xFF12070D), backgroundMid = Color(0xFF3B1B2C),
+            surface = Color(0xFF40202F), surfaceFocused = Color(0xFF5E2F45), surfaceSelected = Color(0xFF4D2639),
+            accent = Color(0xFFFFB3C6), accentSoft = Color(0xFFFFCFDB),
+            alert = Color(0xFFFF6F8E), alertSoft = Color(0xFFFF94A9), amber = Color(0xFFFFC07A),
+            text = Color(0xFFFFF5F8), textMuted = Color(0xFFE8CAD6), textDim = Color(0xFFB68FA3),
+        ),
+    ),
+    /** Sky morning: a light, airy blue for daytime use. */
+    SKY_MORNING(
+        "வானம் காலை", "Sky Morning (light)",
+        Palette(
+            background = Color(0xFFEAF4FB), backgroundDeep = Color(0xFFCFE6F5), backgroundMid = Color(0xFFDDEEF9),
+            surface = Color(0xFFFFFFFF), surfaceFocused = Color(0xFFD6EBF8), surfaceSelected = Color(0xFFE4F1FA),
+            accent = Color(0xFF0C6E99), accentSoft = Color(0xFF1B8AB8),
+            alert = Color(0xFFB42318), alertSoft = Color(0xFFC62828), amber = Color(0xFFB45309),
+            text = Color(0xFF0F2433), textMuted = Color(0xFF3E5A6B), textDim = Color(0xFF62798A),
+            isLight = true,
+        ),
+    ),
     ;
 
     companion object {

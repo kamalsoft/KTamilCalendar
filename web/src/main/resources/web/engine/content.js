@@ -1185,6 +1185,98 @@ export const CONTENT = {
    },
    "isLight": true,
    "focusRing": false
+  },
+  {
+   "id": "SANDALWOOD",
+   "ta": "சந்தனம்",
+   "en": "Sandalwood",
+   "colors": {
+    "background": "#2B1D14",
+    "backgroundDeep": "#150D08",
+    "backgroundMid": "#3A281B",
+    "surface": "#3B2A1E",
+    "surfaceFocused": "#5A4030",
+    "surfaceSelected": "#4A3426",
+    "accent": "#E8C07A",
+    "accentSoft": "#F2D59E",
+    "alert": "#FF7A59",
+    "alertSoft": "#FF9C80",
+    "amber": "#F2A65A",
+    "text": "#FFF8F0",
+    "textMuted": "#E3CFBE",
+    "textDim": "#B39A86"
+   },
+   "isLight": false,
+   "focusRing": false
+  },
+  {
+   "id": "MINT_GARDEN",
+   "ta": "புதினா தோட்டம்",
+   "en": "Mint Garden",
+   "colors": {
+    "background": "#0B2420",
+    "backgroundDeep": "#041412",
+    "backgroundMid": "#13362F",
+    "surface": "#153A33",
+    "surfaceFocused": "#22584C",
+    "surfaceSelected": "#1B4A40",
+    "accent": "#7EE0B5",
+    "accentSoft": "#A8F0CE",
+    "alert": "#FF7A7A",
+    "alertSoft": "#FF9E9E",
+    "amber": "#F7C26B",
+    "text": "#F3FFF9",
+    "textMuted": "#C0E6D6",
+    "textDim": "#88B3A1"
+   },
+   "isLight": false,
+   "focusRing": false
+  },
+  {
+   "id": "ROSE_DUSK",
+   "ta": "ரோஜா அந்தி",
+   "en": "Rose Dusk",
+   "colors": {
+    "background": "#2A1420",
+    "backgroundDeep": "#12070D",
+    "backgroundMid": "#3B1B2C",
+    "surface": "#40202F",
+    "surfaceFocused": "#5E2F45",
+    "surfaceSelected": "#4D2639",
+    "accent": "#FFB3C6",
+    "accentSoft": "#FFCFDB",
+    "alert": "#FF6F8E",
+    "alertSoft": "#FF94A9",
+    "amber": "#FFC07A",
+    "text": "#FFF5F8",
+    "textMuted": "#E8CAD6",
+    "textDim": "#B68FA3"
+   },
+   "isLight": false,
+   "focusRing": false
+  },
+  {
+   "id": "SKY_MORNING",
+   "ta": "வானம் காலை",
+   "en": "Sky Morning (light)",
+   "colors": {
+    "background": "#EAF4FB",
+    "backgroundDeep": "#CFE6F5",
+    "backgroundMid": "#DDEEF9",
+    "surface": "#FFFFFF",
+    "surfaceFocused": "#D6EBF8",
+    "surfaceSelected": "#E4F1FA",
+    "accent": "#0C6E99",
+    "accentSoft": "#1B8AB8",
+    "alert": "#B42318",
+    "alertSoft": "#C62828",
+    "amber": "#B45309",
+    "text": "#0F2433",
+    "textMuted": "#3E5A6B",
+    "textDim": "#62798A"
+   },
+   "isLight": true,
+   "focusRing": false
   }
  ],
  "enums": {

@@ -309,6 +309,10 @@ small { color: var(--dim); }
 [data-skin="GLASS"] { --card-bg: color-mix(in srgb, var(--surface) 58%, transparent); --card-border: #FFFFFF2E; --card-blur: blur(16px) saturate(140%); --card-shadow: 0 10px 30px #0004; }
 [data-skin="PAPER"] { --card-bg: var(--surface); --card-border: var(--surface-hi); --card-shadow: 3px 3px 0 var(--surface-hi); --card-radius: 6px; }
 [data-skin="PAPER"] .cell, [data-skin="PAPER"] .rasi-tile { border-radius: 4px; }
+[data-skin="SOFT"] { --card-bg: color-mix(in srgb, var(--surface) 92%, var(--accent) 8%); --card-border: transparent; --card-shadow: 0 12px 28px #0002; --card-radius: 22px; }
+[data-skin="EDGE"] { --card-bg: var(--surface); --card-border: transparent; --card-shadow: inset 4px 0 0 var(--accent); --card-radius: 12px; }
+.skin-sample.skin-soft i { border-radius: 8px; box-shadow: 0 6px 12px #0002; background: color-mix(in srgb, var(--surface) 92%, var(--accent) 8%); }
+.skin-sample.skin-edge i { border-radius: 3px; box-shadow: inset 4px 0 0 var(--accent); }
 
 /* ---- theme and skin pickers */
 .theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }

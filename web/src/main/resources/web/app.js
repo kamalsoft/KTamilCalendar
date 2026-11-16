@@ -652,6 +652,8 @@ const SKINS = [
   ['CLASSIC', 'பாரம்பரியம்', 'Classic', 'Solid cards with soft shadows.'],
   ['GLASS', 'கண்ணாடி', 'Glass', 'Frosted, translucent cards over the background.'],
   ['PAPER', 'காகிதம்', 'Paper', 'Flat cards with a crisp outline, like a printed almanac.'],
+  ['SOFT', 'மென்மை', 'Soft', 'Rounder cards with a gentle lift and a hint of the accent colour.'],
+  ['EDGE', 'ஓரம்', 'Edge', 'Flat cards with a coloured edge on the left.'],
 ];
 function viewTheme() {
   const cur = state.settings.theme;
