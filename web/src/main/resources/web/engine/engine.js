@@ -15,7 +15,10 @@ const KULIGAI_SEGMENT = [7, 6, 5, 4, 3, 2, 1];
 const GOWRI_CYCLE = [0, 1, 2, 3, 4, 5, 6, 7]; // indices into CONTENT.enums.Gowri
 const AVOIDED_MUHURTHAM_MONTHS = new Set([3, 5, 8]);
 const SHUKLA_MUHURTHAM_TITHIS = new Set([1, 2, 4, 6, 9, 10, 12]);
-const KRISHNA_MUHURTHAM_TITHIS = new Set([1, 2, 4]);
+// Validator: Krishna Prathama to Panchami only (0-based 0..4).
+const KRISHNA_MUHURTHAM_TITHIS = new Set([0, 1, 2, 3, 4]);
+// Validator section D (audited): malefic yogas, 0-based (1-based 1, 6, 9, 10, 13, 15, 17, 19, 27). Sukarma (7) is auspicious.
+const MALEFIC_YOGA_INDICES = new Set([0, 5, 8, 9, 12, 14, 16, 18, 26]);
 const MUHURTHAM_STARS = new Set([3, 4, 9, 11, 12, 14, 16, 18, 20, 21, 22, 25, 26]);
 const AT = { SUNRISE: 'SUNRISE', SUNSET: 'SUNSET', NOON: 'NOON', APARAHNA: 'APARAHNA', MOONRISE_K4: 'MOONRISE_K4', MIDNIGHT: 'MIDNIGHT' };
 
@@ -258,7 +261,9 @@ export class TamilCalendarEngine {
     const w = dayOfWeek(c.day);
     if (w === 2 || w === 6) return false;
     const tithiOk = tithi < 15 ? SHUKLA_MUHURTHAM_TITHIS.has(tithi) : KRISHNA_MUHURTHAM_TITHIS.has(tithi - 15);
-    return tithiOk && MUHURTHAM_STARS.has(star);
+    // Validator section D: a malefic yoga is strictly avoided.
+    const yoga = A.floorDiv(A.yogaSum(c.sunriseJd), NAK_SPAN) % 27;
+    return tithiOk && MUHURTHAM_STARS.has(star) && !MALEFIC_YOGA_INDICES.has(yoga);
   }
 
   // ------------------------------------------------------------ festivals & holidays

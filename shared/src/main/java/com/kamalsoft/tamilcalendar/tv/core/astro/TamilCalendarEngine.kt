@@ -374,7 +374,9 @@ class TamilCalendarEngine(
         val w = c.date.dayOfWeek.value % 7
         if (w == 2 || w == 6) return false // Tuesday, Saturday
         val tithiOk = if (tithi < 15) tithi in SHUKLA_MUHURTHAM_TITHIS else (tithi - 15) in KRISHNA_MUHURTHAM_TITHIS
-        return tithiOk && star in MUHURTHAM_STARS
+        // Validator section D: a malefic yoga is strictly avoided.
+        val yoga = Astro.floorDiv(Astro.yogaSum(c.sunriseJd), NAK_SPAN) % 27
+        return tithiOk && star in MUHURTHAM_STARS && yoga !in MALEFIC_YOGA_INDICES
     }
 
     // ---------------------------------------------------------------- festivals & holidays
@@ -557,7 +559,7 @@ class TamilCalendarEngine(
 
     companion object {
         /** Engine output version; bump to force the offline DB to regenerate. */
-        const val VERSION = 8
+        const val VERSION = 10
 
         private const val NAK_SPAN = 360.0 / 27.0
         private const val LAGNA_STEP_DAYS = 10.0 / 1440.0
@@ -578,7 +580,11 @@ class TamilCalendarEngine(
         // 0-based within paksha: Dwitiyai, Tritiyai, Panchami, Sapthami, Dasami, Ekadasi, Dwadasi, Thrayodasi.
         // Validator: Dwitiyai, Tritiyai, Panchami, Sapthami, Dasami, Ekadasi, Thrayodasi (0-based indices).
         private val SHUKLA_MUHURTHAM_TITHIS = setOf(1, 2, 4, 6, 9, 10, 12)
-        private val KRISHNA_MUHURTHAM_TITHIS = setOf(1, 2, 4)
+        // Validator: Krishna Prathama to Panchami only (0-based 0..4); Saptami and Dashami are an open question.
+        private val KRISHNA_MUHURTHAM_TITHIS = setOf(0, 1, 2, 3, 4)
+        // Validator section D (audited): malefic yogas, 0-based (1-based 1, 6, 9, 10, 13, 15, 17, 19, 27).
+        // Sukarma (7) is auspicious. Whole-yoga rejection is the conservative reading; partial-ghati rules are open.
+        private val MALEFIC_YOGA_INDICES = setOf(0, 5, 8, 9, 12, 14, 16, 18, 26)
         // Rohini, Mirugasirisham, Magam, Uthiram, Hastham, Swathi, Anusham, Moolam, Uthiradam, Uthirattathi, Revathi.
         // Validator's auspicious stars: Rohini, Mrigashirsha, Magha, Uttara Phalguni, Hasta, Swati, Anuradha, Moola,
         // Uttara Ashadha, Shravana, Dhanishta, Uttara Bhadrapada, Revati.

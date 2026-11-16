@@ -123,6 +123,16 @@ class TamilCalendarEngineTest {
         }
     }
 
+    /** Validator section D: Subha Muhurtham only on Krishna Prathama to Panchami, and never on a malefic yoga. */
+    @Test fun muhurthamKrishnaAndYogaRules() {
+        val malefic = setOf(0, 5, 8, 9, 12, 14, 16, 18, 26)
+        days.values.filter { it.tags.contains(DayTag.SUBHA_MUHURTHAM) }.forEach { d ->
+            val t = d.panchangam.tithi.index
+            if (t >= 15) assertTrue("${d.date} Krishna tithi ${t - 14} outside 1-5", t - 15 in 0..4)
+            assertFalse("${d.date} on a malefic yoga", d.panchangam.yogam.index in malefic)
+        }
+    }
+
     /** Validator gate 1: a Kari Naal day never carries the Subha Muhurtham tag. */
     @Test fun noMuhurthamOnKariNaal() {
         days.values.filter { com.kamalsoft.tamilcalendar.tv.domain.model.DayRules.isKariNaal(it.tamilDate.monthIndex, it.tamilDate.day) }

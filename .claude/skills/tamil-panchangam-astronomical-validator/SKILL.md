@@ -128,3 +128,10 @@ When validating a date, calculation, or Panchangam dataset, structure the respon
 - **Location & High-Latitude Seasonal Skew:** Outside India (e.g., North America or Europe), $\Delta T$ varies dramatically between winter (~9 hours) and summer (~15 hours), shifting Rahu Kalam duration from ~68 min to ~112 min and shifting *Aparahna Kala* by hours. Never reuse Indian printed Panchangam clock times for another country or timezone.
 - **Midnight vs. Sunrise Trap:** Always verify whether an early-morning timestamp (e.g., 4:30 AM) precedes local sunrise; if so, decrement the weekday index by 1 before computing *Soolam*, *Rahu Kalam*, *Hora*, or *Marana Yogam*.
 - **International Date Line & Western Hemisphere Lunar Shifts:** Because Moon longitude is geocentric/topocentric at a global instant (UTC), a Tithi or Amavasya that falls on Tuesday in Chennai frequently falls on Monday in North America. Always evaluate Tithi overlap against the **local** date's $T_{\text{rise}}$ and *Aparahna Kala*, never by copying the Indian calendar date.
+
+## Resolved Conflicts (audit by astronomer-validator reviewer)
+
+- **Malefic yogas (1-based):** 1 Vishkambha, 6 Atiganda, 9 Shula, 10 Ganda, 13 Vyaghata, 15 Vajra, 17 Vyatipata, 19 Parigha, 27 Vaidhriti. Sukarma (7) is auspicious. Whole-yoga rejection is the conservative reading. Partial-ghati (Tyajya ghati) rules are open.
+- **Magha and Moola:** permitted for marriage (Vivaha). Adhomukha applies to construction and excavation filters only: raising upper structures is avoided, and digging foundations is favoured.
+
+Both are the reviewer's classical attributions and are not independently verified here. Astronomer confirmation is still pending.

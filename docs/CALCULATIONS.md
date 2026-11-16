@@ -158,13 +158,19 @@ Each tag checks a tithi or star at a fixed instant. `observed` treats a tithi th
 A day is a candidate when all of these hold:
 
 0. The day is not a Kari Naal day (validator gate 1, §14.4).
+   Tuesday and Saturday are excluded from the Subha Muhurtham tag (the marriage and housewarming rule in the validator's
+   section E). They are flagged in the day view, not blacked out.
 1. The Tamil month is not Aadi (3), Purattasi (5) or Margazhi (8).
 2. The Moon's month is not an adhika (extra) month.
 3. The weekday is not Tuesday or Saturday.
 4. Shukla: tithi index in {1, 2, 4, 6, 9, 10, 12}, i.e. Dwitiyai, Tritiyai, Panchami, Sapthami, Dasami, Ekadasi,
-   Thrayodasi (the validator's best tithis). Krishna: tithi − 15 in {1, 2, 4}, i.e. Dwitiyai, Tritiyai, Panchami.
-   The Krishna rule is not in the validator's sources and still needs an astronomer's confirmation.
-5. The star index is one of {3, 4, 9, 11, 12, 14, 16, 18, 20, 21, 22, 25, 26}: Rohini, Mirugasirisham, Magam,
+   Thrayodasi (the validator's best tithis). Krishna: tithi − 15 in {0, 1, 2, 3, 4}, i.e. Prathama to Panchami
+   (the validator's rule). Saptami and Dashami are not included until the open question is answered.
+5. The yogam is not malefic (validator section D, audited): 0-based {0, 5, 8, 9, 12, 14, 16, 18, 26}, i.e. 1-based
+   1 Vishkambam, 6 Atiganda, 9 Shula, 10 Ganda, 13 Vyaghata, 15 Vajra, 17 Vyatipata, 19 Parigha, 27 Vaidhriti.
+   Sukarma (7) is auspicious. The app rejects the whole day for these yogas (the conservative reading). Partial-ghati
+   rules are not implemented.
+6. The star index is one of {3, 4, 9, 11, 12, 14, 16, 18, 20, 21, 22, 25, 26}: Rohini, Mirugasirisham, Magam,
    Uthiram, Hastham, Swathi, Anusham, Moolam, Uthiradam, Thiruvonam (Shravana), Avittam (Dhanishta), Uthirattathi
    (Uttara Bhadrapada), Revati. This is the validator's auspicious list.
 
