@@ -54,6 +54,17 @@
     </section>
 
     <section class="detail">
+      <h2>Language files</h2>
+      <p class="small">One file per language: each line has the Tamil label, its English, and the value in that language.</p>
+      <p>
+        <button class="pill" data-lang="te">Telugu → English</button>
+        <button class="pill" data-lang="ml">Malayalam → English</button>
+        <button class="pill" data-lang="kn">Kannada → English</button>
+        <button class="pill" data-lang="hi">Hindi → English</button>
+      </p>
+    </section>
+
+    <section class="detail">
       <h2>Sending it back</h2>
       <p class="small">To share a finished language with everyone, send the filled file in a GitHub issue or pull request (see <code>CONTRIBUTING.md</code>).</p>
     </section>
@@ -103,6 +114,15 @@
       $('error').textContent = message;
       $('error').hidden = false;
     }
+
+    // One download per language: Tamil, English and that language's value, from the template as it stands.
+    document.querySelectorAll('[data-lang]').forEach((b) => b.addEventListener('click', async () => {
+      const code = b.dataset.lang;
+      const t = await template();
+      const rows = (t.entries || []).map((e) => ({ ta: e.ta, en: e.en, [code]: e[code] || '' }));
+      const blob = new Blob([JSON.stringify({ format: 'panchangam-translations-v1', language: LANGS[code], entries: rows }, null, 1) + '\n'], { type: 'application/json' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${LANGS[code].toLowerCase()}-to-english.json`; a.click();
+    }));
 
     $('clear').addEventListener('click', () => {
       try { localStorage.removeItem(UPLOAD_KEY); } catch (err) { /* nothing stored */ }
