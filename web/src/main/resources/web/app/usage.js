@@ -4,6 +4,7 @@
 // The Google Apps Script web app (see tools/usage/Code.gs). Empty means the feature is off.
 export const USAGE_URL = 'https://script.google.com/macros/s/AKfycbxcSZYKyP8E4Wc9ZjSMjHa68UpDOTitgtacS2ZgDbOs4DeGc662wpD8r1jIUg4wrsuSCw/exec';
 
+
 /** Sends one open. Called once per page load, and only when the user has chosen to share. */
 export function sendOpen(settings, place, platform) {
   if (!USAGE_URL || !settings.shareOpens || !place) return;
